@@ -10,7 +10,7 @@ CORS(app)  # Abilita CORS per tutte le route
 SMTP_SERVER = 'smtp.gmail.com'
 SMTP_PORT = 587
 SMTP_USERNAME = 'sitiegestionali@gmail.com'  # Inserisci il tuo indirizzo email
-SMTP_PASSWORD = 'SitiBelli-22'  # Inserisci la tua password o chiave API
+SMTP_PASSWORD = ''  #TODO: Password Inserisci la tua password o chiave API
 @app.route('/send-email', methods=['POST'])
 def send_email():
     try:
