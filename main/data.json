@@ -1,6 +1,6 @@
 {
     "name": "Test Nome",
-    "who_am_i": "Ciao, Io Sono",
+    "presentation": "Ciao, Io Sono",
     "header_mono_subtitle": "Backend & Integration Analyst | Software Developer",
     "print_resume": "Print Resume",
     "social_links": {
@@ -9,6 +9,7 @@
         "instagram": "#",
         "github": "#"
     },
+    "who_am_i": "Chi Sono?",
     "about": {
         "who": "Mi occupo di Backend per gestsionali aziendali, Sviluppo eCommerce e Integrazione per sistemi Regionali, Ministeroiali ed Europei",
         "details": "Lavoro a stretto contatto con piccole imprese per farle crescere sul mercato internazionale, tramite gestionali ed eCommerce. Inoltre faccio capo al governo europeo e italiano per permettere la condivisione dati tra i vari Paesi Membri dell'Europa"
@@ -33,13 +34,9 @@
         { "name": "Inglese", "level": "75%" },
         { "name": "Spagnolo", "level": "27%" }
     ],
-    "events_and": "Eventi e ",
-    "courses": "Corsi",
-    "content_1": "Chi Sono?",
-    "content_2": "{{about.details}}",
-    "content_3": "Personal Info",
-    "content_4": "My Expertise",
-    "content_5": "Business Management Software Development",
+    "personal_info_label": "Personal Info",
+    "my_expertise_label": "My Expertise",
+    "my_expertise": "Business Management Software Development",
     "content_6": "exercitat Repellendus,  corrupt.",
     "content_7": "eCommerce Development",
     "content_8": "Lorem ipsum dolor sit consectetur.",
