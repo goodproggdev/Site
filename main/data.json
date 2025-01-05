@@ -20,6 +20,7 @@
         "work_number": "+ (39) 3428563032",
         "instagram": "enricobaldasso"
     },
+    "home_title": "Home",
     "skills": [
         { "name": "C", "level": "97%" },
         { "name": "TypeScript & JavaScript", "level": "85%" },
