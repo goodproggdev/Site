@@ -33,6 +33,8 @@
         { "name": "Inglese", "level": "75%" },
         { "name": "Spagnolo", "level": "27%" }
     ],
+    "events_and": "Eventi e ",
+    "courses": "Corsi",
     "content_1": "Chi Sono?",
     "content_2": "{{about.details}}",
     "content_3": "Personal Info",
