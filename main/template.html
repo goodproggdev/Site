@@ -86,39 +86,25 @@
                     <li><span>Instagram</span> : {{personal_info.instagram}}</li>
                 </ul>
                 <ul class="social-icons pt-3">
-                    <li class="social-item"><a class="social-link" href="{{facebook}}"><i class="ti-facebook" aria-hidden="true"></i></a></li>
-                    <li class="social-item"><a class="social-link" href="{{twitter}}"><i class="ti-twitter" aria-hidden="true"></i></a></li>
-                    <li class="social-item"><a class="social-link" href="{{instagram}}"><i class="ti-instagram" aria-hidden="true"></i></a></li>
-                    <li class="social-item"><a class="social-link" href="{{github}}"><i class="ti-github" aria-hidden="true"></i></a></li>
+                    <li class="social-item"><a class="social-link" href="{{social_links.facebook}}"><i class="ti-facebook" aria-hidden="true"></i></a></li>
+                    <li class="social-item"><a class="social-link" href="{{social_links.twitter}}"><i class="ti-twitter" aria-hidden="true"></i></a></li>
+                    <li class="social-item"><a class="social-link" href="{{social_links.instagram}}"><i class="ti-instagram" aria-hidden="true"></i></a></li>
+                    <li class="social-item"><a class="social-link" href="{{social_links.github}}"><i class="ti-github" aria-hidden="true"></i></a></li>
                 </ul>  
             </div>
             <div class="col-lg-4 about-card">
                 <h3 class="font-weight-light">{{my_expertise_label}}</h3>
                 <span class="line mb-5"></span>
-                <div class="row">
-                    <div class="col-1 text-danger pt-1"><i class="ti-widget icon-lg"></i></div>
-                    <div class="col-10 ml-auto mr-3">
-                        <h6>Business Management Software Development</h6>
-                        <p class="subtitle"> exercitat Repellendus,  corrupt.</p>
-                        <hr>
+                {% for expertise in expertise_list %}
+                    <div class="row">
+                        <div class="col-1 text-danger pt-1"><i class="{{ expertise.icon_class }} icon-lg"></i></div>
+                        <div class="col-10 ml-auto mr-3">
+                            <h6>{{ expertise.name }}</h6>
+                            <p class="subtitle"> {{ expertise.subtitle }}</p>
+                            <hr>
+                        </div>
                     </div>
-                </div>
-                <div class="row">
-                    <div class="col-1 text-danger pt-1"><i class="ti-paint-bucket icon-lg"></i></div>
-                    <div class="col-10 ml-auto mr-3">
-                        <h6>eCommerce Development</h6>
-                        <p class="subtitle">Lorem ipsum dolor sit consectetur.</p>
-                        <hr>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-1 text-danger pt-1"><i class="ti-stats-up icon-lg"></i></div>
-                    <div class="col-10 ml-auto mr-3">
-                        <h6>Design and Development - Backend and Middleware </h6>
-                        <p class="subtitle">Gestione dati tramite DB, organizzazzione ed elaborazione dati, gestione chiamate API personalizzate</p>
-                        <hr>
-                    </div>
-                </div>
+                {% endfor %}
             </div>
         </div>
     </div>
@@ -126,7 +112,7 @@
     <!--Resume Section-->
     <section class="section" id="resume">
         <div class="container">
-            <h2 class="mb-5"><span class="text-danger">My</span> Resume</h2>
+            <h2 class="mb-5"><span class="text-danger">{{my_resume_label.my}}</span> {{my_resume_label.resume}}</h2>
             <div class="row">
                 <div class="col-md-6 col-lg-4">
                     <div class="card">
@@ -171,7 +157,6 @@
                             <h6 class="title text-danger">2012 - 2018</h6>
                             <P>Liceo Scientifico opzione Scienze Applicate</P>
                             <P class="subtitle">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Nostrum recusandae, cupiditate ullam dolor ratione repellendus.aliquid repudiandae saepe!.</P>
-                            
                         </div>
                     </div>
                 </div>
@@ -603,10 +588,10 @@
                             </div>
                         </div>
                         <ul class="social-icons pt-4">
-                            <li class="social-item"><a class="social-link text-dark" href="{{facebook}}"><i class="ti-facebook" aria-hidden="true"></i></a></li>
-                            <li class="social-item"><a class="social-link text-dark" href="{{twitter}}"><i class="ti-twitter" aria-hidden="true"></i></a></li>
-                            <li class="social-item"><a class="social-link text-dark" href="{{instagram}}"><i class="ti-instagram" aria-hidden="true"></i></a></li>
-                            <li class="social-item"><a class="social-link text-dark" href="{{github}}"><i class="ti-github" aria-hidden="true"></i></a></li>
+                            <li class="social-item"><a class="social-link text-dark" href="{{social_links.facebook}}"><i class="ti-facebook" aria-hidden="true"></i></a></li>
+                            <li class="social-item"><a class="social-link text-dark" href="{{social_links.twitter}}"><i class="ti-twitter" aria-hidden="true"></i></a></li>
+                            <li class="social-item"><a class="social-link text-dark" href="{{social_links.instagram}}"><i class="ti-instagram" aria-hidden="true"></i></a></li>
+                            <li class="social-item"><a class="social-link text-dark" href="{{social_links.github}}"><i class="ti-github" aria-hidden="true"></i></a></li>
                         </ul> 
                     </div>
                 </div>
