@@ -9,6 +9,10 @@
         "instagram": "#",
         "github": "#"
     },
+    "my_resume_label": {
+        "my": "My",
+        "resume": "Resume"
+    },
     "who_am_i": "Chi Sono?",
     "about": {
         "who": "Mi occupo di Backend per gestsionali aziendali, Sviluppo eCommerce e Integrazione per sistemi Regionali, Ministeroiali ed Europei",
@@ -36,12 +40,11 @@
     ],
     "personal_info_label": "Personal Info",
     "my_expertise_label": "My Expertise",
-    "my_expertise": "Business Management Software Development",
-    "content_6": "exercitat Repellendus,  corrupt.",
-    "content_7": "eCommerce Development",
-    "content_8": "Lorem ipsum dolor sit consectetur.",
-    "content_9": "Design and Development - Backend and Middleware",
-    "content_10": "Gestione dati tramite DB, organizzazzione ed elaborazione dati, gestione chiamate API personalizzate",
+    "expertise_list": [
+        { "name": "Business Management Software Development", "icon_class": "ti-widget", "subtitle": "exercitat Repellendus,  corrupt."},
+        { "name": "eCommerce Development", "icon_class": "ti-paint-bucket", "subtitle": "exercitat Repellendus,  corrupt."},
+        { "name": "Design and Development - Backend and Middleware", "icon_class": "ti-stats-up", "subtitle": "Gestione dati tramite DB, organizzazzione ed elaborazione dati, gestione chiamate API personalizzate"}
+    ],
     "content_11": "2024 - Presente",
     "content_12": "Tecnico di Integrazione Sistemi Europei",
     "content_13": "Integrazione protocolli europei e nazionali, controllo dati e sviluppo portali unici.",
