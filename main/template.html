@@ -10,7 +10,7 @@
     <!-- font icons -->
     <link rel="stylesheet" href="assets/vendors/themify-icons/css/themify-icons.css">
     <!-- Bootstrap + JohnDoe main styles -->
-    <link rel="stylesheet" href="assets/css/johndoe.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/johndoe.css') }}">
 </head>
 
 <body data-spy="scroll" data-target=".navbar" data-offset="40" id="home">
@@ -337,61 +337,28 @@
         </div>
     </section>
 
-    <div class="section contact" id="contact">
-        <div id="map" class="map"></div>
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-8">
-                    <div class="contact-form-card">
-                        <h4 class="contact-title">{{form_title}}</h4>
-                        <form action="">
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title">Send an Email</h4>
+                        <form action="/" method="POST">
+                            <!-- Token CSRF -->
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+
                             <div class="form-group">
-                                <input class="form-control" type="text" placeholder="{{form_placeholder_name}}"
-                                    required>
+                                <label for="subject">Subject</label>
+                                <input type="text" class="form-control" id="subject" name="subject" placeholder="Enter subject" required>
                             </div>
+
                             <div class="form-group">
-                                <input class="form-control" type="email" placeholder="{{form_placeholder_email}}"
-                                    required>
+                                <label for="body">Message Body</label>
+                                <textarea class="form-control" id="body" name="body" rows="5" placeholder="Enter message body" required></textarea>
                             </div>
-                            <div class="form-group">
-                                <textarea class="form-control" placeholder="{{form_placeholder_message}}" rows="7"
-                                    required></textarea>
-                            </div>
-                            <div class="form-group">
-                                <button type="submit" class="form-control btn btn-primary">{{form_button_text}}</button>
-                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-block">Send Email</button>
                         </form>
-                    </div>
-                </div>
-                <div class="col-lg-4">
-                    <div class="contact-info-card">
-                        <h4 class="contact-title">{{contact_title}}</h4>
-                        <div class="row mb-2">
-                            <div class="col-1 pt-1 mr-1">
-                                <i class="ti-mobile icon-md"></i>
-                            </div>
-                            <div class="col-10">
-                                <h6 class="d-inline">{{phone_label}}<br><span class="text-muted">{{phone_number}}</span>
-                                </h6>
-                            </div>
-                        </div>
-                        <div class="row mb-2">
-                            <div class="col-1 pt-1 mr-1">
-                                <i class="ti-map-alt icon-md"></i>
-                            </div>
-                            <div class="col-10">
-                                <h6 class="d-inline">{{address_label}}<br><span class="text-muted">{{address}}</span>
-                                </h6>
-                            </div>
-                        </div>
-                        <div class="row mb-2">
-                            <div class="col-1 pt-1 mr-1">
-                                <i class="ti-envelope icon-md"></i>
-                            </div>
-                            <div class="col-10">
-                                <h6 class="d-inline">{{email_label}}<br><span class="text-muted">{{email}}</span></h6>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
