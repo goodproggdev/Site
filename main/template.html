@@ -118,22 +118,19 @@
                     <div class="card">
                        <div class="card-header">
                             <div class="mt-2">
-                                <h4>Esperienze Lavorative</h4>
+                                <h4>{{work_experience_label}}</h4>
                                 <span class="line"></span>  
                             </div>
                         </div>
                         <div class="card-body">
-                            <h6 class="title text-danger">2024 - Presente</h6>
-                            <P>Tecnico di Integrazione Sistemi Europei</P>
-                            <P class="subtitle">Integrazione protocolli europei e nazionali, controllo dati e sviluppo portali unici.</P>
+                            {% for work_exp in work_experience_list %}
+                            <h6 class="title text-danger">{{ work_exp.period }}</h6>
+                            <P>{{ work_exp.title }}</P>
+                            <P class="subtitle">{{ work_exp.subtitle }}</P>
+                            {% if loop.index != loop.length %}
                             <hr>
-                            <h6 class="title text-danger">2023 - Presente</h6>
-                            <P>Backend Developer</P>
-                            <P class="subtitle">Gestione database, sviluppo CRUD, implementazione sistemi di stampa e moduli personalizzati.</P>
-                            <hr>
-                            <h6 class="title text-danger">2018 - 2022</h6>
-                            <P>Software Developer</P>
-                            <P class="subtitle">Sviluppo gestionali aziendali in particolar per la compra vendita all'ingrosso.</P>
+                            {% endif %}
+                            {% endfor %}
                         </div>
                     </div>
                 </div>
