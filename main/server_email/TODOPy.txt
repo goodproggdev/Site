@@ -1,3 +1,0 @@
-
-pip install Flask
-python email_from_html.py
