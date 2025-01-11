@@ -45,6 +45,12 @@
         { "name": "eCommerce Development", "icon_class": "ti-paint-bucket", "subtitle": "exercitat Repellendus,  corrupt."},
         { "name": "Design and Development - Backend and Middleware", "icon_class": "ti-stats-up", "subtitle": "Gestione dati tramite DB, organizzazzione ed elaborazione dati, gestione chiamate API personalizzate"}
     ],
+    "work_experience_label":"Esperienze Lavorative",
+    "work_experience_list": [
+        { "period": "2024 - Presente", "title": "Tecnico di Integrazione Sistemi Europei", "subtitle": "Integrazione protocolli europei e nazionali, controllo dati e sviluppo portali unici."},
+        { "period": "2023 - Presente", "title": "Backend Developer", "subtitle": "Integrazione protocolli europei e nazionali, controllo dati e sviluppo portali unici."},
+        { "period": "2018 - 2022", "title": "example", "subtitle": "Gestione dati tramite DB, organizzazzione ed elaborazione dati, gestione chiamate API personalizzate"}
+    ],
     "content_11": "2024 - Presente",
     "content_12": "Tecnico di Integrazione Sistemi Europei",
     "content_13": "Integrazione protocolli europei e nazionali, controllo dati e sviluppo portali unici.",

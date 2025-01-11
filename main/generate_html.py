@@ -18,10 +18,17 @@ def render_loops(template, data):
         loop_data = get_value_from_nested_data(data, loop_data_key)
         if isinstance(loop_data, list):
             rendered_content = ""
-            for item in loop_data:
+            loop_length = len(loop_data)
+            for index, item in enumerate(loop_data):
                 item_content = loop_content
                 for key, value in item.items():
                     item_content = item_content.replace(f"{{{{ {loop_var}.{key} }}}}", str(value))
+                # Simula {% if loop.index != loop.length %}
+                if "{% if loop.index != loop.length %}" in item_content:
+                    if index + 1 != loop_length:
+                        item_content = item_content.replace("{% if loop.index != loop.length %}", "").replace("{% endif %}", "")
+                    else:
+                        item_content = re.sub(r"{% if loop\.index != loop\.length %}.*?{% endif %}", "", item_content, flags=re.DOTALL)
                 rendered_content += item_content
             template = template.replace(f"{{% for {loop_var} in {loop_data_key} %}}{loop_content}{{% endfor %}}", rendered_content)
     return template
