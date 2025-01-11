@@ -25,27 +25,66 @@
 		"work_number": "+ (39) 3428563032",
 		"instagram": "enricobaldasso"
 	},
-	"skills_label":"Skills",
+	"skills_label": "Skills",
 	"skills": [
-		{ "name": "C", "level": "97%" },
-		{ "name": "TypeScript & JavaScript", "level": "85%" },
-		{ "name": "Python", "level": "80%" },
-		{ "name": "SQL", "level": "90%" },
-		{ "name": "Java", "level": "90%" },
-		{ "name": "F#", "level": "90%" }
+		{
+			"name": "C",
+			"level": "97%"
+		},
+		{
+			"name": "TypeScript & JavaScript",
+			"level": "85%"
+		},
+		{
+			"name": "Python",
+			"level": "80%"
+		},
+		{
+			"name": "SQL",
+			"level": "90%"
+		},
+		{
+			"name": "Java",
+			"level": "90%"
+		},
+		{
+			"name": "F#",
+			"level": "90%"
+		}
 	],
-	"languages_label":"Languages",
+	"languages_label": "Languages",
 	"languages": [
-		{ "name": "Italiano", "level": "100%" },
-		{ "name": "Inglese", "level": "75%" },
-		{ "name": "Spagnolo", "level": "27%" }
+		{
+			"name": "Italiano",
+			"level": "100%"
+		},
+		{
+			"name": "Inglese",
+			"level": "75%"
+		},
+		{
+			"name": "Spagnolo",
+			"level": "27%"
+		}
 	],
 	"personal_info_label": "Personal Info",
 	"my_expertise_label": "My Expertise",
 	"expertise_list": [
-		{ "name": "Business Management Software Development", "icon_class": "ti-widget", "subtitle": "exercitat Repellendus,  corrupt."},
-		{ "name": "eCommerce Development", "icon_class": "ti-paint-bucket", "subtitle": "exercitat Repellendus,  corrupt."},
-		{ "name": "Design and Development - Backend and Middleware", "icon_class": "ti-stats-up", "subtitle": "Gestione dati tramite DB, organizzazzione ed elaborazione dati, gestione chiamate API personalizzate"}
+		{
+			"name": "Business Management Software Development",
+			"icon_class": "ti-widget",
+			"subtitle": "exercitat Repellendus,  corrupt."
+		},
+		{
+			"name": "eCommerce Development",
+			"icon_class": "ti-paint-bucket",
+			"subtitle": "exercitat Repellendus,  corrupt."
+		},
+		{
+			"name": "Design and Development - Backend and Middleware",
+			"icon_class": "ti-stats-up",
+			"subtitle": "Gestione dati tramite DB, organizzazzione ed elaborazione dati, gestione chiamate API personalizzate"
+		}
 	],
 	"education_label": "Education",
 	"education_list": [
@@ -65,169 +104,204 @@
 			"subtitle": "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Nostrum recusandae, cupiditate ullam dolor ratione repellendus. Aliquid repudiandae saepe!"
 		}
 	],
-	"work_experience_label":"Esperienze Lavorative",
+	"work_experience_label": "Esperienze Lavorative",
 	"work_experience_list": [
-		{ "period": "2024 - Presente", "title": "Tecnico di Integrazione Sistemi Europei", "subtitle": "Integrazione protocolli europei e nazionali, controllo dati e sviluppo portali unici."},
-		{ "period": "2023 - Presente", "title": "Backend Developer", "subtitle": "Integrazione protocolli europei e nazionali, controllo dati e sviluppo portali unici."},
-		{ "period": "2018 - 2022", "title": "example", "subtitle": "Gestione dati tramite DB, organizzazzione ed elaborazione dati, gestione chiamate API personalizzate"}
+		{
+			"period": "2024 - Presente",
+			"title": "Tecnico di Integrazione Sistemi Europei",
+			"subtitle": "Integrazione protocolli europei e nazionali, controllo dati e sviluppo portali unici."
+		},
+		{
+			"period": "2023 - Presente",
+			"title": "Backend Developer",
+			"subtitle": "Integrazione protocolli europei e nazionali, controllo dati e sviluppo portali unici."
+		},
+		{
+			"period": "2018 - 2022",
+			"title": "example",
+			"subtitle": "Gestione dati tramite DB, organizzazzione ed elaborazione dati, gestione chiamate API personalizzate"
+		}
 	],
 	"statistics": [
 		{
-		  "icon": "ti-alarm-clock",
-		  "count": 5000,
-		  "label": "Hours Worked",
-		  "icon_class": "icon-xl"
+			"icon": "ti-alarm-clock",
+			"count": 5000,
+			"label": "Hours Worked",
+			"icon_class": "icon-xl"
 		},
 		{
-		  "icon": "ti-layers-alt",
-		  "count": 70,
-		  "label": "Project Finished",
-		  "icon_class": "icon-xl"
+			"icon": "ti-layers-alt",
+			"count": 70,
+			"label": "Project Finished",
+			"icon_class": "icon-xl"
 		},
 		{
-		  "icon": "ti-face-smile",
-		  "count": 50,
-		  "label": "Happy Clients",
-		  "icon_class": "icon-xl"
+			"icon": "ti-face-smile",
+			"count": 50,
+			"label": "Happy Clients",
+			"icon_class": "icon-xl"
 		},
 		{
-		  "icon": "ti-heart-broken",
-		  "count": "200k",
-		  "label": "Bug Fixed",
-		  "icon_class": "icon-xl"
+			"icon": "ti-heart-broken",
+			"count": "200k",
+			"label": "Bug Fixed",
+			"icon_class": "icon-xl"
 		}
-	  ],
-    "my_service_label":"My Services",
-    "services": [
-        {
-            "icon": "ti-vector",
-            "icon_class": "text-danger",
-            "title": "Sviluppo eCommerce",
-            "description": "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ullam commodi provident, dolores reiciendis enim pariatur error optio, tempora ex, nihil nesciunt! In praesentium sunt commodi, unde ipsam ex veritatis laboriosam dolor asperiores suscipit blanditiis, dignissimos quos nesciunt nulla aperiam officia."
-        },
-        {
-            "icon": "ti-write",
-            "icon_class": "text-danger",
-            "title": "Sviluppo Gestionali",
-            "description": "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ullam commodi provident, dolores reiciendis enim pariatur error optio, tempora ex, nihil nesciunt! In praesentium sunt commodi, unde ipsam ex veritatis laboriosam dolor asperiores suscipit blanditiis, dignissimos quos nesciunt nulla aperiam officia."
-        },
-        {
-            "icon": "ti-package",
-            "icon_class": "text-danger",
-            "title": "Sviluppo DB",
-            "description": "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ullam commodi provident, dolores reiciendis enim pariatur error optio, tempora ex, nihil nesciunt! In praesentium sunt commodi, unde ipsam ex veritatis laboriosam dolor asperiores suscipit blanditiis, dignissimos quos nesciunt nulla aperiam officia."
-        },
-        {
-            "icon": "ti-map-alt",
-            "icon_class": "text-danger",
-            "title": "Sviluppo Eseguibili Windows e C",
-            "description": "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ullam commodi provident, dolores reiciendis enim pariatur error optio, tempora ex, nihil nesciunt! In praesentium sunt commodi, unde ipsam ex veritatis laboriosam dolor asperiores suscipit blanditiis, dignissimos quos nesciunt nulla aperiam officia."
-        },
-        {
-            "icon": "ti-bar-chart",
-            "icon_class": "text-danger",
-            "title": "Sviluppo Siti Vetrina",
-            "description": "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ullam commodi provident, dolores reiciendis enim pariatur error optio, tempora ex, nihil nesciunt! In praesentium sunt commodi, unde ipsam ex veritatis laboriosam dolor asperiores suscipit blanditiis, dignissimos quos nesciunt nulla aperiam officia."
-        },
-        {
-            "icon": "ti-support",
-            "icon_class": "text-danger",
-            "title": "Elaborazione Dati",
-            "description": "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ullam commodi provident, dolores reiciendis enim pariatur error optio, tempora ex, nihil nesciunt! In praesentium sunt commodi, unde ipsam ex veritatis laboriosam dolor asperiores suscipit blanditiis, dignissimos quos nesciunt nulla aperiam officia."
-        }
-    ],
-    "pricing_packs_label":"Packs Pricing",
-    "pricing_packs": [
-        {
-            "title": "Sito Vetrina",
-            "cost": "750€",
-            "project": "5",
-            "storage": "1GB",
-            "domain": "No",
-            "users": "1",
-            "special_class": ""
-        },
-        {
-            "title": "eCommerce",
-            "cost": "1500€",
-            "project": "50",
-            "storage": "10GB",
-            "domain": "1",
-            "users": "5",
-            "special_class": ""
-        },
-        {
-            "title": "Web App",
-            "cost": "2500€",
-            "project": "150",
-            "storage": "15GB",
-            "domain": "5",
-            "users": "15",
-            "special_class": "price-card-requried"
-        },
-        {
-            "title": "Gestionale",
-            "cost": "5000€",
-            "project": "500",
-            "storage": "1000GB",
-            "domain": "10",
-            "users": "Unlimited",
-            "special_class": ""
-        }
-    ],
-    "freelancing_label":"I Am Available For FreeLance",
-    "hire_me_label":"Hire me",
-    "my_portfolio_label":"My</span> Portfolio",
-    
-	"content_11": "2024 - Presente",
-	"content_12": "Tecnico di Integrazione Sistemi Europei",
-	"content_13": "Integrazione protocolli europei e nazionali, controllo dati e sviluppo portali unici.",
-	"content_14": "2023 - Presente",
-	"content_15": "Backend Developer",
-	"content_16": "Gestione database, sviluppo CRUD, implementazione sistemi di stampa e moduli personalizzati.",
-	"content_17": "2018 - 2022",
-	"content_18": "Software Developer",
-	"content_19": "Sviluppo gestionali aziendali in particolar per la compra vendita all'ingrosso.",
-	"content_20": "2023 - Present",
-	"content_21": "Universit\u00e0 Igegneria Informatica",
-	"content_22": "Corso di ... all' Universit\u00e0 di Roma",
-	"content_23": "2018 - 2020",
-	"content_24": "Universit\u00e0 Informatica",
-	"content_25": "Corso di ... all' Universit\u00e0 di Venezia Ca'Foscari",
-	"content_26": "2012 - 2018",
-	"content_27": "Liceo Scientifico opzione Scienze Applicate",
-	"content_28": "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Nostrum recusandae, cupiditate ullam dolor ratione repellendus.aliquid repudiandae saepe!.",
-	"content_29": "{{ skill.name }}",
-	"content_30": "{{ language.name }}",
-	"content_31": "Hours Worked",
-	"content_32": "Project Finished",
-	"content_33": "Happy Clients",
-	"content_34": "Bug Fixed",
-	"content_35": "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ullam commodi provident, dolores reiciendis enim pariatur error optio, tempora ex, nihil nesciunt! In praesentium sunt commodi, unde ipsam ex veritatis laboriosam dolor asperiores suscipit blanditiis, dignissimos quos nesciunt nulla aperiam officia.",
-	"content_36": "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ullam commodi provident, dolores reiciendis enim pariatur error optio, tempora ex, nihil nesciunt! In praesentium sunt commodi, unde ipsam ex veritatis laboriosam dolor asperiores suscipit blanditiis, dignissimos quos nesciunt nulla aperiam officia.",
-	"content_37": "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ullam commodi provident, dolores reiciendis enim pariatur error optio, tempora ex, nihil nesciunt! In praesentium sunt commodi, unde ipsam ex veritatis laboriosam dolor asperiores suscipit blanditiis, dignissimos quos nesciunt nulla aperiam officia.",
-	"content_38": "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ullam commodi provident, dolores reiciendis enim pariatur error optio, tempora ex, nihil nesciunt! In praesentium sunt commodi, unde ipsam ex veritatis laboriosam dolor asperiores suscipit blanditiis, dignissimos quos nesciunt nulla aperiam officia.",
-	"content_39": "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ullam commodi provident, dolores reiciendis enim pariatur error optio, tempora ex, nihil nesciunt! In praesentium sunt commodi, unde ipsam ex veritatis laboriosam dolor asperiores suscipit blanditiis, dignissimos quos nesciunt nulla aperiam officia.",
-	"content_40": "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ullam commodi provident, dolores reiciendis enim pariatur error optio, tempora ex, nihil nesciunt! In praesentium sunt commodi, unde ipsam ex veritatis laboriosam dolor asperiores suscipit blanditiis, dignissimos quos nesciunt nulla aperiam officia.",
-	"content_41": "Sito Vetrina",
-	"content_42": "eCommerce",
-	"content_43": "Web App",
-	"content_44": "Gestionale",
-	"content_45": "Gestionale",
-	"content_46": "Merotto Fiori",
-	"content_47": "Gestionale",
-	"content_48": "ABS Utensili",
-	"content_49": "eCommerce",
-	"content_50": "Orologiaio da Sebastian",
-	"content_51": "AI Demo",
-	"content_52": "Tris contro Una Rete Neurale",
-	"content_53": "Web App Demo",
-	"content_54": "Tarocchi",
-	"content_55": "Consectetur adipisicing elit",
-	"content_56": "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Amet nesciunt qui sit velit delectus voluptates, repellat ipsum culpa id deleniti. Rerum debitis facilis accusantium neque numquam mollitia modi quasi distinctio.",
-	"content_57": "Necessitatibus nihil impedit! Ex nisi eveniet, dolor aliquid consequuntur repudiandae.",
-	"content_58": "Magnam in repellat enim harum omnis aperiam! Explicabo illo, commodi, dolor blanditiis cupiditate harum nisi vero accusamus laudantium voluptatibus dolores quae obcaecati.",
-	"content_59": "Explicabo illo",
-	"content_60": "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Impedit excepturi laborum enim, vitae ipsam atque eum, ad iusto consequuntur voluptas, esse doloribus. Perferendis porro quisquam vitae exercitationem aliquid, minus eos laborum repudiandae, cumque debitis iusto omnis praesentium? Laborum placeat sit adipisci illum tempore maxime, esse qui quae? Molestias excepturi corporis similique doloribus. Esse vitae earum architecto nulla non dolores illum at perspiciatis quod, et deleniti cupiditate reiciendis harum facere, delectus eum commodi soluta distinctio sit repudiandae possimus sunt. Ipsum, rem.",
-	"content_61": "consectetur adipisicing elit. Impedit excepturi laborum enim, vitae ipsam atque eum, ad iusto consequuntur voluptas, esse doloribus. Perferendis porro quisquam vitae exercitationem aliquid, minus eos laborum repudiandae, cumque debitis iusto omnis praesentium? Laborum placeat sit adipisci illum tempore maxime, esse qui quae? Molestias excepturi corporis similique doloribus. Esse vitae earum architecto nulla non dolores illum at perspiciatis quod, et deleniti cupiditate reiciendis harum facere, delectus eum commodi soluta distinctio sit repudiandae possimus sunt. Ipsum, rem."
+	],
+	"my_service_label": "My Services",
+	"services": [
+		{
+			"icon": "ti-vector",
+			"icon_class": "text-danger",
+			"title": "Sviluppo eCommerce",
+			"description": "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ullam commodi provident, dolores reiciendis enim pariatur error optio, tempora ex, nihil nesciunt! In praesentium sunt commodi, unde ipsam ex veritatis laboriosam dolor asperiores suscipit blanditiis, dignissimos quos nesciunt nulla aperiam officia."
+		},
+		{
+			"icon": "ti-write",
+			"icon_class": "text-danger",
+			"title": "Sviluppo Gestionali",
+			"description": "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ullam commodi provident, dolores reiciendis enim pariatur error optio, tempora ex, nihil nesciunt! In praesentium sunt commodi, unde ipsam ex veritatis laboriosam dolor asperiores suscipit blanditiis, dignissimos quos nesciunt nulla aperiam officia."
+		},
+		{
+			"icon": "ti-package",
+			"icon_class": "text-danger",
+			"title": "Sviluppo DB",
+			"description": "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ullam commodi provident, dolores reiciendis enim pariatur error optio, tempora ex, nihil nesciunt! In praesentium sunt commodi, unde ipsam ex veritatis laboriosam dolor asperiores suscipit blanditiis, dignissimos quos nesciunt nulla aperiam officia."
+		},
+		{
+			"icon": "ti-map-alt",
+			"icon_class": "text-danger",
+			"title": "Sviluppo Eseguibili Windows e C",
+			"description": "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ullam commodi provident, dolores reiciendis enim pariatur error optio, tempora ex, nihil nesciunt! In praesentium sunt commodi, unde ipsam ex veritatis laboriosam dolor asperiores suscipit blanditiis, dignissimos quos nesciunt nulla aperiam officia."
+		},
+		{
+			"icon": "ti-bar-chart",
+			"icon_class": "text-danger",
+			"title": "Sviluppo Siti Vetrina",
+			"description": "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ullam commodi provident, dolores reiciendis enim pariatur error optio, tempora ex, nihil nesciunt! In praesentium sunt commodi, unde ipsam ex veritatis laboriosam dolor asperiores suscipit blanditiis, dignissimos quos nesciunt nulla aperiam officia."
+		},
+		{
+			"icon": "ti-support",
+			"icon_class": "text-danger",
+			"title": "Elaborazione Dati",
+			"description": "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ullam commodi provident, dolores reiciendis enim pariatur error optio, tempora ex, nihil nesciunt! In praesentium sunt commodi, unde ipsam ex veritatis laboriosam dolor asperiores suscipit blanditiis, dignissimos quos nesciunt nulla aperiam officia."
+		}
+	],
+	"pricing_packs_label": "Packs Pricing",
+	"pricing_packs": [
+		{
+			"title": "Sito Vetrina",
+			"cost": "750€",
+			"project": "5",
+			"storage": "1GB",
+			"domain": "No",
+			"users": "1",
+			"special_class": ""
+		},
+		{
+			"title": "eCommerce",
+			"cost": "1500€",
+			"project": "50",
+			"storage": "10GB",
+			"domain": "1",
+			"users": "5",
+			"special_class": ""
+		},
+		{
+			"title": "Web App",
+			"cost": "2500€",
+			"project": "150",
+			"storage": "15GB",
+			"domain": "5",
+			"users": "15",
+			"special_class": "price-card-requried"
+		},
+		{
+			"title": "Gestionale",
+			"cost": "5000€",
+			"project": "500",
+			"storage": "1000GB",
+			"domain": "10",
+			"users": "Unlimited",
+			"special_class": ""
+		}
+	],
+	"freelancing_label": "I Am Available For FreeLance",
+	"hire_me_label": "Hire me",
+	"my_portfolio_label": "My</span> Portfolio",
+	"portfolio_items": [
+		{
+			"title": "Gestionale",
+			"subtitle": "Merotto Fiori",
+			"image": "assets/imgs/web-1.jpg",
+			"alt": "Gestionale Merotto Fiori"
+		},
+		{
+			"title": "Sito Vetrina",
+			"subtitle": "Pizzeria Bella Napoli",
+			"image": "assets/imgs/web-2.jpg",
+			"alt": "Sito Vetrina Bella Napoli"
+		},
+		{
+			"title": "eCommerce",
+			"subtitle": "Tech Store",
+			"image": "assets/imgs/web-3.jpg",
+			"alt": "eCommerce Tech Store"
+		},
+		{
+			"title": "Web App",
+			"subtitle": "Merotto Fiori",
+			"image": "assets/imgs/web-4.jpg",
+			"alt": "Web App Merotto Fiori"
+		}
+	],
+	"latest_label": " Latest",
+	"news_label": " News",
+	"blog_posts": [
+		{
+			"title": "Consectetur adipisicing elit",
+			"author": "Admin",
+			"likes": 234,
+			"comments": 123,
+			"image": "assets/imgs/blog1.jpg",
+			"alt": "Consectetur adipisicing elit",
+			"description": "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Amet nesciunt qui sit velit delectus voluptates, repellat ipsum culpa id deleniti.",
+			"full_description": "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Amet nesciunt qui sit velit delectus voluptates, repellat ipsum culpa id deleniti. Rerum debitis facilis accusantium neque numquam mollitia modi quasi distinctio.",
+			"read_more_url": "#"
+		},
+		{
+			"title": "Explicabo illo",
+			"author": "Admin",
+			"likes": 456,
+			"comments": 264,
+			"image": "assets/imgs/blog2.jpg",
+			"alt": "Explicabo illo",
+			"description": "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Impedit excepturi laborum enim, vitae ipsam atque eum.",
+			"full_description": "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Impedit excepturi laborum enim, vitae ipsam atque eum, ad iusto consequuntur voluptas, esse doloribus. Perferendis porro quisquam vitae exercitationem aliquid, minus eos laborum repudiandae.",
+			"read_more_url": "#"
+		},
+		{
+			"title": "Porro Quisqua",
+			"author": "Admin",
+			"likes": 431,
+			"comments": 312,
+			"image": "assets/imgs/blog3.jpg",
+			"alt": "Porro Quisqua",
+			"description": "Consectetur adipisicing elit. Impedit excepturi laborum enim, vitae ipsam atque eum, ad iusto consequuntur voluptas.",
+			"full_description": "Consectetur adipisicing elit. Impedit excepturi laborum enim, vitae ipsam atque eum, ad iusto consequuntur voluptas, esse doloribus. Perferendis porro quisquam vitae exercitationem aliquid, minus eos laborum repudiandae.",
+			"read_more_url": "#"
+		}
+	],
+	"form_title": "Send a message",
+	"form_placeholder_name": "Name *",
+	"form_placeholder_email": "Email *",
+	"form_placeholder_message": "Message *",
+	"form_button_text": "Send Message",
+	"contact_title": "Get in touch",
+	"phone_label": "Phone :",
+	"phone_number": "+ (123) 456-789",
+	"address_label": "Address :",
+	"address": "12345 Fake ST NoWhere AB Country.",
+	"email_label": "Email :",
+	"email": "info@website.com"
 }
