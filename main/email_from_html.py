@@ -3,7 +3,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from dotenv import load_dotenv
-from flask import Flask, request, render_template, session, send_from_directory, url_for
+from flask import Flask, request, render_template, session
 import secrets
 
 # Carica le variabili dal file .env
@@ -74,11 +74,7 @@ def contact():
         else:
             return f"Error: {result}"
 
-    return render_template('output.html', csrf_token=csrf_token)
-
-@app.route('/assets/<path:filename>')
-def static_files(filename):
-    return send_from_directory('statics/assets', filename)
+    return render_template('contact.html', csrf_token=csrf_token)
 
 if __name__ == "__main__":
     app.run(debug=True)

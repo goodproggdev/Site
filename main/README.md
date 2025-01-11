@@ -12,6 +12,7 @@ Run the following commands to install the required dependencies:
 
 ```bash
 pip install python-dotenv
+pip install Flask
 python -m pip install --upgrade pip
 
 File .env :
