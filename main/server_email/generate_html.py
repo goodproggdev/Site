@@ -51,7 +51,7 @@ with open('template.html', 'r') as template_file:
 template = render_loops(template, data)
 html = replace_placeholders(template, data)
 
-with open('output.html', 'w') as output_file:
+with open('templates/output.html', 'w') as output_file:
     output_file.write(html)
 
 print("HTML generato con successo: output.html")
