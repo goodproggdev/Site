@@ -233,25 +233,25 @@
 		{
 			"title": "Gestionale",
 			"subtitle": "Merotto Fiori",
-			"image": "assets/imgs/web-1.jpg",
+			"image": "static/assets/imgs/web-1.jpg",
 			"alt": "Gestionale Merotto Fiori"
 		},
 		{
 			"title": "Sito Vetrina",
 			"subtitle": "Pizzeria Bella Napoli",
-			"image": "assets/imgs/web-2.jpg",
+			"image": "static/assets/imgs/web-2.jpg",
 			"alt": "Sito Vetrina Bella Napoli"
 		},
 		{
 			"title": "eCommerce",
 			"subtitle": "Tech Store",
-			"image": "assets/imgs/web-3.jpg",
+			"image": "static/assets/imgs/web-3.jpg",
 			"alt": "eCommerce Tech Store"
 		},
 		{
 			"title": "Web App",
 			"subtitle": "Merotto Fiori",
-			"image": "assets/imgs/web-4.jpg",
+			"image": "static/assets/imgs/web-4.jpg",
 			"alt": "Web App Merotto Fiori"
 		}
 	],
@@ -263,7 +263,7 @@
 			"author": "Admin",
 			"likes": 234,
 			"comments": 123,
-			"image": "assets/imgs/blog1.jpg",
+			"image": "static/assets/imgs/blog1.jpg",
 			"alt": "Consectetur adipisicing elit",
 			"description": "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Amet nesciunt qui sit velit delectus voluptates, repellat ipsum culpa id deleniti.",
 			"full_description": "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Amet nesciunt qui sit velit delectus voluptates, repellat ipsum culpa id deleniti. Rerum debitis facilis accusantium neque numquam mollitia modi quasi distinctio.",
@@ -274,7 +274,7 @@
 			"author": "Admin",
 			"likes": 456,
 			"comments": 264,
-			"image": "assets/imgs/blog2.jpg",
+			"image": "static/assets/imgs/blog2.jpg",
 			"alt": "Explicabo illo",
 			"description": "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Impedit excepturi laborum enim, vitae ipsam atque eum.",
 			"full_description": "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Impedit excepturi laborum enim, vitae ipsam atque eum, ad iusto consequuntur voluptas, esse doloribus. Perferendis porro quisquam vitae exercitationem aliquid, minus eos laborum repudiandae.",
@@ -285,7 +285,7 @@
 			"author": "Admin",
 			"likes": 431,
 			"comments": 312,
-			"image": "assets/imgs/blog3.jpg",
+			"image": "static/assets/imgs/blog3.jpg",
 			"alt": "Porro Quisqua",
 			"description": "Consectetur adipisicing elit. Impedit excepturi laborum enim, vitae ipsam atque eum, ad iusto consequuntur voluptas.",
 			"full_description": "Consectetur adipisicing elit. Impedit excepturi laborum enim, vitae ipsam atque eum, ad iusto consequuntur voluptas, esse doloribus. Perferendis porro quisquam vitae exercitationem aliquid, minus eos laborum repudiandae.",

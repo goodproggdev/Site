@@ -8,9 +8,8 @@
     <meta name="author" content="Devcrud">
     <title>Test Nome Landing page | Free Bootstrap 4.3.x landing page</title>
     <!-- font icons -->
-    <link rel="stylesheet" href="assets/vendors/themify-icons/css/themify-icons.css">
-    <!-- Bootstrap + JohnDoe main styles -->
-    <link rel="stylesheet" href="assets/css/johndoe.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/vendors/themify-icons/css/themify-icons.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/johndoe.css') }}">
 </head>
 
 <body data-spy="scroll" data-target=".navbar" data-offset="40" id="home">
@@ -55,7 +54,7 @@
                     </li>
                 </ul>
                 <ul class="navbar-nav brand">
-                    <img src="assets/imgs/avatar.jpg" alt="" class="brand-img">
+                    <img src="{{ url_for('static', filename='assets/imgs/avatar.jpg') }}" alt="" class="brand-img">
                     <li class="brand-txt">
                         <h5 class="brand-title">Test Nome</h5>
                         <div class="brand-subtitle">Backend & Integration Analyst | Software Developer</div>
@@ -522,9 +521,9 @@
                         
                         <div class="col-md-6 col-lg-4">
                             <div class="portfolio-item">
-                                <img src="assets/imgs/web-1.jpg" class="img-fluid" alt="Gestionale Merotto Fiori">
+                                <img src="static/assets/imgs/web-1.jpg" class="img-fluid" alt="Gestionale Merotto Fiori">
                                 <div class="content-holder">
-                                    <a class="img-popup" href="assets/imgs/web-1.jpg"></a>
+                                    <a class="img-popup" href="static/assets/imgs/web-1.jpg"></a>
                                     <div class="text-holder">
                                         <h6 class="title">Gestionale</h6>
                                         <p class="subtitle">Merotto Fiori</p>
@@ -535,9 +534,9 @@
                         
                         <div class="col-md-6 col-lg-4">
                             <div class="portfolio-item">
-                                <img src="assets/imgs/web-2.jpg" class="img-fluid" alt="Sito Vetrina Bella Napoli">
+                                <img src="static/assets/imgs/web-2.jpg" class="img-fluid" alt="Sito Vetrina Bella Napoli">
                                 <div class="content-holder">
-                                    <a class="img-popup" href="assets/imgs/web-2.jpg"></a>
+                                    <a class="img-popup" href="static/assets/imgs/web-2.jpg"></a>
                                     <div class="text-holder">
                                         <h6 class="title">Sito Vetrina</h6>
                                         <p class="subtitle">Pizzeria Bella Napoli</p>
@@ -548,9 +547,9 @@
                         
                         <div class="col-md-6 col-lg-4">
                             <div class="portfolio-item">
-                                <img src="assets/imgs/web-3.jpg" class="img-fluid" alt="eCommerce Tech Store">
+                                <img src="static/assets/imgs/web-3.jpg" class="img-fluid" alt="eCommerce Tech Store">
                                 <div class="content-holder">
-                                    <a class="img-popup" href="assets/imgs/web-3.jpg"></a>
+                                    <a class="img-popup" href="static/assets/imgs/web-3.jpg"></a>
                                     <div class="text-holder">
                                         <h6 class="title">eCommerce</h6>
                                         <p class="subtitle">Tech Store</p>
@@ -561,9 +560,9 @@
                         
                         <div class="col-md-6 col-lg-4">
                             <div class="portfolio-item">
-                                <img src="assets/imgs/web-4.jpg" class="img-fluid" alt="Web App Merotto Fiori">
+                                <img src="static/assets/imgs/web-4.jpg" class="img-fluid" alt="Web App Merotto Fiori">
                                 <div class="content-holder">
-                                    <a class="img-popup" href="assets/imgs/web-4.jpg"></a>
+                                    <a class="img-popup" href="static/assets/imgs/web-4.jpg"></a>
                                     <div class="text-holder">
                                         <h6 class="title">Web App</h6>
                                         <p class="subtitle">Merotto Fiori</p>
@@ -586,7 +585,7 @@
                 
                 <div class="blog-card">
                     <div class="img-holder">
-                        <img src="assets/imgs/blog1.jpg" alt="Consectetur adipisicing elit">
+                        <img src="static/assets/imgs/blog1.jpg" alt="Consectetur adipisicing elit">
                     </div>
                     <div class="content-holder">
                         <h6 class="title">Consectetur adipisicing elit</h6>
@@ -604,7 +603,7 @@
                 
                 <div class="blog-card">
                     <div class="img-holder">
-                        <img src="assets/imgs/blog2.jpg" alt="Explicabo illo">
+                        <img src="static/assets/imgs/blog2.jpg" alt="Explicabo illo">
                     </div>
                     <div class="content-holder">
                         <h6 class="title">Explicabo illo</h6>
@@ -622,7 +621,7 @@
                 
                 <div class="blog-card">
                     <div class="img-holder">
-                        <img src="assets/imgs/blog3.jpg" alt="Porro Quisqua">
+                        <img src="static/assets/imgs/blog3.jpg" alt="Porro Quisqua">
                     </div>
                     <div class="content-holder">
                         <h6 class="title">Porro Quisqua</h6>
@@ -642,61 +641,28 @@
         </div>
     </section>
 
-    <div class="section contact" id="contact">
-        <div id="map" class="map"></div>
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-8">
-                    <div class="contact-form-card">
-                        <h4 class="contact-title">Send a message</h4>
-                        <form action="">
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title">Send an Email</h4>
+                        <form action="/" method="POST">
+                            <!-- Token CSRF -->
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+
                             <div class="form-group">
-                                <input class="form-control" type="text" placeholder="Name *"
-                                    required>
+                                <label for="subject">Subject</label>
+                                <input type="text" class="form-control" id="subject" name="subject" placeholder="Enter subject" required>
                             </div>
+
                             <div class="form-group">
-                                <input class="form-control" type="email" placeholder="Email *"
-                                    required>
+                                <label for="body">Message Body</label>
+                                <textarea class="form-control" id="body" name="body" rows="5" placeholder="Enter message body" required></textarea>
                             </div>
-                            <div class="form-group">
-                                <textarea class="form-control" placeholder="Message *" rows="7"
-                                    required></textarea>
-                            </div>
-                            <div class="form-group">
-                                <button type="submit" class="form-control btn btn-primary">Send Message</button>
-                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-block">Send Email</button>
                         </form>
-                    </div>
-                </div>
-                <div class="col-lg-4">
-                    <div class="contact-info-card">
-                        <h4 class="contact-title">Get in touch</h4>
-                        <div class="row mb-2">
-                            <div class="col-1 pt-1 mr-1">
-                                <i class="ti-mobile icon-md"></i>
-                            </div>
-                            <div class="col-10">
-                                <h6 class="d-inline">Phone :<br><span class="text-muted">+ (123) 456-789</span>
-                                </h6>
-                            </div>
-                        </div>
-                        <div class="row mb-2">
-                            <div class="col-1 pt-1 mr-1">
-                                <i class="ti-map-alt icon-md"></i>
-                            </div>
-                            <div class="col-10">
-                                <h6 class="d-inline">Address :<br><span class="text-muted">12345 Fake ST NoWhere AB Country.</span>
-                                </h6>
-                            </div>
-                        </div>
-                        <div class="row mb-2">
-                            <div class="col-1 pt-1 mr-1">
-                                <i class="ti-envelope icon-md"></i>
-                            </div>
-                            <div class="col-10">
-                                <h6 class="d-inline">Email :<br><span class="text-muted">info@website.com</span></h6>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -731,21 +697,21 @@
     </footer>
 
     <!-- core  -->
-    <script src="assets/vendors/jquery/jquery-3.4.1.js"></script>
-    <script src="assets/vendors/bootstrap/bootstrap.bundle.js"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/jquery/jquery-3.4.1.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/bootstrap/bootstrap.bundle.js') }}"></script>
 
     <!-- bootstrap 3 affix -->
-    <script src="assets/vendors/bootstrap/bootstrap.affix.js"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/bootstrap/bootstrap.affix.js') }}"></script>
 
     <!-- Isotope  -->
-    <script src="assets/vendors/isotope/isotope.pkgd.js"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/bootstrap/isotope/isotope.pkgd.js') }}"></script>
 
     <!-- Google maps -->
     <script async defer
         src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCtme10pzgKSPeJVJrG1O3tjR6lk98o4w8&callback=initMap"></script>
 
     <!-- JohnDoe js -->
-    <script src="assets/js/johndoe.js"></script>
+    <script src="{{ url_for('static', filename='assets/js/johndoe.js') }}"></script>
 
 </body>
 
