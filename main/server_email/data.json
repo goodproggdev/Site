@@ -188,7 +188,9 @@
 			"description": "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ullam commodi provident, dolores reiciendis enim pariatur error optio, tempora ex, nihil nesciunt! In praesentium sunt commodi, unde ipsam ex veritatis laboriosam dolor asperiores suscipit blanditiis, dignissimos quos nesciunt nulla aperiam officia."
 		}
 	],
-	"pricing_packs_label": "Packs Pricing",
+	
+	"contact_label": "Parliamone!",
+	"pricing_packs_label": "Packs<span> Pricing",
 	"pricing_packs": [
 		{
 			"title": "Sito Vetrina",
