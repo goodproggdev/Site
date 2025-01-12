@@ -158,3 +158,11 @@ $(document).ready(function() {
 		}
 	});
 });
+
+$(document).ready(function() {
+	$('.btn-contact-call').on('click', function() {
+		$('html, body').animate({
+			scrollTop: $('#contact').offset().top
+		}, 800); // 800ms per uno scroll fluido
+	});
+});
