@@ -29,7 +29,7 @@
                 <h4 class="header-subtitle">Ciao, Io Sono</h4>
                 <h1 class="header-title">Test Nome</h1>
                 <h6 class="header-mono">Backend & Integration Analyst | Software Developer</h6>
-                <button id="downloadCVButton" class="btn btn-primary btn-rounded"><i
+                <button class="btn btn-primary btn-rounded download-cv-button"><i
                         class="ti-printer pr-2"></i>Print Resume</button>
             </div>
         </div>
@@ -81,8 +81,7 @@
                 <span class="line mb-5"></span>
                 <h5 class="mb-3">Mi occupo di Backend per gestsionali aziendali, Sviluppo eCommerce e Integrazione per sistemi Regionali, Ministeroiali ed Europei</h5>
                 <p class="mt-20">Lavoro a stretto contatto con piccole imprese per farle crescere sul mercato internazionale, tramite gestionali ed eCommerce. Inoltre faccio capo al governo europeo e italiano per permettere la condivisione dati tra i vari Paesi Membri dell'Europa</p>
-                <button id="downloadCVButton" class="btn btn-outline-danger"><i class="icon-down-circled2 "></i>Download
-                    My CV</button>
+                <button class="btn btn-outline-danger download-cv-button"><i class="icon-down-circled2 "></i>Download My CV </button>
             </div>
             <div class="col-lg-4 about-card">
                 <h3 class="font-weight-light">Personal Info</h3>
@@ -449,7 +448,7 @@
                             <li class="list-item">No <span class="text-muted">Domain</span></li>
                             <li class="list-item">1 <span class="text-muted">User</span></li>
                         </ul>
-                        <button class="btn btn-primary btn-rounded w-lg">Subscribe</button>
+                        <button class="btn btn-primary btn-rounded w-lg btn-contact-call">Parliamone!</button>
                     </div>
                 </div>
                 
@@ -465,7 +464,7 @@
                             <li class="list-item">1 <span class="text-muted">Domain</span></li>
                             <li class="list-item">5 <span class="text-muted">User</span></li>
                         </ul>
-                        <button class="btn btn-primary btn-rounded w-lg">Subscribe</button>
+                        <button class="btn btn-primary btn-rounded w-lg btn-contact-call">Parliamone!</button>
                     </div>
                 </div>
                 
@@ -481,7 +480,7 @@
                             <li class="list-item">5 <span class="text-muted">Domain</span></li>
                             <li class="list-item">15 <span class="text-muted">User</span></li>
                         </ul>
-                        <button class="btn btn-primary btn-rounded w-lg">Subscribe</button>
+                        <button class="btn btn-primary btn-rounded w-lg btn-contact-call">Parliamone!</button>
                     </div>
                 </div>
                 
@@ -497,7 +496,7 @@
                             <li class="list-item">10 <span class="text-muted">Domain</span></li>
                             <li class="list-item">Unlimited <span class="text-muted">User</span></li>
                         </ul>
-                        <button class="btn btn-primary btn-rounded w-lg">Subscribe</button>
+                        <button class="btn btn-primary btn-rounded w-lg btn-contact-call">Parliamone!</button>
                     </div>
                 </div>
                 
@@ -641,33 +640,35 @@
         </div>
     </section>
 
-    <div class="container mt-5">
-        <div class="row justify-content-center">
-            <div class="col-lg-6">
-                <div class="card">
-                    <div class="card-body">
-                        <h4 class="card-title">Send an Email</h4>
-                        <form action="/" method="POST">
-                            <!-- Token CSRF -->
-                            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+    <section class="section" id="contact">
+        <div class="container mt-5">
+            <div class="row justify-content-center">
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h4 class="card-title">Send an Email</h4>
+                            <form action="/" method="POST">
+                                <!-- Token CSRF -->
+                                <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
 
-                            <div class="form-group">
-                                <label for="subject">Subject</label>
-                                <input type="text" class="form-control" id="subject" name="subject" placeholder="Enter subject" required>
-                            </div>
+                                <div class="form-group">
+                                    <label for="subject">Subject</label>
+                                    <input type="text" class="form-control" id="subject" name="subject" placeholder="Enter subject" required>
+                                </div>
 
-                            <div class="form-group">
-                                <label for="body">Message Body</label>
-                                <textarea class="form-control" id="body" name="body" rows="5" placeholder="Enter message body" required></textarea>
-                            </div>
+                                <div class="form-group">
+                                    <label for="body">Message Body</label>
+                                    <textarea class="form-control" id="body" name="body" rows="5" placeholder="Enter message body" required></textarea>
+                                </div>
 
-                            <button type="submit" class="btn btn-primary btn-block">Send Email</button>
-                        </form>
+                                <button type="submit" class="btn btn-primary btn-block">Send Email</button>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    </section>
 
     <ul class="social-icons pt-4">
         <li class="social-item"><a class="social-link text-dark" href="#"><i class="ti-facebook"
