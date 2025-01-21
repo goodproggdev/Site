@@ -51,30 +51,24 @@ def generate_csrf_token():
 
 @app.route('/', methods=['GET', 'POST'])
 def contact():
-    # Genera un token CSRF per il modulo
     csrf_token = generate_csrf_token()
 
     if request.method == 'POST':
-        # Controlla il token CSRF
         if request.form.get('_csrf_token') != session['_csrf_token']:
             return "CSRF token mismatch. Please try again.", 400
         
         subject = request.form['subject']
         body = request.form['body']
         
-        # Invia l'email
         result = send_email(
-            to_email="sitiegestionali@gmail.com",  # Puoi cambiare l'indirizzo di destinazione
+            to_email="sitiegestionali@gmail.com",
             subject=subject,
             body=body
         )
         
-        if result is True:
-            return "Message sent successfully!"
-        else:
-            return f"Error: {result}"
 
     return render_template('output.html', csrf_token=csrf_token)
+
 
 @app.route('/assets/<path:filename>')
 def static_files(filename):
