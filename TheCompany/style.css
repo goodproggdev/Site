@@ -113,13 +113,33 @@ section {
 	border-top: 1px solid #edf1f2
 }
 
+<<<<<<< HEAD
+=======
+.glow {
+	color: #fff;
+	-webkit-animation: glow 1s ease-in-out infinite alternate;
+	-moz-animation: glow 1s ease-in-out infinite alternate;
+	animation: glow 1s ease-in-out infinite alternate;
+	text-shadow: 0 0 1px #fff, 0 0 2px #fff, 0 0 3px #0191f059, 0 0 4px #0191f059, 0 0 5px #0191f059, 0 0 6px #0191f059, 0 0 7px #0191f059;
+}
+
+.preview {
+	box-shadow: 0 10px 20px 0 rgba(0, 0, 0, 1);
+}
+
+>>>>>>> f1398ef ([18 18-layout-arrangment] Redesign the first section of the landing page according to the new layout)
 /* ==============================================
    2. Navbar 
 ===============================================*/
 
 .custom-navbar {
+<<<<<<< HEAD
 	background-color: #ffffff!important;
 	box-shadow: 0 2px 4px 0 rgba(0,0,0,.09);
+=======
+	/* background-color: #ffffff!important;
+	box-shadow: 0 2px 4px 0 rgba(0,0,0,.09); */
+>>>>>>> f1398ef ([18 18-layout-arrangment] Redesign the first section of the landing page according to the new layout)
 	height: 70px;
 	max-height: 70px;
 }
@@ -135,11 +155,19 @@ section {
 }
 
 .navbar-toggler-icon {
+<<<<<<< HEAD
 	color: #ffffff;
 }
 
 .navbar-collapse {
 	background-color: #ffffff;
+=======
+	/* color: #ffffff; */
+}
+
+.navbar-collapse {
+	/* background-color: #ffffff; */
+>>>>>>> f1398ef ([18 18-layout-arrangment] Redesign the first section of the landing page according to the new layout)
 }
 
 .nav-custom-link {
@@ -182,7 +210,11 @@ section {
 }
 
 .btn-regular:hover {
+<<<<<<< HEAD
 	background-color: #0191f0;
+=======
+	background-color: #0191f059;
+>>>>>>> f1398ef ([18 18-layout-arrangment] Redesign the first section of the landing page according to the new layout)
 	color: #ffffff;
 }
 
@@ -226,7 +258,11 @@ section {
 }
 
 .btn-buy:hover {
+<<<<<<< HEAD
 	background-color: #0191f0;
+=======
+	background-color: #0191f059;
+>>>>>>> f1398ef ([18 18-layout-arrangment] Redesign the first section of the landing page according to the new layout)
 	color: #ffffff;
 }
 
@@ -278,9 +314,21 @@ section {
 }
 
 .content-box {
+<<<<<<< HEAD
 	padding: 60px 20px;
 }
 
+=======
+	padding: 30px 20px;
+}
+
+.button-content {
+	width: 100%;
+	margin: auto;
+}
+
+
+>>>>>>> f1398ef ([18 18-layout-arrangment] Redesign the first section of the landing page according to the new layout)
 /* ==============================================
    6. Testimonials
 ===============================================*/
