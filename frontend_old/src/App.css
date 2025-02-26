@@ -1,5 +1,5 @@
-@import "flowbite/src/themes/default";
-@plugin "flowbite/plugin";
+@import "../node_modules/flowbite/src/themes/default";
+@plugin "../node_modules/flowbite/plugin";
 @source "../node_modules/flowbite";
 
 #root {
