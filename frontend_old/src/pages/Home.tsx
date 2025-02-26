@@ -54,6 +54,7 @@ const Home = () => {
       {renderContent()}
     </div>
   );
+  
 };
 
 export default Home;
