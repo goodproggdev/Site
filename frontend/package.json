@@ -14,20 +14,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-<<<<<<< HEAD
     "caniuse-lite": "^1.0.30001701",
     "flowbite": "^3.1.2",
     "flowbite-react": "^0.8.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
-=======
-    "@tailwindcss/vite": "^4.0.7",
-    "axios": "^1.7.9",
-    "flowbite-react": "^0.10.2",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "tailwindcss": "^4.0.7"
->>>>>>> c950a27049e42b0509ec026487062d35f05fbf1b
   },
   "devDependencies": {
     "@types/react": "^18.2.67",
