@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
 import Home from './pages/Home';  // Importa il componente Home
+import Header from './pages/Header';
+import Hero from './pages/Hero';
+import Marketing from './pages/Marketing';
 import OutputTest from './pages/OutputTest';  // Importa il componente Profile
 
 const App = () => {
@@ -14,6 +17,8 @@ const App = () => {
   }, []);
   return (
     <>
+      <Header />
+      <Marketing />
       <Home />  {/* Aggiungi il componente Home qui per visualizzarlo */}
 
       {/* Puoi aggiungere altri contenuti qui se vuoi */}
