@@ -1,6 +1,28 @@
-import { DarkThemeToggle, Flowbite } from "flowbite-react";
+import React, { useState } from 'react';
+import { Flowbite, Modal, TextInput, Button, DarkThemeToggle } from 'flowbite-react';
 
-const Navbar = () => {
+const Navbar: React.FC = () => {
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isSignupOpen, setIsSignupOpen] = useState(false);
+
+  const openLoginModal = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsLoginOpen(true);
+  };
+
+  const closeLoginModal = () => {
+    setIsLoginOpen(false);
+  };
+
+  const openSignupModal = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsSignupOpen(true);
+  };
+
+  const closeSignupModal = () => {
+    setIsSignupOpen(false);
+  };
+
   return (
     <Flowbite>
       <nav className="bg-white border-gray-200 dark:bg-gray-900">
@@ -9,7 +31,7 @@ const Navbar = () => {
             <img src="https://flowbite.com/docs/images/logo.svg" className="h-8" alt="Flowbite Logo" />
             <span className="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">Flowbite</span>
           </a>
-          <div className="flex items-center ml-auto space-x-4"> {/* Contenitore per allineare i gruppi */}
+          <div className="flex items-center ml-auto space-x-4">
             <DarkThemeToggle />
             <button
               data-collapse-toggle="navbar-default"
@@ -47,14 +69,51 @@ const Navbar = () => {
           </div>
           <ul className="font-medium flex flex-col p-4 md:p-0 mt-4 border border-gray-100 rounded-lg bg-gray-50 md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:border-0 md:bg-white dark:bg-gray-800 md:dark:bg-gray-900 dark:border-gray-700 ml-auto">
             <li>
-              <a href="#" className="block py-2 px-3 text-gray-900 rounded-sm hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent">Login</a>
+              <a href="#" onClick={openLoginModal} className="block py-2 px-3 text-gray-900 rounded-sm hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent">
+                Login
+              </a>
             </li>
             <li>
-              <a href="#" className="block py-2 px-3 text-white bg-blue-700 rounded-sm md:bg-transparent md:text-blue-700 md:p-0 dark:text-white md:dark:text-blue-500">Sign up</a>
+              <a href="#" onClick={openSignupModal} className="block py-2 px-3 text-white bg-blue-700 rounded-sm md:bg-transparent md:text-blue-700 md:p-0 dark:text-white md:dark:text-blue-500">
+                Sign up
+              </a>
             </li>
           </ul>
         </div>
       </nav>
+
+      <Modal show={isLoginOpen} onClose={closeLoginModal} size="sm">
+        <Modal.Header>Login</Modal.Header>
+        <Modal.Body>
+          <div className="space-y-4">
+            <TextInput id="login-email" type="email" placeholder="Your email" required />
+            <TextInput id="login-password" type="password" placeholder="Your password" required />
+          </div>
+          <div className="mt-2 text-center">
+            <a href="/reset-password" className="text-sm text-blue-500 hover:underline">Forgot your password?</a>
+          </div>
+      </Modal.Body>
+
+        <Modal.Footer>
+          <Button onClick={closeLoginModal} color="gray">Close</Button>
+          <Button>Login</Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal show={isSignupOpen} onClose={closeSignupModal} size="sm">
+        <Modal.Header>Sign Up</Modal.Header>
+        <Modal.Body>
+          <div className="space-y-4">
+            <TextInput id="signup-email" type="email" placeholder="Your email" required />
+            <TextInput id="signup-password" type="password" placeholder="Your password" required />
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button onClick={closeSignupModal} color="gray">Close</Button>
+          <Button>Sign Up</Button>
+        </Modal.Footer>
+      </Modal>
+
       <style>
         {`
           html {
