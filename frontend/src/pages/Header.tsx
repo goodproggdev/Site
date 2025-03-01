@@ -27,7 +27,7 @@ const Header: React.FC = () => {
           Home
         </Navbar.Link>
         <Navbar.Link href="/about" className="text-white hover:text-yellow-400">
-          About
+          Aboutgrhtejryw
         </Navbar.Link>
         <Navbar.Link href="/services" className="text-white hover:text-yellow-400">
           Services
