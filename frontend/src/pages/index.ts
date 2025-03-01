@@ -6,3 +6,4 @@ export { default as Testimonials } from "./Testimonials";
 export { default as ContactForm } from "./ContactForm";
 export { default as Feature } from "./Feature";
 export { default as App } from "../App";
+export { default as Upload } from "./Upload";
