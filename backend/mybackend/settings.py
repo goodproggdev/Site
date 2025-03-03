@@ -12,6 +12,38 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 
+# mail
+
+INSTALLED_APPS = ['corsheaders']
+MIDDLEWARE = ['corsheaders.middleware.CorsMiddleware']
+CORS_ALLOWED_ORIGINS = ['http://localhost:5173']
+CORS_ALLOW_CREDENTIALS = True
+
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173'
+]
+
+DATA_UPLOAD_HANDLERS = [
+    'django.http.request.JSONUploadHandler',
+]
+
+# Configurazione CORS
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173"
+]
+CORS_ALLOW_HEADERS = [
+    'content-type',
+    'x-csrftoken',
+]
+
+CORS_ALLOW_CREDENTIALS = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SECURE = False  # Solo per sviluppo
+SESSION_COOKIE_SECURE = False  # Solo per sviluppo
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
