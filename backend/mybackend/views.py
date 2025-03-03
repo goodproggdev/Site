@@ -8,6 +8,6 @@ def analyze_cv(request):
 	if 'document' not in request.data:
 		return Response({'error':'Nessun file inviato'}, status=400)
 	document = request.data['document']
-	# Esegui l'analisi del documento qui
+	# Analisi del CV
 	result = {'message':'Documento analizzato con successo'}
 	return Response(result)

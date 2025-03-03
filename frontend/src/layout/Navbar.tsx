@@ -1,5 +1,7 @@
 import React,{useState,useRef,useEffect,MouseEvent,ChangeEvent}from 'react'
-import {Flowbite,Modal,TextInput,Button,DarkThemeToggle}from 'flowbite-react'
+import {Flowbite,Modal,TextInput,Button,DarkThemeToggle, Dropdown}from 'flowbite-react'
+import i18n from '../i18n'
+import LanguageSwitcher from './LanguageSwitcher'
 interface MNavProps {
 	toggleMenu:()=>void
 	mobileMenuOpen:boolean
@@ -81,6 +83,7 @@ const DesktopNavbar:React.FC<DNavProps>=({openLoginModal,openSignupModal,isLogge
 		<img src="https://flowbite.com/docs/images/logo.svg" className="h-8" alt="Flowbite Logo"/>
 		<span className="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">Flowbite</span>
 	</a>
+	<LanguageSwitcher />
 	<div className="flex items-center ml-auto space-x-6">
 		<DarkThemeToggle/>
 		<div className="ml-4"/>
