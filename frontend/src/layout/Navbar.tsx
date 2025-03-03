@@ -114,19 +114,28 @@ const Navbar:React.FC=()=>{
 	const mobileMenuButtonRef=useRef<HTMLButtonElement>(null)
 	const[loginEmail,setLoginEmail]=useState('')
 	const[loginPassword,setLoginPassword]=useState('')
+	const[signupUsername,setSignupUsername]=useState('')
 	const[signupEmail,setSignupEmail]=useState('')
 	const[signupPassword,setSignupPassword]=useState('')
+	const[signupPasswordConfirm,setSignupPasswordConfirm]=useState('')
+	const[signupError,setSignupError]=useState('')
+	const[passwordError,setPasswordError]=useState('')
+	const[emailError,setEmailError]=useState('')
 	const[isLoggedIn,setIsLoggedIn]=useState(!!localStorage.getItem('token'))
 	const openLoginModal=(e:MouseEvent)=>{e.preventDefault();setIsLoginOpen(true);setMobileDropdownOpen(false);setMobileMenuOpen(false)}
 	const closeLoginModal=()=>setIsLoginOpen(false)
 	const openSignupModal=(e:MouseEvent)=>{e.preventDefault();setIsSignupOpen(true);setMobileDropdownOpen(false);setMobileMenuOpen(false)}
-	const closeSignupModal=()=>setIsSignupOpen(false)
+	const closeSignupModal=()=>{setSignupError('');setPasswordError('');setEmailError('');setIsSignupOpen(false)}
 	const toggleMobileDropdown=()=>setMobileDropdownOpen(!mobileDropdownOpen)
 	const toggleMobileMenu=()=>setMobileMenuOpen(!mobileMenuOpen)
 	const handleLoginEmail=(e:ChangeEvent<HTMLInputElement>)=>setLoginEmail(e.target.value)
 	const handleLoginPassword=(e:ChangeEvent<HTMLInputElement>)=>setLoginPassword(e.target.value)
+	const handleSignupUsername=(e:ChangeEvent<HTMLInputElement>)=>setSignupUsername(e.target.value)
 	const handleSignupEmail=(e:ChangeEvent<HTMLInputElement>)=>setSignupEmail(e.target.value)
 	const handleSignupPassword=(e:ChangeEvent<HTMLInputElement>)=>setSignupPassword(e.target.value)
+	const handleSignupPasswordConfirm=(e:ChangeEvent<HTMLInputElement>)=>setSignupPasswordConfirm(e.target.value)
+	const isValidPassword=(password:string)=>/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/.test(password)
+	const isValidEmail=(email:string)=>/^\S+@\S+\.\S+$/.test(email)
 	const login=async()=>{
 		const res=await fetch('http://127.0.0.1:8000/auth/login/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:loginEmail,password:loginPassword})})
 		const data=await res.json()
@@ -137,7 +146,23 @@ const Navbar:React.FC=()=>{
 		}
 	}
 	const signup=async()=>{
-		const res=await fetch('http://127.0.0.1:8000/auth/registration/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:signupEmail,password1:signupPassword,password2:signupPassword})})
+		if(!isValidEmail(signupEmail)){
+			setEmailError('Il formato della mail non è valido')
+			return
+		}
+		if(signupPassword!==signupPasswordConfirm){
+			setPasswordError('Le password non coincidono')
+			return
+		}
+		if(!isValidPassword(signupPassword)){
+			setPasswordError('La password deve contenere almeno 8 caratteri, una maiuscola, una minuscola, un numero e un simbolo')
+			return
+		}
+		const res=await fetch('http://127.0.0.1:8000/auth/registration/',{
+			method:'POST',
+			headers:{'Content-Type':'application/json'},
+			body:JSON.stringify({username:signupUsername,email:signupEmail,password1:signupPassword,password2:signupPasswordConfirm})
+		})
 		const data=await res.json()
 		if(data.key){
 			localStorage.setItem('token',data.key)
@@ -185,8 +210,13 @@ const Navbar:React.FC=()=>{
 				<Modal.Header>Sign Up</Modal.Header>
 				<Modal.Body>
 					<div className="space-y-4">
+						<TextInput id="signup-username" type="text" placeholder="Username" required value={signupUsername} onChange={handleSignupUsername}/>
 						<TextInput id="signup-email" type="email" placeholder="Your email" required value={signupEmail} onChange={handleSignupEmail}/>
+						{emailError&&<span className="text-red-500 text-sm">{emailError}</span>}
 						<TextInput id="signup-password" type="password" placeholder="Your password" required value={signupPassword} onChange={handleSignupPassword}/>
+						<TextInput id="signup-password-confirm" type="password" placeholder="Confirm password" required value={signupPasswordConfirm} onChange={handleSignupPasswordConfirm}/>
+						{passwordError&&<span className="text-red-500 text-sm">{passwordError}</span>}
+						{signupError&&<span className="text-red-500 text-sm">{signupError}</span>}
 					</div>
 				</Modal.Body>
 				<Modal.Footer>
