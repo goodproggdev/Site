@@ -1,4 +1,4 @@
-import React,{useState,useRef,useEffect,MouseEvent}from 'react'
+import React,{useState,useRef,useEffect,MouseEvent,ChangeEvent}from 'react'
 import {Flowbite,Modal,TextInput,Button,DarkThemeToggle}from 'flowbite-react'
 interface MNavProps{toggleMenu:()=>void;mobileMenuOpen:boolean;openLoginModal:(e:MouseEvent)=>void;openSignupModal:(e:MouseEvent)=>void;toggleDropdown:()=>void;mobileDropdownOpen:boolean;mobileDropdownRef:React.RefObject<HTMLDivElement>;mobileDropdownButtonRef:React.RefObject<HTMLButtonElement>;mobileMenuRef:React.RefObject<HTMLDivElement>;mobileMenuButtonRef:React.RefObject<HTMLButtonElement>}
 const MobileNavbar:React.FC<MNavProps>=({toggleMenu,mobileMenuOpen,openLoginModal,openSignupModal,toggleDropdown,mobileDropdownOpen,mobileDropdownRef,mobileDropdownButtonRef,mobileMenuRef,mobileMenuButtonRef})=>(<>
@@ -75,12 +75,22 @@ const Navbar:React.FC=()=>{
 	const mobileDropdownButtonRef=useRef<HTMLButtonElement>(null)
 	const mobileMenuRef=useRef<HTMLDivElement>(null)
 	const mobileMenuButtonRef=useRef<HTMLButtonElement>(null)
+	const[loginEmail,setLoginEmail]=useState('')
+	const[loginPassword,setLoginPassword]=useState('')
+	const[signupEmail,setSignupEmail]=useState('')
+	const[signupPassword,setSignupPassword]=useState('')
 	const openLoginModal=(e:MouseEvent)=>{e.preventDefault();setIsLoginOpen(true);setMobileDropdownOpen(false);setMobileMenuOpen(false)}
 	const closeLoginModal=()=>setIsLoginOpen(false)
 	const openSignupModal=(e:MouseEvent)=>{e.preventDefault();setIsSignupOpen(true);setMobileDropdownOpen(false);setMobileMenuOpen(false)}
 	const closeSignupModal=()=>setIsSignupOpen(false)
 	const toggleMobileDropdown=()=>setMobileDropdownOpen(!mobileDropdownOpen)
 	const toggleMobileMenu=()=>setMobileMenuOpen(!mobileMenuOpen)
+	const handleLoginEmail=(e:ChangeEvent<HTMLInputElement>)=>setLoginEmail(e.target.value)
+	const handleLoginPassword=(e:ChangeEvent<HTMLInputElement>)=>setLoginPassword(e.target.value)
+	const handleSignupEmail=(e:ChangeEvent<HTMLInputElement>)=>setSignupEmail(e.target.value)
+	const handleSignupPassword=(e:ChangeEvent<HTMLInputElement>)=>setSignupPassword(e.target.value)
+	const login=async()=>{const res=await fetch('http://127.0.0.1:8000/api/auth/login/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:loginEmail,password:loginPassword})});const data=await res.json();if(data.key){localStorage.setItem('token',data.key);closeLoginModal()}}
+	const signup=async()=>{const res=await fetch('http://127.0.0.1:8000/api/auth/registration/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:signupEmail,password1:signupPassword,password2:signupPassword})});const data=await res.json();if(data.key){localStorage.setItem('token',data.key);closeSignupModal()}}
 	useEffect(()=>{
 		const handleClickOutside=(e:Event)=>{
 			if(mobileDropdownOpen&&mobileDropdownRef.current&&!mobileDropdownRef.current.contains(e.target as Node)&&mobileDropdownButtonRef.current&&!mobileDropdownButtonRef.current.contains(e.target as Node))setMobileDropdownOpen(false)
@@ -101,15 +111,15 @@ const Navbar:React.FC=()=>{
 				<Modal.Header>Login</Modal.Header>
 				<Modal.Body>
 					<div className="space-y-4">
-						<TextInput id="login-email" type="email" placeholder="Your email" required/>
-						<TextInput id="login-password" type="password" placeholder="Your password" required/>
+						<TextInput id="login-email" type="email" placeholder="Your email" required value={loginEmail} onChange={handleLoginEmail}/>
+						<TextInput id="login-password" type="password" placeholder="Your password" required value={loginPassword} onChange={handleLoginPassword}/>
 					</div>
 					<div className="mt-2 text-center">
 						<a href="/reset-password" className="text-sm text-blue-500 hover:underline">Forgot your password?</a>
 					</div>
 				</Modal.Body>
 				<Modal.Footer>
-					<Button>Login</Button>
+					<Button onClick={login}>Login</Button>
 					<Button onClick={closeLoginModal} color="gray">Close</Button>
 				</Modal.Footer>
 			</Modal>
@@ -117,12 +127,12 @@ const Navbar:React.FC=()=>{
 				<Modal.Header>Sign Up</Modal.Header>
 				<Modal.Body>
 					<div className="space-y-4">
-						<TextInput id="signup-email" type="email" placeholder="Your email" required/>
-						<TextInput id="signup-password" type="password" placeholder="Your password" required/>
+						<TextInput id="signup-email" type="email" placeholder="Your email" required value={signupEmail} onChange={handleSignupEmail}/>
+						<TextInput id="signup-password" type="password" placeholder="Your password" required value={signupPassword} onChange={handleSignupPassword}/>
 					</div>
 				</Modal.Body>
 				<Modal.Footer>
-					<Button>Sign Up</Button>
+					<Button onClick={signup}>Sign Up</Button>
 					<Button onClick={closeSignupModal} color="gray">Close</Button>
 				</Modal.Footer>
 			</Modal>
