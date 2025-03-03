@@ -1,7 +1,33 @@
 import React,{useState,useRef,useEffect,MouseEvent,ChangeEvent}from 'react'
 import {Flowbite,Modal,TextInput,Button,DarkThemeToggle}from 'flowbite-react'
-interface MNavProps{toggleMenu:()=>void;mobileMenuOpen:boolean;openLoginModal:(e:MouseEvent)=>void;openSignupModal:(e:MouseEvent)=>void;toggleDropdown:()=>void;mobileDropdownOpen:boolean;mobileDropdownRef:React.RefObject<HTMLDivElement>;mobileDropdownButtonRef:React.RefObject<HTMLButtonElement>;mobileMenuRef:React.RefObject<HTMLDivElement>;mobileMenuButtonRef:React.RefObject<HTMLButtonElement>}
-const MobileNavbar:React.FC<MNavProps>=({toggleMenu,mobileMenuOpen,openLoginModal,openSignupModal,toggleDropdown,mobileDropdownOpen,mobileDropdownRef,mobileDropdownButtonRef,mobileMenuRef,mobileMenuButtonRef})=>(<>
+interface MNavProps {
+	toggleMenu:()=>void
+	mobileMenuOpen:boolean
+	openLoginModal:(e:MouseEvent)=>void
+	openSignupModal:(e:MouseEvent)=>void
+	toggleDropdown:()=>void
+	mobileDropdownOpen:boolean
+	mobileDropdownRef:React.RefObject<HTMLDivElement>
+	mobileDropdownButtonRef:React.RefObject<HTMLButtonElement>
+	mobileMenuRef:React.RefObject<HTMLDivElement>
+	mobileMenuButtonRef:React.RefObject<HTMLButtonElement>
+	isLoggedIn:boolean
+	logout:()=>void
+}
+const MobileNavbar:React.FC<MNavProps>=({
+	toggleMenu,
+	mobileMenuOpen,
+	openLoginModal,
+	openSignupModal,
+	toggleDropdown,
+	mobileDropdownOpen,
+	mobileDropdownRef,
+	mobileDropdownButtonRef,
+	mobileMenuRef,
+	mobileMenuButtonRef,
+	isLoggedIn,
+	logout
+})=>(<>
 	<div className="flex md:hidden items-center justify-between">
 		<button ref={mobileMenuButtonRef} onClick={toggleMenu} type="button" className="inline-flex items-center p-2 w-10 h-10 justify-center text-sm text-gray-500 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600" aria-controls="mobile-menu" aria-expanded={mobileMenuOpen}>
 			<span className="sr-only">Open main menu</span>
@@ -22,8 +48,10 @@ const MobileNavbar:React.FC<MNavProps>=({toggleMenu,mobileMenuOpen,openLoginModa
 				{mobileDropdownOpen&&
 				<div ref={mobileDropdownRef} className="absolute right-0 mt-2 w-40 bg-white rounded divide-y divide-gray-100 shadow dark:bg-gray-700">
 					<ul className="py-1 text-sm text-gray-700 dark:text-gray-200">
-						<li><a href="#" onClick={openLoginModal} className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600">Login</a></li>
-						<li><a href="#" onClick={openSignupModal} className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600">Sign up</a></li>
+						{!isLoggedIn?<>
+							<li><a href="#" onClick={openLoginModal} className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600">Login</a></li>
+							<li><a href="#" onClick={openSignupModal} className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600">Sign up</a></li>
+						</>:<li><a href="#" onClick={logout} className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600">Logout</a></li>}
 					</ul>
 				</div>}
 			</div>
@@ -37,11 +65,18 @@ const MobileNavbar:React.FC<MNavProps>=({toggleMenu,mobileMenuOpen,openLoginModa
 			<li><a href="#services" onClick={toggleMenu} className="block py-2 px-3 text-gray-900 rounded-sm hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">Services</a></li>
 			<li><a href="#pricing" onClick={toggleMenu} className="block py-2 px-3 text-gray-900 rounded-sm hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">Pricing</a></li>
 			<li><a href="#contact" onClick={toggleMenu} className="block py-2 px-3 text-gray-900 rounded-sm hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">Contact</a></li>
+			{isLoggedIn&&
+			<li><a href="#" onClick={()=>{toggleMenu();logout()}} className="block py-2 px-3 text-gray-900 rounded-sm hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">Logout</a></li>}
 		</ul>
 	</div>}
 </>)
-interface DNavProps{openLoginModal:(e:MouseEvent)=>void;openSignupModal:(e:MouseEvent)=>void}
-const DesktopNavbar:React.FC<DNavProps>=({openLoginModal,openSignupModal})=>(<div className="hidden md:flex flex-wrap items-center justify-between">
+interface DNavProps {
+	openLoginModal:(e:MouseEvent)=>void
+	openSignupModal:(e:MouseEvent)=>void
+	isLoggedIn:boolean
+	logout:()=>void
+}
+const DesktopNavbar:React.FC<DNavProps>=({openLoginModal,openSignupModal,isLoggedIn,logout})=>(<div className="hidden md:flex flex-wrap items-center justify-between">
 	<a href="https://flowbite.com/" className="flex items-center space-x-3 rtl:space-x-reverse">
 		<img src="https://flowbite.com/docs/images/logo.svg" className="h-8" alt="Flowbite Logo"/>
 		<span className="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">Flowbite</span>
@@ -62,8 +97,10 @@ const DesktopNavbar:React.FC<DNavProps>=({openLoginModal,openSignupModal})=>(<di
 		</div>
 	</div>
 	<ul className="font-medium flex flex-col p-4 md:p-0 mt-4 border border-gray-100 rounded-lg bg-gray-50 md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:border-0 md:bg-white dark:bg-gray-800 md:dark:bg-gray-900 dark:border-gray-700 ml-auto">
-		<li><a href="#" onClick={openLoginModal} className="block py-2 px-3 text-gray-900 rounded-sm hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent">Login</a></li>
-		<li><a href="#" onClick={openSignupModal} className="block py-2 px-3 text-white bg-blue-700 rounded-sm md:bg-transparent md:text-blue-700 md:p-0 dark:text-white md:dark:text-blue-500">Sign up</a></li>
+		{!isLoggedIn?<>
+			<li><a href="#" onClick={openLoginModal} className="block py-2 px-3 text-gray-900 rounded-sm hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent">Login</a></li>
+			<li><a href="#" onClick={openSignupModal} className="block py-2 px-3 text-white bg-blue-700 rounded-sm md:bg-transparent md:text-blue-700 md:p-0 dark:text-white md:dark:text-blue-500">Sign up</a></li>
+		</>:<li><a href="#" onClick={logout} className="block py-2 px-3 text-gray-900 rounded-sm hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500">Logout</a></li>}
 	</ul>
 </div>)
 const Navbar:React.FC=()=>{
@@ -79,6 +116,7 @@ const Navbar:React.FC=()=>{
 	const[loginPassword,setLoginPassword]=useState('')
 	const[signupEmail,setSignupEmail]=useState('')
 	const[signupPassword,setSignupPassword]=useState('')
+	const[isLoggedIn,setIsLoggedIn]=useState(!!localStorage.getItem('token'))
 	const openLoginModal=(e:MouseEvent)=>{e.preventDefault();setIsLoginOpen(true);setMobileDropdownOpen(false);setMobileMenuOpen(false)}
 	const closeLoginModal=()=>setIsLoginOpen(false)
 	const openSignupModal=(e:MouseEvent)=>{e.preventDefault();setIsSignupOpen(true);setMobileDropdownOpen(false);setMobileMenuOpen(false)}
@@ -89,8 +127,28 @@ const Navbar:React.FC=()=>{
 	const handleLoginPassword=(e:ChangeEvent<HTMLInputElement>)=>setLoginPassword(e.target.value)
 	const handleSignupEmail=(e:ChangeEvent<HTMLInputElement>)=>setSignupEmail(e.target.value)
 	const handleSignupPassword=(e:ChangeEvent<HTMLInputElement>)=>setSignupPassword(e.target.value)
-	const login=async()=>{const res=await fetch('http://127.0.0.1:8000/api/auth/login/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:loginEmail,password:loginPassword})});const data=await res.json();if(data.key){localStorage.setItem('token',data.key);closeLoginModal()}}
-	const signup=async()=>{const res=await fetch('http://127.0.0.1:8000/api/auth/registration/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:signupEmail,password1:signupPassword,password2:signupPassword})});const data=await res.json();if(data.key){localStorage.setItem('token',data.key);closeSignupModal()}}
+	const login=async()=>{
+		const res=await fetch('http://127.0.0.1:8000/auth/login/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:loginEmail,password:loginPassword})})
+		const data=await res.json()
+		if(data.key){
+			localStorage.setItem('token',data.key)
+			setIsLoggedIn(true)
+			closeLoginModal()
+		}
+	}
+	const signup=async()=>{
+		const res=await fetch('http://127.0.0.1:8000/auth/registration/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:signupEmail,password1:signupPassword,password2:signupPassword})})
+		const data=await res.json()
+		if(data.key){
+			localStorage.setItem('token',data.key)
+			setIsLoggedIn(true)
+			closeSignupModal()
+		}
+	}
+	const logout=()=>{
+		localStorage.removeItem('token')
+		setIsLoggedIn(false)
+	}
 	useEffect(()=>{
 		const handleClickOutside=(e:Event)=>{
 			if(mobileDropdownOpen&&mobileDropdownRef.current&&!mobileDropdownRef.current.contains(e.target as Node)&&mobileDropdownButtonRef.current&&!mobileDropdownButtonRef.current.contains(e.target as Node))setMobileDropdownOpen(false)
@@ -103,8 +161,8 @@ const Navbar:React.FC=()=>{
 		<Flowbite>
 			<nav className="bg-white border-gray-200 dark:bg-gray-900">
 				<div className="max-w-screen-xl mx-auto p-4">
-					<MobileNavbar toggleMenu={toggleMobileMenu} mobileMenuOpen={mobileMenuOpen} openLoginModal={openLoginModal} openSignupModal={openSignupModal} toggleDropdown={toggleMobileDropdown} mobileDropdownOpen={mobileDropdownOpen} mobileDropdownRef={mobileDropdownRef} mobileDropdownButtonRef={mobileDropdownButtonRef} mobileMenuRef={mobileMenuRef} mobileMenuButtonRef={mobileMenuButtonRef}/>
-					<DesktopNavbar openLoginModal={openLoginModal} openSignupModal={openSignupModal}/>
+					<MobileNavbar toggleMenu={toggleMobileMenu} mobileMenuOpen={mobileMenuOpen} openLoginModal={openLoginModal} openSignupModal={openSignupModal} toggleDropdown={toggleMobileDropdown} mobileDropdownOpen={mobileDropdownOpen} mobileDropdownRef={mobileDropdownRef} mobileDropdownButtonRef={mobileDropdownButtonRef} mobileMenuRef={mobileMenuRef} mobileMenuButtonRef={mobileMenuButtonRef} isLoggedIn={isLoggedIn} logout={logout}/>
+					<DesktopNavbar openLoginModal={openLoginModal} openSignupModal={openSignupModal} isLoggedIn={isLoggedIn} logout={logout}/>
 				</div>
 			</nav>
 			<Modal show={isLoginOpen} onClose={closeLoginModal} size="sm">
