@@ -70,7 +70,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose }) => {
                 <Button onClick={onClose} color="gray">
                     Chiudi
                 </Button>
-                <Button onClick={() => alert("File caricato!")}>Carica</Button>
+                <Button onClick={() => alert("File caricato!")}>Analizza</Button>
             </Modal.Footer>
         </Modal>
     );

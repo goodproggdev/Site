@@ -16,10 +16,12 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from .views import analyze_cv
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
     path('auth/', include('dj_rest_auth.urls')),
-    path('auth/registration/', include('dj_rest_auth.registration.urls'))
+    path('auth/registration/', include('dj_rest_auth.registration.urls')),
+    path('api/analyze-cv/', analyze_cv, name='analyze-cv')
 ]
