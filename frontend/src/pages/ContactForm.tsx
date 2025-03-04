@@ -10,6 +10,19 @@ const ContactForm = () => {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string>("");
 
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+  
+    if (status === "success" || status === "error") {
+      timer = setTimeout(() => {
+        setStatus("idle");
+      }, 5000);
+    }
+  
+    return () => clearTimeout(timer);
+  }, [status]);
+  
+
   const getCsrfToken = () => {
     return document.cookie
       .split("; ")
@@ -91,13 +104,13 @@ const ContactForm = () => {
         </p>
 
         {status === "success" && (
-          <Alert color="success" onDismiss={() => setStatus("idle")} className="mb-4">
+          <Alert color="success" className="mb-4">
             <span>Messaggio inviato con successo!</span>
           </Alert>
         )}
 
         {status === "error" && (
-          <Alert color="failure" onDismiss={() => setStatus("idle")} className="mb-4">
+          <Alert color="failure" className="mb-4">
             <span>{getAlertMessage()}</span>
           </Alert>
         )}
