@@ -1,5 +1,5 @@
-import React,{useState,useRef,useEffect,MouseEvent,ChangeEvent}from 'react'
-import {Flowbite,Modal,TextInput,Button,DarkThemeToggle}from 'flowbite-react'
+import React,{ useState,useRef,useEffect,MouseEvent,ChangeEvent } from 'react'
+import { Flowbite,Modal,TextInput,Button,DarkThemeToggle } from 'flowbite-react'
 interface MNavProps {
 	toggleMenu:()=>void
 	mobileMenuOpen:boolean
@@ -174,14 +174,22 @@ const Navbar:React.FC=()=>{
 		localStorage.removeItem('token')
 		setIsLoggedIn(false)
 	}
-	useEffect(()=>{
-		const handleClickOutside=(e:Event)=>{
-			if(mobileDropdownOpen&&mobileDropdownRef.current&&!mobileDropdownRef.current.contains(e.target as Node)&&mobileDropdownButtonRef.current&&!mobileDropdownButtonRef.current.contains(e.target as Node))setMobileDropdownOpen(false)
-			if(mobileMenuOpen&&mobileMenuRef.current&&!mobileMenuRef.current.contains(e.target as Node)&&mobileMenuButtonRef.current&&!mobileMenuButtonRef.current.contains(e.target as Node))setMobileMenuOpen(false)
-		}
-		document.addEventListener('mousedown',handleClickOutside)
-		return ()=>document.removeEventListener('mousedown',handleClickOutside)
-	},[mobileDropdownOpen,mobileMenuOpen])
+	useEffect(() => {
+		const handleClickOutside = (e: Event) => {
+			if (mobileDropdownOpen && mobileDropdownRef.current && !mobileDropdownRef.current.contains(e.target as Node) && mobileDropdownButtonRef.current && !mobileDropdownButtonRef.current.contains(e.target as Node)) {
+				setMobileDropdownOpen(false);
+			}
+			if (mobileMenuOpen && mobileMenuRef.current && !mobileMenuRef.current.contains(e.target as Node) && mobileMenuButtonRef.current && !mobileMenuButtonRef.current.contains(e.target as Node)) {
+				setMobileMenuOpen(false);
+			}
+		};
+	
+		document.addEventListener('click', handleClickOutside);
+	
+		return () => {
+			document.removeEventListener('click', handleClickOutside);
+		};
+	}, [mobileDropdownOpen, mobileMenuOpen]);	
 	return(
 		<Flowbite>
 			<nav className="bg-white border-gray-200 dark:bg-gray-900">
