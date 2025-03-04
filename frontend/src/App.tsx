@@ -1,4 +1,3 @@
-
 import { Navbar, Footer } from "./layout";
 import { Welcome, Preview, About, Statistics, Testimonials, ContactForm, Feature } from "./pages";
 
