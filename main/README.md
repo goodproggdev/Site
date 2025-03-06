@@ -17,3 +17,12 @@ python -m pip install --upgrade pip
 
 File .env :
 EMAIL_USER=sitiegestionali@gmail.com
+```
+### 2. Launch the Application
+
+Run the following commands to launch the application:
+
+```bash
+py generate_html.py
+py email_from_html.py
+```
