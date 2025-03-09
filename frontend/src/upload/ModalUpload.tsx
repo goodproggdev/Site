@@ -20,6 +20,44 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose }) => {
         }
     };
 
+    const handleFileUpload = async () => {
+        if (!file) {
+            alert("Seleziona un file prima di analizzarlo.");
+            return;
+        }
+    
+        const formData = new FormData();
+        formData.append("file", file);
+    
+        try {
+            console.log("Inizio caricamento file:", file.name); // Debug
+            console.log(formData.get("file"));
+    
+            //'http://127.0.0.1:8000/auth/login/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:loginEmail,password:loginPassword})})
+
+            const response = await fetch("http://127.0.0.1:8000/upload/", { //Assicurati che l'url sia corretto
+                method: "POST",
+                body: formData,
+                signal: AbortSignal.timeout(10000),
+            });
+    
+            console.log("Risposta dal server:", response); // Debug
+    
+            if (response.ok) {
+                const data = await response.json();
+                console.log("Dati ricevuti:", data); // Debug
+                alert(data.message);
+                onClose();
+            } else {
+                console.error("Errore durante il caricamento:", response.status, response.statusText); // Debug
+                alert("Errore durante il caricamento del file.");
+            }
+        } catch (error) {
+            console.error("Errore di rete:", error); // Debug
+            alert("Errore durante il caricamento del file.");
+        }
+    };
+
     return (
         <Modal show={isOpen} onClose={onClose}>
             <Modal.Header>Carica un file</Modal.Header>
@@ -70,7 +108,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose }) => {
                 <Button onClick={onClose} color="gray">
                     Chiudi
                 </Button>
-                <Button onClick={() => alert("File caricato!")}>Analizza</Button>
+                <Button onClick={handleFileUpload}>Analizza</Button>
             </Modal.Footer>
         </Modal>
     );

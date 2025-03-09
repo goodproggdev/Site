@@ -14,15 +14,24 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+"""
+URL configuration for mybackend project.
+"""
 from django.contrib import admin
 from django.urls import path, include
-from .views import analyze_cv, contact_view
+from .views import analyze_cv, contact_view, upload_file
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
+    path('upload/', upload_file, name='upload_file'),
     path('auth/', include('dj_rest_auth.urls')),
     path('auth/registration/', include('dj_rest_auth.registration.urls')),
     path('api/analyze-cv/', analyze_cv, name='analyze-cv'),
     path('api/contact/', contact_view, name='contact')
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
