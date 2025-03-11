@@ -13,6 +13,8 @@ import PyPDF2
 import socket
 import smtplib
 import json
+import io
+from django.core.files.base import ContentFile
 
 @api_view(['POST'])
 @parser_classes([MultiPartParser])
@@ -58,6 +60,29 @@ def upload_file(request):
     return JsonResponse({'message': 'Errore nel caricamento del file.'}, status=400)
 
 def extract_text(file_path, file_name):
+    try:
+        with default_storage.open(file_path, 'rb') as file: #usa default_storage.open
+            if file_name.endswith('.pdf'):
+                reader = PyPDF2.PdfReader(io.BytesIO(file.read())) #legge il file come bytes
+                text = ''
+                for page in reader.pages:
+                    text += page.extract_text() or ''
+                return text
+            elif file_name.endswith('.docx'):
+                doc = docx.Document(io.BytesIO(file.read())) #legge il file come bytes
+                text = '\n'.join([paragraph.text for paragraph in doc.paragraphs])
+                return text
+            elif file_name.endswith('.txt'):
+                with default_storage.open(file_path, 'r', encoding='utf-8') as file: #usa default_storage.open
+                    return file.read()
+            else:
+                return "File type not supported."
+    except (PyPDF2.errors.PdfReadError, docx.opc.exceptions.PackageNotFoundError) as e:
+        return f"Error processing file: {e}"
+    except FileNotFoundError:
+        return "File not found."
+    except Exception as e:
+        return f"An unexpected error occurred: {e}"
     try:
         if file_name.endswith('.pdf'):
             with open(file_path, 'rb') as file:
