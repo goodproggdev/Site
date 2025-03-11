@@ -38,7 +38,6 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose }) => {
             const response = await fetch("http://127.0.0.1:8000/upload/", { //Assicurati che l'url sia corretto
                 method: "POST",
                 body: formData,
-                signal: AbortSignal.timeout(10000),
             });
     
             console.log("Risposta dal server:", response); // Debug

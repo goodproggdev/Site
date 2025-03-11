@@ -13,3 +13,4 @@ Frontend
 	cd frontend
 	npm run dev
 
+C:\Users\ebs\Desktop\Site\backend\media\uploads\original
