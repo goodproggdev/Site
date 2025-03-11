@@ -1,0 +1,62 @@
+In /backend/mybackend open settings.py and modify:
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:YOUR_FRONTEND_PORT",
+]
+
+pip install django-cors-headers
+
+Backend:
+   cd backend
+   python manage.py runserver
+
+Frontend
+   cd frontend
+   npm run dev
+
+C:\Users\ebs\Desktop\Site\backend\media\uploads\original
+
+mybackend : views.py, settings.py, urls.py
+
+frontend\src\pages : Welcome.tsx 
+frontend\src\layout : Navbar.tsx
+frontend\src\upload : ModalUpload.tsx
+
+
+------------------------------------------------------
+Implementa il Pagamento : 
+   https://dashboard.stripe.com/test/products/prod_RZXzPNAVxZyYs6
+   https://dashboard.stripe.com/payments 
+
+
+------------------------------------------------------
+
+Sessione che scadenza
+Verifica email implemetazione
+Send email -> token setting.py.io -> no push git
+
+Lingue, bandierine --> i18n traduci react, lavora sul json per tradurre
+
+Pagamento revolut tabella prezzi, dashboard secondaria
+
+Bottone carica documento -> va parsato, json dei dati -> % dati aventi e form dati mancanti
+
+Copy della pagina, frasi vere non standard
+
+Pagina login separata per profilazione
+
+
+------------------------------------------------------
+
+
+git add .
+git commit -m "#13 home_title"
+git push
+git status
+
+Fai separatamente con copia index su TheCompany
+Footer, Traduzione, Posizionamento, WhatsApp
+https://github.com/goodproggdev/Site/issues/1
+
+Funzioni javascript
+
+------------------------------------------------------

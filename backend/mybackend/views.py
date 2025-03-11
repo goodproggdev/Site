@@ -58,22 +58,29 @@ def upload_file(request):
     return JsonResponse({'message': 'Errore nel caricamento del file.'}, status=400)
 
 def extract_text(file_path, file_name):
-    if file_name.endswith('.pdf'):
-        with open(file_path, 'rb') as file:
-            reader = PyPDF2.PdfReader(file)
-            text = ''
-            for page in reader.pages:
-                text += page.extract_text() or ''
-        return text
-    elif file_name.endswith('.docx'):
-        doc = docx.Document(file_path)
-        text = '\n'.join([paragraph.text for paragraph in doc.paragraphs])
-        return text
-    elif file_name.endswith('.txt'):
-        with open(file_path, 'r', encoding='utf-8') as file:
-            return file.read()
-    else:
-        return ''
+    try:
+        if file_name.endswith('.pdf'):
+            with open(file_path, 'rb') as file:
+                reader = PyPDF2.PdfReader(file)
+                text = ''
+                for page in reader.pages:
+                    text += page.extract_text() or ''
+            return text
+        elif file_name.endswith('.docx'):
+            doc = docx.Document(file_path)
+            text = '\n'.join([paragraph.text for paragraph in doc.paragraphs])
+            return text
+        elif file_name.endswith('.txt'):
+            with open(file_path, 'r', encoding='utf-8') as file:
+                return file.read()
+        else:
+            return "File type not supported."
+    except (PyPDF2.errors.PdfReadError, docx.opc.exceptions.PackageNotFoundError) as e:
+        return f"Error processing file: {e}"
+    except FileNotFoundError:
+        return "File not found."
+    except Exception as e:
+        return f"An unexpected error occurred: {e}"
     
 @ensure_csrf_cookie
 @csrf_protect
