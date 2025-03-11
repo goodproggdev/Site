@@ -1,0 +1,88 @@
+Curriculum Vitae - Enrico Baldasso
+Enrico Baldasso
+Data di nascita: 23/03/1999
+Indirizzo: Via Morganella 8/2, 31020 Villorba (TV), Italia
+Telefono: (+39) 3517287336
+Email: enrico.baldasso@smc.it
+Profilo Professionale
+Ingegnere informatico specializzato nello sviluppo software, integrazione di
+sistemi complessi e gestione dati.
+Esperienza consolidata in contesti aziendali ed europei, con competenze
+avanzate in tecnologie come Python, SQL
+e tecniche di Machine Learning. Appassionato di intelligenza artificiale,
+soluzioni data-driven e progetti
+di innovazione tecnologica.
+Esperienza Lavorativa
+Tecnico di integrazione sistemi europei
+Unione Europea, Ministeri Italiani, Regioni Italiane, AgID, Accenture, SMC
+Treviso - DGS Company
+Aprile 2024 - Presente, Treviso (Italia)
+- Integrazione dei protocolli europei nelle realtà nazionali e regionali italiane.
+- Controllo e ottimizzazione delle procedure ministeriali e regionali per
+conformità ai requisiti europei.
+- Sviluppo di un portale unico europeo e nazionale per la gestione delleprocedure censite.
+- Coordinamento di meeting trimestrali a Bruxelles per l'allineamento strategico
+con l'Unione Europea.
+Junior Developer
+SMC Treviso - DGS Company
+Luglio 2023 - Presente, Treviso (Italia)
+- Gestione avanzata di database: CRUD, ricerche incrociate, ottimizzazione
+query.
+- Implementazione di interfacce personalizzate e moduli per software gestionali
+aziendali.
+- Creazione di sistemi di stampa automatizzati, inclusi codici a barre e numerici
+per la logistica e il trasporto.
+Software Developer
+Melograno SRL
+Settembre 2020 - Marzo 2021, Silea (Italia)
+- Sviluppo di moduli per applicazioni Android.
+- Creazione di gestionali per fornitori all'ingrosso, con sistemi di
+scannerizzazione e ristampa bolle.
+Programmatore Back-End
+Futurarea
+Giugno 2019 - Marzo 2020, Villorba (Italia)
+- Progettazione e sviluppo di database e API.
+- Implementazione di logiche lato server e ottimizzazione dei middleware
+aziendali.- Creazione di interfacce web user-friendly.
+Istruzione
+Laurea in Ingegneria Informatica (in corso)
+Università di Roma Uninettuno
+Ottobre 2024 - Presente
+Laurea breve in Informatica e Data Science (trasferito a Ingegneria Informatica)
+Università Ca' Foscari Venezia
+Settembre 2018 - Settembre 2020
+Diploma di Liceo Scientifico, opzione Scienze Applicate
+Liceo Statale Duca degli Abruzzi, Treviso
+Settembre 2012 - Luglio 2018
+Competenze Tecniche
+Programmazione:
+- Linguaggi: Python, Java, JavaScript, SQL, HTML/CSS.
+- Framework: Django, Flask, Node.js.
+- Database: MySQL, PostgreSQL.
+Machine Learning e Data Science:
+- Sviluppo di modelli di apprendimento automatico e analisi dati.
+- Esperienza con librerie come Scikit-learn, TensorFlow, e Pandas.
+Strumenti e tecnologie:
+- Sistemi operativi: Windows, Linux.- Versionamento: Git/GitHub.
+- Tecnologie di rete e gestione middleware.
+Certificazioni
+- Certificato IBM in Data Science e Machine Learning (Giugno 2024)
+- Sviluppo competenze pratiche in Python, SQL, analisi dati e visualizzazioni.
+- Realizzazione di un progetto Capstone per applicare le competenze acquisite.
+Lingue
+- Italiano: Madrelingua.
+- Inglese: Livello B2 (lettura, scrittura, produzione e interazione orale).
+Progetti e Riconoscimenti
+- Projectathon 5
+Unione Europea (2024)
+- Coordinatore di un progetto che ha posizionato l'Italia prima tra gli Stati
+Membri per integrazione di sistemi informatici.
+- Simulazione del Parlamento Europeo
+Parlamentari Europei (2018)
+- Premiazione come miglior mediatore per capacità di sintesi e gestione dei
+conflitti.
+Hobby e interessi
+- Intelligenza artificiale: Creazione di reti neurali per risolvere problemi pratici
+come giochi e algoritmi di ottimizzazione.
+- Sport: Rugby e arti marziali.- Viaggi: Esperienze in Europa, America e Medio Oriente, con focus su scambi
+culturali e tecnologie locali.
