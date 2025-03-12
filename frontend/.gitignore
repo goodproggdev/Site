@@ -16,6 +16,8 @@ dist-ssr
 .vscode/*
 !.vscode/extensions.json
 .idea
+.TODOEnrico.txt
+.backend/media/uploads
 .DS_Store
 *.suo
 *.ntvs*
