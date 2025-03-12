@@ -60,3 +60,5 @@ https://github.com/goodproggdev/Site/issues/1
 Funzioni javascript
 
 ------------------------------------------------------
+
+pip install resume_matcher
