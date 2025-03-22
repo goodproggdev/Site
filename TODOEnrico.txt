@@ -60,5 +60,17 @@ https://github.com/goodproggdev/Site/issues/1
 Funzioni javascript
 
 ------------------------------------------------------
+route react
+fare route sottodominio domain/enrico.baldasso
+
+C:\Users\ebs\Desktop\Site\main\server_email
+   lancia email_from_html.py
+------------------------------------------------------
 
 pip install resume_matcher
+
+
+Committa -> pusha
+git pull
+repository
+Se non funziona "git pull --ff-only"
