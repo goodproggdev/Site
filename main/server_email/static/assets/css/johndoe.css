@@ -11342,6 +11342,8 @@ p {
     width: 100%;
     max-width: 100%;
     min-width: 100%;
+    height: auto; /* L'altezza si adatta proporzionalmente */	
+    object-fit: cover;
   }
 }
 
