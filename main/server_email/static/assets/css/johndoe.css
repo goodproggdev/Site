@@ -11280,11 +11280,12 @@ p {
 .blog-card .img-holder {
   min-width: 350px;
   max-width: 350px;
+  margin: auto;
 }
 
 .blog-card .img-holder img {
   width: 100%;
-  height: 100%;
+  height: auto;
   -o-object-fit: cover;
      object-fit: cover;
 }
