@@ -1,0 +1,16 @@
+In /backend/mybackend open settings.py and modify:
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:YOUR_FRONTEND_PORT",
+]
+
+pip install django-cors-headers
+
+Backend:
+	cd backend
+	python manage.py runserver
+
+Frontend
+	cd frontend
+	npm run dev
+
+C:\Users\ebs\Desktop\Site\backend\media\uploads\original
