@@ -246,37 +246,37 @@
 		{
 			"title": "Pircher",
 			"subtitle": "Cliente Gestionale",
-			"image": "static/assets/imgs/web-1.jpg",
+			"image": "static/assets/imgs/Pircher.jpg",
 			"alt": "https://www.pircher.eu/it/"
 		},
 		{
 			"title": "Maddalena Spa",
 			"subtitle": "Cliente Gestionale",
-			"image": "static/assets/imgs/web-2.jpg",
+			"image": "static/assets/imgs/maddalena02.jpg",
 			"alt": "https://www.maddalena.it/"
 		},
 		{
 			"title": "IBM",
 			"subtitle": "Partner",
-			"image": "static/assets/imgs/web-4.jpg",
+			"image": "static/assets/imgs/IBM01.jpg",
 			"alt": "https://www.ibm.com/it-it"
 		},
 		{
 			"title": "Accenture",
 			"subtitle": "Partner",
-			"image": "static/assets/imgs/web-4.jpg",
+			"image": "static/assets/imgs/Accenture01.jpg",
 			"alt": "https://www.accenture.com/it-it"
 		},
 		{
 			"title": "ABS Utensili",
 			"subtitle": "Sviluppo sito",
-			"image": "static/assets/imgs/web-4.jpg",
+			"image": "static/assets/imgs/ABS01.jpg",
 			"alt": "https://absutensili.com/it/home/"
 		},
 		{
 			"title": "Orologiaio da Sebastian",
 			"subtitle": "Sviluppo eCommerce",
-			"image": "static/assets/imgs/web-4.jpg",
+			"image": "static/assets/imgs/oro01.jpg",
 			"alt": "https://orologiaiodasebastian.com/"
 		}
 	],
@@ -286,20 +286,20 @@
 		{
 			"title": "Tecnico per Bruxells - Projectathon Europeo",
 			"author": "Admin",
-			"likes": 10,
-			"comments": 0,
-			"image": "static/assets/imgs/blog1.jpg",
-			"alt": "https://ec.europa.eu/digital-building-blocks/sites/display/OOTS/Projectathon5",
-			"description": "Ho lavorato per molti mesi per l'Unione Europea sviluppando conoscenze e skills",
-			"full_description": "Allego il Protocollo EU che ho integrato in tutte le regioni e i miniteri italiani әhttps://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/Once+Only+Technical+System",
-			"read_more_url": "https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/Once+Only+Technical+System"
+			"image": "static/assets/imgs/EU01.jpg",
+			"likes_html": "",
+			"comments_html": "",
+			"alt": "https://interoperable-europe.ec.europa.eu/collection/digital-building-blocks/solution/once-only-technical-system-oots",
+			"description": "Progetti chiave dell'Unione Europea per la semplificazione dell'accesso e dell'uso dei servizi pubblici",
+			"full_description": "Ho contribuito attivamente all'implementazione del sistema tecnico 'Once Only' (OOTS) e del portale digitale unico (SDG) in Italia. Ho collaborato con tutte le regioni e i ministeri italiani per garantire l'adozione e l'integrazione di questi sistemi, facilitando lo scambio transfrontaliero di dati e documenti e migliorando l'esperienza digitale di cittadini e imprese. Ho lavorato per garantire l'interoperabilità tra le pubbliche amministrazioni italiane e quelle degli altri Stati membri, in accordo con le normative europee.",
+			"read_more_url": "https://interoperable-europe.ec.europa.eu/collection/digital-building-blocks/solution/once-only-technical-system-oots"
 		},
 		{
 			"title": "Certificato IBM in Data Science",
 			"author": "Admin",
-			"likes": 15,
-			"comments": 0,
-			"image": "static/assets/imgs/blog2.jpg",
+			"likes_html": "",
+			"comments_html": "",
+			"image": "static/assets/imgs/Certi01.jpg",
 			"alt": "https://coursera.org/share/67a906a955411b3c4e85a8be587c848a",
 			"description": "Corso completo IBM in Data Science",
 			"full_description": "In questo certificato professionale, i partecipanti hanno sviluppato e affinato competenze pratiche in Data Science e Machine Learning. Hanno iniziato con un’introduzione alla Data Science e alla sua metodologia, familiarizzando e utilizzando una varietà di strumenti per la scienza dei dati, imparando Python e SQL, eseguendo attività di visualizz azione e analisi dei dati, e creando modelli di Machine Learning. Durante il percorso, hanno completato diversi laboratori e compiti nel cloud, inclusa la realizzazione di un Progetto Capstone finale per applicare e dimostrare le conoscenze e le competenze acquisite.",
@@ -308,20 +308,20 @@
 		{
 			"title": "Altri Partner",
 			"author": "Admin",
-			"likes": 25,
-			"comments": 0,
-			"image": "static/assets/imgs/blog2.jpg",
-			"alt": "https://coursera.org/share/67a906a955411b3c4e85a8be587c848a",
+			"likes_html": "",
+			"comments_html": "",
+			"image": "static/assets/imgs/Akzo01.jpg",
+			"alt": "https://www.akzonobel.com/en",
 			"description": "Aziende con cui ho lavorato",
-			"full_description": "DGS : әhttps://www.dgsspa.com/ . AkzoNobel : әhttps://www.akzonobel.com/en . AGID : әhttps://www.agid.gov.it/it",
-			"read_more_url": "https://coursera.org/share/67a906a955411b3c4e85a8be587c848a"
+			"full_description": "Esperienza maturata in DGS SPA, azienda leader nel settore ICT, specializzata in soluzioni di cybersecurity, digital solutions e management consulting. Coinvolto in progetti di trasformazione digitale e sviluppo software. Esperienza in AkzoNobel, multinazionale leader nel settore dei prodotti vernicianti, con responsabilità in logistica, produzione e ricerca. Coinvolto in progetti di ricerca e sviluppo di nuove vernici a base polimerica. Esperienza presso l'AGID, l'agenzia governativa responsabile per la trasformazione digitale del Paese. Coinvolto nei progetti di innovazione dei servizi pubblici, gestito dall'Unione Europea, per i Ministeri e le Regioni italiane",
+			"read_more_url": "https://www.akzonobel.com/en"
 		},
 		{
 			"title": "Capacità di mediazione",
 			"author": "Admin",
-			"likes": 20,
-			"comments": 0,
-			"image": "static/assets/imgs/blog3.jpg",
+			"likes_html": "",
+			"comments_html": "",
+			"image": "static/assets/imgs/meet01.jpg",
 			"alt": "Porro Quisqua",
 			"description": "Ho partecipato a una simulazione di parlamento europeo supervisionata da 2 Parlamentari Europei.",
 			"full_description": "Sono stato premiato da essi, come miglior mediatore. In particolare per le mie doti nel trovare fronti comunemente accettati dai vari schieramenti in molti ambiti, che vanno dal reperimento di risorse agricole alle tecnologie più vantaggiose nell'ambito energetico in base alla conformazione del territorio.",

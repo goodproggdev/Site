@@ -276,7 +276,9 @@
     <section class="section bg-dark py-5">
         <div class="container text-center">
             <h2 class="text-light mb-5 font-weight-normal">{{freelancing_label}}</h2>
-            <button class="btn bg-primary w-lg">{{hire_me_label}}</button>
+            <a href="#contact" class="nav-link">
+                <button class="btn bg-primary w-lg">{{hire_me_label}}</button>
+            </a>
         </div>
     </section>
 
@@ -290,14 +292,15 @@
                         {% for project in portfolio_items %}
                         <div class="col-md-6 col-lg-4">
                             <div class="portfolio-item">
-                                <img src="{{ project.image }}" class="img-fluid" alt="{{ project.alt }}">
-                                <div class="content-holder">
-                                    <a class="img-popup" href="{{ project.image }}"></a>
-                                    <div class="text-holder">
-                                        <h6 class="title">{{ project.title }}</h6>
-                                        <p class="subtitle">{{ project.subtitle }}</p>
+                                <a href="{{ project.alt }}" target="_blank" style="display: block; text-decoration: none;">
+                                    <img src="{{ project.image }}" class="img-fluid" alt="{{ project.alt }}">
+                                    <div class="content-holder">
+                                        <div class="text-holder">
+                                            <h6 class="title">{{ project.title }}</h6>
+                                            <p class="subtitle">{{ project.subtitle }}</p>
+                                        </div>
                                     </div>
-                                </div>
+                                </a>
                             </div>
                         </div>
                         {% endfor %}
@@ -321,16 +324,15 @@
                         <h6 class="title">{{ post.title }}</h6>
                         <p class="post-details">
                             <a href="#">By: {{ post.author }}</a>
-                            <a href="#"><i class="ti-heart text-danger"></i> {{ post.likes }}</a>
-                            <a href="#"><i class="ti-comment"></i> {{ post.comments }}</a>
+                            {{ post.likes_html }}
+                            {{ post.comments_html }}
                         </p>
                         <p>{{ post.description }}</p>
                         <p><b>{{ post.full_description }}</b></p>
                         <a href="{{ post.read_more_url }}" class="read-more">Read more <i
-                                class="ti-angle-double-right"></i></a>
+                                    class="ti-angle-double-right"></i></a>
                     </div>
-                </div><!-- end of blog wrapper -->
-                {% endfor %}
+                </div>{% endfor %}
             </div>
         </div>
     </section>
