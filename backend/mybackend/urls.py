@@ -32,7 +32,7 @@ def include_subdomain(subdomain, module):
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include('api.urls')),
+#    path('api/', include('api.urls')),
     path('upload/', upload_file, name='upload_file'),
     path('auth/', include('dj_rest_auth.urls')),
     path('auth/registration/', include('dj_rest_auth.registration.urls')),
