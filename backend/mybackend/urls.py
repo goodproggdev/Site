@@ -23,6 +23,13 @@ from .views import analyze_cv, contact_view, upload_file
 from django.conf import settings
 from django.conf.urls.static import static
 
+def include_subdomain(subdomain, module):
+    def include_patterns(request):
+        if request.subdomain == subdomain:
+            return include(module)
+        return None
+    return include_patterns
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
@@ -31,7 +38,10 @@ urlpatterns = [
     path('auth/registration/', include('dj_rest_auth.registration.urls')),
     path('api/analyze-cv/', analyze_cv, name='analyze-cv'),
     path('api/contact/', contact_view, name='contact')
+
+    re_path(r'^.*$', include_subdomain('test', 'test_app.urls')),
+    re_path(r'^.*$', include_subdomain(None, 'main_app.urls')),
 ]
 
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static.static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

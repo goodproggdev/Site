@@ -1,5 +1,5 @@
 import { Navbar, Footer } from "./layout";
-import { Welcome, Preview, About, Statistics, Testimonials, ContactForm, Feature } from "./pages";
+import { Welcome, Preview, About, Statistics, Testimonials, ContactForm, Feature, Pricing } from "./pages";
 
 function App() {
   return (
@@ -9,6 +9,7 @@ function App() {
       <Preview />
       <About />
       <Feature />
+      <Pricing />
       <Statistics />
       <Testimonials />
       <ContactForm />
