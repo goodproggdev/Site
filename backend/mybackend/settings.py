@@ -63,10 +63,10 @@ SECRET_KEY = 'django-insecure-b9wf78(o_zncyjr3pjl*&^iwoxb^ab$!b(jp*10247a9prpq*l
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    '.tuodominio.it',
-    'localhost',
-    '127.0.0.1',
-    'test.localhost',
+ #   '.tuodominio.it',
+ #   'localhost',
+ #   '127.0.0.1',
+ #   'test.localhost'
 ]
 
 INSTALLED_APPS = [
@@ -110,8 +110,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
-    'allauth.account.middleware.AccountMiddleware',
-    'mybackend.middleware.SubdomainMiddleware'
+    'allauth.account.middleware.AccountMiddleware'
+ #   'mybackend.middleware.SubdomainMiddleware'
 ]
 
 CORS_ALLOWED_ORIGINS = [
