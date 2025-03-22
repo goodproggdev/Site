@@ -39,9 +39,9 @@ urlpatterns = [
     path('api/analyze-cv/', analyze_cv, name='analyze-cv'),
     path('api/contact/', contact_view, name='contact')
 
-    re_path(r'^.*$', include_subdomain('test', 'test_app.urls')),
-    re_path(r'^.*$', include_subdomain(None, 'main_app.urls')),
+ #   re_path(r'^.*$', include_subdomain('test', 'test_app.urls')),
+ #   re_path(r'^.*$', include_subdomain(None, 'main_app.urls')),
 ]
 
 if settings.DEBUG:
-    urlpatterns += static.static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
