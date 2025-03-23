@@ -9,9 +9,9 @@ function App() {
       <Preview />
       <About />
       <Feature />
-      <Pricing />
       <Statistics />
       <Testimonials />
+      <Pricing />
       <Footer />
     </>
   );
