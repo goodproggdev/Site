@@ -306,15 +306,37 @@
 			"read_more_url": "https://coursera.org/share/67a906a955411b3c4e85a8be587c848a"
 		},
 		{
-			"title": "Altri Partner",
+			"title": "Partner Chiave",
+			"author": "Admin",
+			"likes_html": "",
+			"comments_html": "",
+			"image": "static/assets/imgs/dgs.jpg",
+			"alt": "https://www.dgsspa.com/",
+			"description": "Agenzia per cui lavoro spesso",
+			"full_description": "Esperienze professionalo maturate presso DGS SPA, azienda leader nel settore ICT, specializzata in soluzioni di cybersecurity, digital solutions e management consulting. La mia attività è stata incentrata su vari progetti di trasformazione digitale e sviluppo software.",
+			"read_more_url": "https://www.dgsspa.com/"
+		},
+		{
+			"title": "La mia esperienza da chimico",
 			"author": "Admin",
 			"likes_html": "",
 			"comments_html": "",
 			"image": "static/assets/imgs/Akzo01.jpg",
 			"alt": "https://www.akzonobel.com/en",
-			"description": "Aziende con cui ho lavorato",
-			"full_description": "Esperienza maturata in DGS SPA, azienda leader nel settore ICT, specializzata in soluzioni di cybersecurity, digital solutions e management consulting. Coinvolto in progetti di trasformazione digitale e sviluppo software. Esperienza in AkzoNobel, multinazionale leader nel settore dei prodotti vernicianti, con responsabilità in logistica, produzione e ricerca. Coinvolto in progetti di ricerca e sviluppo di nuove vernici a base polimerica. Esperienza presso l'AGID, l'agenzia governativa responsabile per la trasformazione digitale del Paese. Coinvolto nei progetti di innovazione dei servizi pubblici, gestito dall'Unione Europea, per i Ministeri e le Regioni italiane",
+			"description": "AkzoNobel - Ricerca e Sviluppo Polimeri",
+			"full_description": "Ho lavorato per un periodo a Como per l' AkzoNobel, multinazionale di riferimento nel settore dei prodotti vernicianti, con responsabilità nelle aree di logistica, produzione e ricerca. Sono stato coinvolto in progetti di ricerca e sviluppo di nuove formulazioni di vernici a base polimerica.",
 			"read_more_url": "https://www.akzonobel.com/en"
+		},
+		{
+			"title": "Lavorando con il Governo",
+			"author": "Admin",
+			"likes_html": "",
+			"comments_html": "",
+			"image": "static/assets/imgs/agid.jpg",
+			"alt": "https://www.agid.gov.it/it",
+			"description": "AGID - Agenzia per l'Italia Digitale",
+			"full_description": "Presso l'AGID (Agenzia per l'Italia Digitale), l'agenzia governativa dedicata alla trasformazione digitale del Paese. Ho collaborato a progetti di innovazione dei servizi pubblici, finanziati dall'Unione Europea, per conto di Ministeri e Regioni italiane.",
+			"read_more_url": "https://www.agid.gov.it/it"
 		},
 		{
 			"title": "Capacità di mediazione",
