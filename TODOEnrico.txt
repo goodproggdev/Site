@@ -74,3 +74,12 @@ Committa -> pusha
 git pull
 repository
 Se non funziona "git pull --ff-only"
+
+------------------------------------------------------
+
+Site\main\server_EMail
+template.html
+data.json
+
+py generate_html.py
+py email_from_html.py
