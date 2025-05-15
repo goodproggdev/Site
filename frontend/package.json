@@ -17,8 +17,10 @@
     "@stripe/stripe-js": "^5.8.0",
     "axios": "^1.8.1",
     "caniuse-lite": "^1.0.30001701",
+    "file-saver": "^2.0.5",
     "flowbite": "^3.1.2",
     "flowbite-react": "^0.8.0",
+    "jszip": "^3.10.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^7.2.0"
