@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { Button, Modal } from "flowbite-react";
+import JSZip from 'jszip'; // Importa la libreria JSZip
+import { saveAs } from 'file-saver'; // Importa saveAs da file-saver
 
 // Definisci la struttura JSON originale come una costante
+// Ho incluso le parti rilevanti dal file data.json che hai fornito
 const originalJsonStructure = {
 	"name": "", // Sarà popolato dal form
 	"presentation": "", // Sarà popolato dal form
@@ -186,8 +189,8 @@ const UploadModal = ({ isOpen, onClose }) => {
   };
 
 
-  // Gestisce l'invio del form e salva il JSON localmente
-  const handleSubmit = (e) => {
+  // Gestisce l'invio del form e crea l'archivio ZIP
+  const handleSubmit = async (e) => { // Funzione resa async per gestire le operazioni sui file
     e.preventDefault();
 
     // Crea una copia profonda della struttura JSON originale
@@ -201,26 +204,62 @@ const UploadModal = ({ isOpen, onClose }) => {
     }
 
     // Aggiorna i percorsi delle immagini nel JSON con i nomi dei file selezionati
+    // e prepara i file per l'aggiunta allo ZIP
+
+    const zip = new JSZip(); // Crea una nuova istanza ZIP
+    const imgsFolder = zip.folder("imgs"); // Crea la cartella 'imgs' nello ZIP
+
+    // Array per tenere traccia delle promesse di lettura dei file
+    const fileReadPromises = [];
+
     // Per portfolio_items (esempio per i primi 2)
     if (dataToSave.portfolio_items && dataToSave.portfolio_items.length > 0) {
         if (selectedFiles.portfolio_items_0_image && dataToSave.portfolio_items[0]) {
-            dataToSave.portfolio_items[0].image = `imgs/${selectedFiles.portfolio_items_0_image.name}`;
+            const file = selectedFiles.portfolio_items_0_image;
+            dataToSave.portfolio_items[0].image = `imgs/${file.name}`;
+            // Aggiungi il file allo ZIP - jszip gestisce le Promise
+            imgsFolder.file(file.name, file);
         }
          if (selectedFiles.portfolio_items_1_image && dataToSave.portfolio_items.length > 1 && dataToSave.portfolio_items[1]) {
-            dataToSave.portfolio_items[1].image = `imgs/${selectedFiles.portfolio_items_1_image.name}`;
+            const file = selectedFiles.portfolio_items_1_image;
+            dataToSave.portfolio_items[1].image = `imgs/${file.name}`;
+             // Aggiungi il file allo ZIP
+            imgsFolder.file(file.name, file);
         }
         // Aggiungi logica simile per gli altri elementi di portfolio_items
+        // Esempio generalizzato (richiederebbe un'iterazione dinamica sugli elementi e input corrispondenti)
+        // for (let i = 0; i < dataToSave.portfolio_items.length; i++) {
+        //     const file = selectedFiles[`portfolio_items_${i}_image`];
+        //     if (file && dataToSave.portfolio_items[i]) {
+        //          dataToSave.portfolio_items[i].image = `imgs/${file.name}`;
+        //          imgsFolder.file(file.name, file);
+        //     }
+        // }
     }
 
      // Per blog_posts (esempio per i primi 2)
      if (dataToSave.blog_posts && dataToSave.blog_posts.length > 0) {
         if (selectedFiles.blog_posts_0_image && dataToSave.blog_posts[0]) {
-            dataToSave.blog_posts[0].image = `imgs/${selectedFiles.blog_posts_0_image.name}`;
+             const file = selectedFiles.blog_posts_0_image;
+            dataToSave.blog_posts[0].image = `imgs/${file.name}`;
+             // Aggiungi il file allo ZIP
+            imgsFolder.file(file.name, file);
         }
         if (selectedFiles.blog_posts_1_image && dataToSave.blog_posts.length > 1 && dataToSave.blog_posts[1]) {
-            dataToSave.blog_posts[1].image = `imgs/${selectedFiles.blog_posts_1_image.name}`;
+             const file = selectedFiles.blog_posts_1_image;
+            dataToSave.blog_posts[1].image = `imgs/${file.name}`;
+             // Aggiungi il file allo ZIP
+            imgsFolder.file(file.name, file);
         }
         // Aggiungi logica simile per gli altri elementi di blog_posts
+        // Esempio generalizzato
+        // for (let i = 0; i < dataToSave.blog_posts.length; i++) {
+        //     const file = selectedFiles[`blog_posts_${i}_image`];
+        //     if (file && dataToSave.blog_posts[i]) {
+        //          dataToSave.blog_posts[i].image = `imgs/${file.name}`;
+        //          imgsFolder.file(file.name, file);
+        //     }
+        // }
      }
     // Aggiungi logica simile per altri array con campi immagine
 
@@ -228,27 +267,24 @@ const UploadModal = ({ isOpen, onClose }) => {
     // Converti l'oggetto JavaScript risultante in una stringa JSON formattata
     const jsonString = JSON.stringify(dataToSave, null, 2); // null, 2 per formattazione leggibile
 
-    // *** Parte per il download del file JSON ***
-    const jsonBlob = new Blob([jsonString], { type: "application/json" });
-    const jsonUrl = URL.createObjectURL(jsonBlob);
-    const jsonLink = document.createElement("a");
-    jsonLink.href = jsonUrl;
-    jsonLink.download = "dati_compilati.json"; // Nome del file JSON
+    // Aggiungi il file JSON all'archivio ZIP
+    zip.file("dati_compilati.json", jsonString);
 
-    document.body.appendChild(jsonLink);
-    jsonLink.click();
+    // Genera il contenuto dello ZIP in formato Blob
+    try {
+        const zipBlob = await zip.generateAsync({ type: "blob" });
 
-    setTimeout(() => {
-      URL.revokeObjectURL(jsonUrl);
-      document.body.removeChild(jsonLink);
-    }, 100);
+        // Usa file-saver per scaricare il file ZIP
+        saveAs(zipBlob, "dati_compilati.zip");
 
-    // *** Spiegazione per il download delle immagini (richiede logica ZIP) ***
-    console.log("File immagine selezionati:", selectedFiles);
-    alert("Il file JSON è stato scaricato. Per scaricare anche le immagini in una cartella 'imgs', è necessaria una funzionalità aggiuntiva (creazione ZIP lato browser o backend).");
+    } catch (error) {
+        console.error("Errore nella creazione o nel download del file ZIP:", error);
+        alert("Si è verificato un errore durante la creazione del file ZIP.");
+    }
 
 
     // Chiudi il modal dopo aver avviato il download (opzionale)
+    // Considera se vuoi chiudere il modal subito o aspettare la conferma del download
     onClose();
   };
 
@@ -256,7 +292,7 @@ const UploadModal = ({ isOpen, onClose }) => {
     <Modal show={isOpen} onClose={onClose}>
       <Modal.Header>
         <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-          Popola Dati e Carica Immagini
+          Popola Dati, Carica Immagini e Scarica ZIP
         </h3>
       </Modal.Header>
       <Modal.Body>
@@ -397,13 +433,13 @@ const UploadModal = ({ isOpen, onClose }) => {
              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Immagini Portfolio</h4>
              <div className="mb-5">
                 <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white" htmlFor="portfolio_items_0_image">Portfolio Item 1 Image</label>
-                <input className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" id="portfolio_items_0_image" type="file" onChange={handleFileChange} />
+                <input className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" id="portfolio_items_0_image" type="file" onChange={handleFileChange} accept="image/*" /> {/* Aggiunto accept="image/*" */}
              </div>
               <div className="mb-5">
                 <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white" htmlFor="portfolio_items_1_image">Portfolio Item 2 Image</label>
-                <input className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" id="portfolio_items_1_image" type="file" onChange={handleFileChange} />
+                <input className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" id="portfolio_items_1_image" type="file" onChange={handleFileChange} accept="image/*" /> {/* Aggiunto accept="image/*" */}
              </div>
-             {/* Aggiungi qui altri campi per gli altri portfolio_items */}
+             {/* Aggiungi qui altri campi per gli altri portfolio_items seguendo lo schema: portfolio_items_N_image */}
           </div>
 
            {/* Campi per l'upload delle immagini - Esempio per i primi 2 di blog_posts */}
@@ -411,20 +447,20 @@ const UploadModal = ({ isOpen, onClose }) => {
              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Immagini Blog</h4>
              <div className="mb-5">
                 <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white" htmlFor="blog_posts_0_image">Blog Post 1 Image</label>
-                <input className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" id="blog_posts_0_image" type="file" onChange={handleFileChange} />
+                <input className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" id="blog_posts_0_image" type="file" onChange={handleFileChange} accept="image/*" /> {/* Aggiunto accept="image/*" */}
              </div>
               <div className="mb-5">
                 <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white" htmlFor="blog_posts_1_image">Blog Post 2 Image</label>
-                <input className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" id="blog_posts_1_image" type="file" onChange={handleFileChange} />
+                <input className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" id="blog_posts_1_image" type="file" onChange={handleFileChange} accept="image/*" /> {/* Aggiunto accept="image/*" */}
              </div>
-             {/* Aggiungi qui altri campi per gli altri blog_posts */}
+             {/* Aggiungi qui altri campi per gli altri blog_posts seguendo lo schema: blog_posts_N_image */}
           </div>
-          {/* Aggiungi qui campi per altri array con immagini se presenti */}
+          {/* Aggiungi qui campi per altri array con immagini se presenti, seguendo lo schema: nome_array_N_image */}
 
 
           {/* Bottone per salvare che attiva handleSubmit */}
           <Button type="submit">
-            Salva JSON Locale (Immagini non incluse nel download ZIP)
+            Scarica ZIP con JSON e Immagini
           </Button>
         </form>
       </Modal.Body>
