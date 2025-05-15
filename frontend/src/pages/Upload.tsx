@@ -1,126 +1,122 @@
 import { useState } from "react";
 import { Button, Modal } from "flowbite-react";
-import JSZip from 'jszip'; // Importa la libreria JSZip
-import { saveAs } from 'file-saver'; // Importa saveAs da file-saver
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
+// Assicurati che l'import sia corretto per il tuo ambiente se usi content_fetcher
+// import { content_fetcher } from '@google/generative-ai-toolbox/tools';
+
 
 // Definisci la struttura JSON originale come una costante
-// Ho incluso le parti rilevanti dal file data.json che hai fornito
 const originalJsonStructure = {
-	"name": "", // Sarà popolato dal form
-	"presentation": "", // Sarà popolato dal form
-	"header_mono_subtitle": "", // Sarà popolato dal form
-	"print_resume": "", // Sarà popolato dal form
-	"download_my_cv": "", // Sarà popolato dal form
-	"social_links": { // Oggetto nidificato - non popolato dal form semplice
+	"name": "",
+	"presentation": "",
+	"header_mono_subtitle": "",
+	"print_resume": "",
+	"download_my_cv": "",
+	"social_links": {
 		"facebook": "#",
 		"twitter": "#",
 		"instagram": "#",
 		"github": "#"
 	},
-	"my_resume_label": { // Oggetto nidificato - non popolato dal form semplice
+	"my_resume_label": {
 		"my": "My",
 		"resume": "Resume"
 	},
-	"who_am_i": "", // Sarà popolato dal form
-	"about": { // Oggetto nidificato - non popolato dal form semplice
+	"who_am_i": "",
+	"about": {
 		"who": "Mi occupo di Backend per gestsionali aziendali, Sviluppo eCommerce e Integrazione per sistemi Regionali, Ministeroiali ed Europei",
 		"details": "Lavoro a stretto contatto con piccole imprese per farle crescere sul mercato internazionale, tramite gestionali ed eCommerce. Inoltre faccio capo al governo europeo e italiano per permettere la condivisione dati tra i vari Paesi Membri dell'Europa"
 	},
-	"personal_info": { // Oggetto nidificato - non popolato dal form semplice
+	"personal_info": {
 		"birthdate": "23/03/1999",
 		"work_email": "sitiegestionali@gmail.com",
 		"personal_email": "sitiegestionali@gmail.com",
 		"work_number": "+ (39) 3517287336",
 		"instagram": "enricobaldasso"
 	},
-	"skills_label": "", // Sarà popolato dal form
-	"skills": [ // Array di oggetti - non popolato dal form semplice
+	"skills_label": "",
+	"skills": [
 		{
 			"name": "C",
 			"level": "97%"
 		}
-		// ... altri skill (struttura originale)
 	],
-	"languages_label": "", // Sarà popolato dal form
-	"languages": [ // Array di oggetti - non popolato dal form semplice
+	"languages_label": "",
+	"languages": [
 		{
 			"name": "Italiano",
 			"level": "100%"
 		}
-		// ... altre lingue (struttura originale)
 	],
-	"personal_info_label": "", // Sarà popolato dal form
-	"my_expertise_label": "", // Sarà popolato dal form
-	"expertise_list": [], // Array di oggetti - non popolato dal form semplice
-	"education_label": "", // Sarà popolato dal form
-	"education_list": [], // Array di oggetti - non popolato dal form semplice
-	"work_experience_label": "", // Sarà popolato dal form
-	"work_experience_list": [], // Array di oggetti - non popolato dal form semplice
-	"statistics": [], // Array di oggetti - non popolato dal form semplice
-	"my_service_label": "", // Sarà popolato dal form
-	"services": [], // Array di oggetti - non popolato dal form semplice
-	"contact_label": "", // Sarà popolato dal form
-	"pricing_packs_label": "", // Sarà popolato dal form
-	"pricing_packs": [], // Array di oggetti - non popolato dal form semplice
-	"freelancing_label": "", // Sarà popolato dal form
-	"hire_me_label": "", // Sarà popolato dal form
-	"my_portfolio_label": "", // Sarà popolato dal form
-    // Ho incluso solo i primi due elementi per semplificare l'esempio nel form
+	"personal_info_label": "",
+	"my_expertise_label": "",
+	"expertise_list": [],
+	"education_label": "",
+	"education_list": [],
+	"work_experience_label": "",
+	"work_experience_list": [],
+	"statistics": [],
+	"my_service_label": "",
+	"services": [],
+	"contact_label": "",
+	"pricing_packs_label": "",
+	"pricing_packs": [],
+	"freelancing_label": "",
+	"hire_me_label": "",
+	"my_portfolio_label": "",
 	"portfolio_items": [
 		{
-			"title": "Pircher", // Mantiene valore originale
-			"subtitle": "Cliente Gestionale", // Mantiene valore originale
-			"image": "static/assets/imgs/Pircher.jpg", // Sarà popolato dal form con il nome del file
-			"alt": "https://www.pircher.eu/it/" // Mantiene valore originale
+			"title": "Pircher",
+			"subtitle": "Cliente Gestionale",
+			"image": "static/assets/imgs/Pircher.jpg",
+			"alt": "https://www.pircher.eu/it/"
 		},
 		{
-			"title": "Maddalena Spa", // Mantiene valore originale
-			"subtitle": "Cliente Gestionale", // Mantiene valore originale
-			"image": "static/assets/imgs/maddalena02.jpg", // Sarà popolato dal form con il nome del file
-			"alt": "https://www.maddalena.it/" // Mantiene valore originale
+			"title": "Maddalena Spa",
+			"subtitle": "Cliente Gestionale",
+			"image": "static/assets/imgs/maddalena02.jpg",
+			"alt": "https://www.maddalena.it/"
 		}
-        // ... altri portfolio_items originali (la struttura completa sarà copiata)
 	],
-	"latest_label": "", // Sarà popolato dal form
-	"news_label": "", // Sarà popolato dal form
-    // Ho incluso solo i primi due elementi per semplificare l'esempio nel form
+	"latest_label": "",
+	"news_label": "",
 	"blog_posts": [
 		{
-			"title": "Tecnico per Bruxells - Projectathon Europeo", // Mantiene valore originale
-			"author": "Admin", // Mantiene valore originale
-			"likes_html": "", // Mantiene valore originale
-			"comments_html": "", // Mantiene valore originale
-			"image": "static/assets/imgs/EU01.jpg", // Sarà popolato dal form con il nome del file
-			"alt": "https://interoperable-europe.ec.europa.eu/collection/digital-building-blocks/solution/once-only-technical-system-oots", // Mantiene valore originale
-			"description": "Progetti chiave dell'Unione Europea per la semplificazione dell'accesso e dell'uso dei servizi pubblici", // Mantiene valore originale
-			"full_description": "Ho contribuito attivamente...", // Mantiene valore originale
-			"read_more_url": "https://interoperable-europe.ec.europa.eu/collection/digital-building-blocks/solution/once-only-technical-system-oots" // Mantiene valore originale
+			"title": "Tecnico per Bruxells - Projectathon Europeo",
+			"author": "Admin",
+			"likes_html": "",
+			"comments_html": "",
+			"image": "static/assets/imgs/EU01.jpg",
+			"alt": "https://interoperable-europe.ec.europa.eu/collection/digital-building-blocks/solution/once-only-technical-system-oots",
+			"description": "Progetti chiave dell'Unione Europea per la semplificazione dell'accesso e dell'uso dei servizi pubblici",
+			"full_description": "Ho contribuito attivamente...",
+			"read_more_url": "https://interoperable-europe.ec.europa.eu/collection/digital-building-blocks/solution/once-only-technical-system-oots"
 		},
 		{
-			"title": "Certificato IBM in Data Science", // Mantiene valore originale
-			"author": "Admin", // Mantiene valore originale
-			"likes_html": "", // Mantiene valore originale
-			"comments_html": "", // Mantiene valore originale
-			"image": "static/assets/imgs/Certi01.jpg", // Sarà popolato dal form con il nome del file
-			"alt": "https://coursera.org/share/67a906a955411b3c4e85a8be587c848a", // Mantiene valore originale
-			"description": "Corso completo IBM in Data Science", // Mantiene valore originale
-			"full_description": "In questo certificato professionale...", // Mantiene valore originale
-			"read_more_url": "https://coursera.org/share/67a906a955411b3c4e85a8be587c848a" // Mantiene valore originale
+			"title": "Certificato IBM in Data Science",
+			"author": "Admin",
+			"likes_html": "",
+			"comments_html": "",
+			"image": "static/assets/imgs/Certi01.jpg",
+			"alt": "https://coursera.org/share/67a906a955411b3c4e85a8be587c848a",
+			"description": "Corso completo IBM in Data Science",
+			"full_description": "In questo certificato professionale...",
+			"read_more_url": "https://coursera.org/share/67a906a955411b3c4e85a8be587c848a"
 		}
-        // ... altri blog_posts originali (la struttura completa sarà copiata)
 	],
-	"form_title": "", // Sarà popolato dal form
-	"form_placeholder_name": "", // Sarà popolato dal form
-	"form_placeholder_email": "", // Sarà popolato dal form
-	"form_placeholder_message": "", // Sarà popolato dal form
-	"form_button_text": "", // Sarà popolato dal form
-	"contact_title": "", // Sarà popolato dal form
-	"phone_label": "", // Sarà popolato dal form
-	"phone_number": "", // Sarà popolato dal form
-	"address_label": "", // Sarà popolato dal form
-	"address": "", // Sarà popolato dal form
-	"email_label": "", // Sarà popolato dal form
-	"email": "" // Sarà popolato dal form
+	"form_title": "",
+	"form_placeholder_name": "",
+	"form_placeholder_email": "",
+	"form_placeholder_message": "",
+	"form_button_text": "",
+	"contact_title": "",
+	"phone_label": "",
+	"phone_number": "",
+	"address_label": "",
+	"address": "",
+	"email_label": "",
+	"email": ""
 };
 
 
@@ -161,14 +157,18 @@ const UploadModal = ({ isOpen, onClose }) => {
     email: "",
   });
 
-  // Stato per tenere i file selezionati (per le immagini)
-  const [selectedFiles, setSelectedFiles] = useState({
-    portfolio_items_0_image: null, // Esempio per il primo elemento del portfolio
-    portfolio_items_1_image: null, // Esempio per il secondo elemento del portfolio
-    blog_posts_0_image: null, // Esempio per il primo elemento del blog
-    blog_posts_1_image: null, // Esempio per il secondo elemento del blog
-    // Aggiungi qui gli stati per gli altri campi immagine se necessario
+  // Stato per tenere i file immagine selezionati
+  const [selectedImageFiles, setSelectedImageFiles] = useState({
+    portfolio_items_0_image: null,
+    portfolio_items_1_image: null,
+    blog_posts_0_image: null,
+    blog_posts_1_image: null,
+    // Aggiungi qui gli stati per gli altri campi immagine
   });
+
+  // Stato per tenere il file CV selezionato
+   const [selectedCVFile, setSelectedCVFile] = useState(null);
+
 
   // Gestisce i cambiamenti negli input di testo
   const handleTextChange = (e) => {
@@ -179,19 +179,47 @@ const UploadModal = ({ isOpen, onClose }) => {
     }));
   };
 
-  // Gestisce i cambiamenti negli input di tipo file
-  const handleFileChange = (e) => {
+  // Gestisce i cambiamenti negli input di tipo file immagine
+  const handleImageFileChange = (e) => {
     const { id, files } = e.target;
-    setSelectedFiles((prevSelectedFiles) => ({
+    setSelectedImageFiles((prevSelectedFiles) => ({
       ...prevSelectedFiles,
       [id]: files[0], // Salva solo il primo file selezionato
     }));
   };
 
+  // Gestisce il cambiamento nell'input di tipo file per il CV
+  const handleCVFileChange = async (e) => {
+      const file = e.target.files ? e.target.files[0] : null;
+      setSelectedCVFile(file);
+
+      // *** NOTA: Questa parte mostrerà il testo grezzo nella console. ***
+      // *** L'estrazione strutturata dei dati per popolare il form ***
+      // *** richiede logica di parsing avanzata non disponibile qui. ***
+       if (file) {
+           console.log("File CV selezionato:", file.name);
+           // Esempio di come leggere il contenuto grezzo del file (richiederebbe content_fetcher con ID file)
+           // Per ora, simuliamo solo la selezione del file.
+            try {
+                 // Se il file è stato caricato tramite l'interfaccia con il tool,
+                 // potresti usare content_fetcher.fetch con l'ID del file.
+                 // Poiché stiamo gestendo un input file standard, la lettura del contenuto
+                 // richiederebbe FileReader o un backend per l'elaborazione PDF.
+                console.log("Il parsing automatico del CV non è supportato per i formati di documenti.");
+
+            } catch (error) {
+                console.error("Errore durante la lettura del file CV:", error);
+            }
+       }
+  };
+
 
   // Gestisce l'invio del form e crea l'archivio ZIP
-  const handleSubmit = async (e) => { // Funzione resa async per gestire le operazioni sui file
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const zip = new JSZip(); // Crea una nuova istanza ZIP
+    const imgsFolder = zip.folder("imgs"); // Crea la cartella 'imgs' nello ZIP
 
     // Crea una copia profonda della struttura JSON originale
     const dataToSave = JSON.parse(JSON.stringify(originalJsonStructure));
@@ -203,69 +231,47 @@ const UploadModal = ({ isOpen, onClose }) => {
       }
     }
 
-    // Aggiorna i percorsi delle immagini nel JSON con i nomi dei file selezionati
-    // e prepara i file per l'aggiunta allo ZIP
-
-    const zip = new JSZip(); // Crea una nuova istanza ZIP
-    const imgsFolder = zip.folder("imgs"); // Crea la cartella 'imgs' nello ZIP
-
-    // Array per tenere traccia delle promesse di lettura dei file
-    const fileReadPromises = [];
-
+    // Aggiorna i percorsi delle immagini nel JSON e aggiungi i file immagine allo ZIP
     // Per portfolio_items (esempio per i primi 2)
     if (dataToSave.portfolio_items && dataToSave.portfolio_items.length > 0) {
-        if (selectedFiles.portfolio_items_0_image && dataToSave.portfolio_items[0]) {
-            const file = selectedFiles.portfolio_items_0_image;
+        if (selectedImageFiles.portfolio_items_0_image && dataToSave.portfolio_items[0]) {
+            const file = selectedImageFiles.portfolio_items_0_image;
             dataToSave.portfolio_items[0].image = `imgs/${file.name}`;
-            // Aggiungi il file allo ZIP - jszip gestisce le Promise
             imgsFolder.file(file.name, file);
         }
-         if (selectedFiles.portfolio_items_1_image && dataToSave.portfolio_items.length > 1 && dataToSave.portfolio_items[1]) {
-            const file = selectedFiles.portfolio_items_1_image;
+         if (selectedImageFiles.portfolio_items_1_image && dataToSave.portfolio_items.length > 1 && dataToSave.portfolio_items[1]) {
+            const file = selectedImageFiles.portfolio_items_1_image;
             dataToSave.portfolio_items[1].image = `imgs/${file.name}`;
-             // Aggiungi il file allo ZIP
             imgsFolder.file(file.name, file);
         }
         // Aggiungi logica simile per gli altri elementi di portfolio_items
-        // Esempio generalizzato (richiederebbe un'iterazione dinamica sugli elementi e input corrispondenti)
-        // for (let i = 0; i < dataToSave.portfolio_items.length; i++) {
-        //     const file = selectedFiles[`portfolio_items_${i}_image`];
-        //     if (file && dataToSave.portfolio_items[i]) {
-        //          dataToSave.portfolio_items[i].image = `imgs/${file.name}`;
-        //          imgsFolder.file(file.name, file);
-        //     }
-        // }
     }
 
      // Per blog_posts (esempio per i primi 2)
      if (dataToSave.blog_posts && dataToSave.blog_posts.length > 0) {
-        if (selectedFiles.blog_posts_0_image && dataToSave.blog_posts[0]) {
-             const file = selectedFiles.blog_posts_0_image;
+        if (selectedImageFiles.blog_posts_0_image && dataToSave.blog_posts[0]) {
+             const file = selectedImageFiles.blog_posts_0_image;
             dataToSave.blog_posts[0].image = `imgs/${file.name}`;
-             // Aggiungi il file allo ZIP
             imgsFolder.file(file.name, file);
         }
-        if (selectedFiles.blog_posts_1_image && dataToSave.blog_posts.length > 1 && dataToSave.blog_posts[1]) {
-             const file = selectedFiles.blog_posts_1_image;
+        if (selectedImageFiles.blog_posts_1_image && dataToSave.blog_posts.length > 1 && dataToSave.blog_posts[1]) {
+             const file = selectedImageFiles.blog_posts_1_image;
             dataToSave.blog_posts[1].image = `imgs/${file.name}`;
-             // Aggiungi il file allo ZIP
             imgsFolder.file(file.name, file);
         }
         // Aggiungi logica simile per gli altri elementi di blog_posts
-        // Esempio generalizzato
-        // for (let i = 0; i < dataToSave.blog_posts.length; i++) {
-        //     const file = selectedFiles[`blog_posts_${i}_image`];
-        //     if (file && dataToSave.blog_posts[i]) {
-        //          dataToSave.blog_posts[i].image = `imgs/${file.name}`;
-        //          imgsFolder.file(file.name, file);
-        //     }
-        // }
      }
     // Aggiungi logica simile per altri array con campi immagine
 
 
+    // Aggiungi il file CV allo ZIP se è stato selezionato
+    if (selectedCVFile) {
+        zip.file(selectedCVFile.name, selectedCVFile);
+    }
+
+
     // Converti l'oggetto JavaScript risultante in una stringa JSON formattata
-    const jsonString = JSON.stringify(dataToSave, null, 2); // null, 2 per formattazione leggibile
+    const jsonString = JSON.stringify(dataToSave, null, 2);
 
     // Aggiungi il file JSON all'archivio ZIP
     zip.file("dati_compilati.json", jsonString);
@@ -282,9 +288,6 @@ const UploadModal = ({ isOpen, onClose }) => {
         alert("Si è verificato un errore durante la creazione del file ZIP.");
     }
 
-
-    // Chiudi il modal dopo aver avviato il download (opzionale)
-    // Considera se vuoi chiudere il modal subito o aspettare la conferma del download
     onClose();
   };
 
@@ -297,7 +300,24 @@ const UploadModal = ({ isOpen, onClose }) => {
       </Modal.Header>
       <Modal.Body>
         <form className="max-w-sm mx-auto" onSubmit={handleSubmit}>
-           {/* Campi di testo esistenti - mantengono handleTextChange */}
+
+           {/* Campo per l'upload del CV - Modificato l'attributo accept */}
+            <div className="mb-5 border-b pb-4">
+                <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white" htmlFor="cv_file">Carica CV (PDF, Word, TXT, RTF)</label>
+                <input
+                    className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400"
+                    id="cv_file"
+                    type="file"
+                    onChange={handleCVFileChange}
+                    accept=".pdf,.doc,.docx,.txt,.rtf" // Accetta più formati
+                />
+                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-300">
+                    Carica il tuo CV. L'estrazione automatica dei dati per popolare i campi del form non è supportata; dovrai copiare i dati manualmente.
+                </p>
+            </div>
+
+
+           {/* Campi di testo esistenti - usano handleTextChange */}
            <div className="mb-5">
             <label htmlFor="name" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Name</label>
             <input type="text" id="name" className="block w-full p-4 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-base focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value={formData.name} onChange={handleTextChange} />
@@ -428,30 +448,30 @@ const UploadModal = ({ isOpen, onClose }) => {
           </div>
 
 
-          {/* Campi per l'upload delle immagini - Esempio per i primi 2 di portfolio_items */}
-          <div className="mb-5 mt-10 border-t pt-4"> {/* Separatore visivo */}
+          {/* Campi per l'upload delle immagini - usano handleImageFileChange */}
+          <div className="mb-5 mt-10 border-t pt-4">
              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Immagini Portfolio</h4>
              <div className="mb-5">
                 <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white" htmlFor="portfolio_items_0_image">Portfolio Item 1 Image</label>
-                <input className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" id="portfolio_items_0_image" type="file" onChange={handleFileChange} accept="image/*" /> {/* Aggiunto accept="image/*" */}
+                <input className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" id="portfolio_items_0_image" type="file" onChange={handleImageFileChange} accept="image/*" />
              </div>
               <div className="mb-5">
                 <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white" htmlFor="portfolio_items_1_image">Portfolio Item 2 Image</label>
-                <input className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" id="portfolio_items_1_image" type="file" onChange={handleFileChange} accept="image/*" /> {/* Aggiunto accept="image/*" */}
+                <input className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" id="portfolio_items_1_image" type="file" onChange={handleImageFileChange} accept="image/*" />
              </div>
              {/* Aggiungi qui altri campi per gli altri portfolio_items seguendo lo schema: portfolio_items_N_image */}
           </div>
 
-           {/* Campi per l'upload delle immagini - Esempio per i primi 2 di blog_posts */}
-          <div className="mb-5 mt-10 border-t pt-4"> {/* Separatore visivo */}
+           {/* Campi per l'upload delle immagini - usano handleImageFileChange */}
+          <div className="mb-5 mt-10 border-t pt-4">
              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Immagini Blog</h4>
              <div className="mb-5">
                 <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white" htmlFor="blog_posts_0_image">Blog Post 1 Image</label>
-                <input className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" id="blog_posts_0_image" type="file" onChange={handleFileChange} accept="image/*" /> {/* Aggiunto accept="image/*" */}
+                <input className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" id="blog_posts_0_image" type="file" onChange={handleImageFileChange} accept="image/*" />
              </div>
               <div className="mb-5">
                 <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white" htmlFor="blog_posts_1_image">Blog Post 2 Image</label>
-                <input className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" id="blog_posts_1_image" type="file" onChange={handleFileChange} accept="image/*" /> {/* Aggiunto accept="image/*" */}
+                <input className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" id="blog_posts_1_image" type="file" onChange={handleImageFileChange} accept="image/*" />
              </div>
              {/* Aggiungi qui altri campi per gli altri blog_posts seguendo lo schema: blog_posts_N_image */}
           </div>
@@ -460,7 +480,7 @@ const UploadModal = ({ isOpen, onClose }) => {
 
           {/* Bottone per salvare che attiva handleSubmit */}
           <Button type="submit">
-            Scarica ZIP con JSON e Immagini
+            Scarica ZIP con JSON, Immagini e CV
           </Button>
         </form>
       </Modal.Body>
