@@ -1,0 +1,248 @@
+{
+	"name": "Professionista Digitale",
+	"presentation": "Ciao, Sono un",
+	"header_mono_subtitle": "Architetto Software | Cloud Specialist",
+	"print_resume": "Stampa Curriculum",
+	"download_my_cv": "Scarica il mio CV",
+	"social_links": {
+		"facebook": "#",
+		"twitter": "#",
+		"instagram": "#",
+		"github": "#"
+	},
+	"my_resume_label": {
+		"my": "Il mio",
+		"resume": "Curriculum"
+	},
+	"who_am_i": "Chi Sono?",
+	"about": {
+		"who": "Mi occupo di progettazione e implementazione di soluzioni software scalabili e architetture cloud.",
+		"details": "Collaboro con aziende per guidare la trasformazione digitale, ottimizzare i processi IT e adottare tecnologie innovative per migliorare l'efficienza e la sicurezza."
+	},
+	"personal_info": {
+		"birthdate": "DD/MM/YYYY",
+		"work_email": "info.digitale@emailgenerica.com",
+		"personal_email": "contatto.digitale@emailgenerica.com",
+		"work_number": "+ (XX) XXXX XXXX",
+		"instagram": "digital_pro"
+	},
+	"skills_label": "Competenze",
+	"skills": [
+		{
+			"name": "Cloud Computing (AWS, Azure, GCP)",
+			"level": "95%"
+		},
+		{
+			"name": "Architetture Microservizi",
+			"level": "90%"
+		},
+		{
+			"name": "DevOps & CI/CD",
+			"level": "88%"
+		},
+		{
+			"name": "Programmazione Backend (Java, Python, Node.js)",
+			"level": "92%"
+		},
+		{
+			"name": "Database (SQL, NoSQL)",
+			"level": "85%"
+		}
+	],
+	"languages_label": "Lingue",
+	"languages": [
+		{
+			"name": "Italiano",
+			"level": "100%"
+		},
+		{
+			"name": "Inglese Tecnico",
+			"level": "90%"
+		}
+	],
+	"personal_info_label": "Info Personali",
+	"my_expertise_label": "La mia Expertise",
+	"expertise_list": [
+		{
+			"name": "Progettazione Architetture Cloud",
+			"icon_class": "ti-cloud",
+			"subtitle": "Definizione e implementazione di architetture scalabili e resilienti su piattaforme cloud pubbliche e private."
+		},
+		{
+			"name": "Sviluppo Software Enterprise",
+			"icon_class": "ti-settings",
+			"subtitle": "Realizzazione di soluzioni software complesse per le esigenze specifiche delle grandi organizzazioni."
+		},
+		{
+			"name": "Consulenza Tecnologica",
+			"icon_class": "ti-light-bulb",
+			"subtitle": "Supporto alle aziende nella scelta e nell'adozione delle migliori tecnologie per raggiungere gli obiettivi di business."
+		}
+	],
+	"education_label": "Formazione",
+	"education_list": [
+		{
+			"period": "YYYY - YYYY",
+			"title": "Laurea Magistrale in Ingegneria Informatica",
+			"subtitle": "Approfondimento su sistemi distribuiti, sicurezza informatica e intelligenza artificiale."
+		},
+		{
+			"period": "YYYY - YYYY",
+			"title": "Certificazione Professional Cloud Architect",
+			"subtitle": "Certificazione riconosciuta a livello internazionale sulle competenze di progettazione in ambiente cloud."
+		}
+	],
+	"work_experience_label": "Esperienze Lavorative",
+	"work_experience_list": [
+		{
+			"period": "YYYY - Presente",
+			"title": "Architetto Cloud",
+			"subtitle": "Progettazione e supervisione dell'implementazione di infrastrutture e applicazioni su piattaforme cloud."
+		},
+		{
+			"period": "YYYY - YYYY",
+			"title": "Lead Developer Backend",
+			"subtitle": "Coordinamento team di sviluppo e realizzazione di servizi backend ad alte prestazioni."
+		}
+	],
+	"statistics": [
+		{
+			"icon": "ti-alarm-clock",
+			"count": 8000,
+			"label": "Ore Lavorate",
+			"icon_class": "icon-xl"
+		},
+		{
+			"icon": "ti-layers-alt",
+			"count": 100,
+			"label": "Progetti Completati",
+			"icon_class": "icon-xl"
+		},
+		{
+			"icon": "ti-face-smile",
+			"count": 70,
+			"label": "Clienti Soddisfatti",
+			"icon_class": "icon-xl"
+		},
+		{
+			"icon": "ti-heart-broken",
+			"count": "50k",
+			"label": "Bug Risolti",
+			"icon_class": "icon-xl"
+		}
+	],
+	"my_service_label": "I miei Servizi",
+	"services": [
+		{
+			"icon": "ti-world",
+			"icon_class": "text-danger",
+			"title": "Consulenza Cloud",
+			"description": "Supporto nella migrazione e ottimizzazione di infrastrutture e applicazioni verso il cloud."
+		},
+		{
+			"icon": "ti-settings",
+			"icon_class": "text-danger",
+			"title": "Sviluppo Applicazioni Web",
+			"description": "Realizzazione di applicazioni web robuste, scalabili e sicure utilizzando le ultime tecnologie."
+		},
+		{
+			"icon": "ti-lock",
+			"icon_class": "text-danger",
+			"title": "Sicurezza Informatica",
+			"description": "Analisi delle vulnerabilità e implementazione di misure di sicurezza per proteggere i sistemi e i dati."
+		}
+	],
+
+	"contact_label": "Parliamone!",
+	"pricing_packs_label": "Packs<span> Pricing",
+	"pricing_packs": [
+		{
+			"title": "Starter IT",
+			"cost": "Prezzo su Richiesta",
+			"project": "1-2",
+			"storage": "Variabile",
+			"domain": "1",
+			"users": "Limitato",
+			"special_class": ""
+		},
+		{
+			"title": "Professional IT",
+			"cost": "Prezzo su Richiesta",
+			"project": "3-5",
+			"storage": "Variabile",
+			"domain": "Illimitato",
+			"users": "Variabile",
+			"special_class": "price-card-requried"
+		},
+		{
+			"title": "Enterprise IT",
+			"cost": "Preventivo Personalizzato",
+			"project": "Complesso",
+			"storage": "Ampio",
+			"domain": "Multiplo",
+			"users": "Illimitato",
+			"special_class": ""
+		}
+	],
+	"freelancing_label": "Sono disponibile per progetti freelance nel campo del digitale e IT.",
+	"hire_me_label": "Contattami",
+	"my_portfolio_label": "Il mio</span> Portfolio",
+	"portfolio_items": [
+		{
+			"title": "Progetto Cloud Migration",
+			"subtitle": "Settore Finanziario",
+			"image": "static/assets/imgs/generic_it_1.jpg",
+			"alt": "#"
+		},
+		{
+			"title": "Sviluppo Piattaforma E-learning",
+			"subtitle": "Settore Istruzione",
+			"image": "static/assets/imgs/generic_it_2.jpg",
+			"alt": "#"
+		},
+		{
+			"title": "Implementazione Soluzione Cybersecurity",
+			"subtitle": "Settore Sanitario",
+			"image": "static/assets/imgs/generic_it_3.jpg",
+			"alt": "#"
+		}
+	],
+	"latest_label": " Ultime",
+	"news_label": " Notizie",
+	"blog_posts": [
+		{
+			"title": "L'impatto del 5G sulle architetture cloud",
+			"author": "Admin",
+			"image": "static/assets/imgs/blog_it_1.jpg",
+			"likes_html": "",
+			"comments_html": "",
+			"alt": "#",
+			"description": "Analisi delle nuove opportunità e sfide per gli architetti cloud con l'avvento del 5G.",
+			"full_description": "Il 5G promette latenza ridotta e maggiore larghezza di banda, aprendo la strada a nuove applicazioni e servizi. Questo richiede un ripensamento delle architetture cloud esistenti, con un focus sul computing di edge e sulla distribuzione dei dati.",
+			"read_more_url": "#"
+		},
+		{
+			"title": "Guida alla scelta del Database giusto per la tua applicazione",
+			"author": "Admin",
+			"likes_html": "",
+			"comments_html": "",
+			"image": "static/assets/imgs/blog_it_2.jpg",
+			"alt": "#",
+			"description": "Un confronto tra database relazionali e NoSQL e consigli pratici.",
+			"full_description": "La scelta del database è cruciale per le performance e la scalabilità di un'applicazione. Esploreremo le differenze tra i vari tipi di database e quando è opportuno utilizzare l'uno o l'altro, considerando fattori come la struttura dei dati, il volume e la velocità di accesso.",
+			"read_more_url": "#"
+		}
+	],
+	"form_title": "Invia un messaggio",
+	"form_placeholder_name": "Nome *",
+	"form_placeholder_email": "Email *",
+	"form_placeholder_message": "Messaggio *",
+	"form_button_text": "Invia Messaggio",
+	"contact_title": "Mettiti in contatto",
+	"phone_label": "Telefono :",
+	"phone_number": "+ (XX) XXXX XXXX",
+	"address_label": "Indirizzo :",
+	"address": "Via Generica, 123, Città, Paese.",
+	"email_label": "Email :",
+	"email": "contatto.digitale@emailgenerica.com"
+}

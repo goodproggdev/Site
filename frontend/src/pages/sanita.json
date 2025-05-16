@@ -1,0 +1,248 @@
+{
+	"name": "Professionista Sanitario",
+	"presentation": "Benvenuti, Sono un",
+	"header_mono_subtitle": "Medico Generale | Infermiere Specializzato",
+	"print_resume": "Stampa Curriculum",
+	"download_my_cv": "Scarica il mio CV",
+	"social_links": {
+		"facebook": "#",
+		"twitter": "#",
+		"instagram": "#",
+		"github": "#"
+	},
+	"my_resume_label": {
+		"my": "Il mio",
+		"resume": "Curriculum"
+	},
+	"who_am_i": "Chi Sono?",
+	"about": {
+		"who": "Mi dedico alla cura e al benessere dei pazienti, offrendo assistenza medica e supporto personalizzato.",
+		"details": "Lavoro in strutture sanitarie per fornire diagnosi, trattamenti e supporto continuo, promuovendo la salute e prevenendo le malattie."
+	},
+	"personal_info": {
+		"birthdate": "DD/MM/YYYY",
+		"work_email": "info.sanita@emailgenerica.com",
+		"personal_email": "contatto.sanita@emailgenerica.com",
+		"work_number": "+ (XX) XXXX XXXX",
+		"instagram": "professionista_sanitario"
+	},
+	"skills_label": "Competenze",
+	"skills": [
+		{
+			"name": "Primo Soccorso",
+			"level": "98%"
+		},
+		{
+			"name": "Assistenza Pazienti",
+			"level": "95%"
+		},
+		{
+			"name": "Procedure Mediche/Infermieristiche",
+			"level": "93%"
+		},
+		{
+			"name": "Comunicazione Empatica",
+			"level": "96%"
+		},
+		{
+			"name": "Gestione Emergenze",
+			"level": "97%"
+		}
+	],
+	"languages_label": "Lingue",
+	"languages": [
+		{
+			"name": "Italiano",
+			"level": "100%"
+		},
+		{
+			"name": "Inglese Medico",
+			"level": "85%"
+		}
+	],
+	"personal_info_label": "Info Personali",
+	"my_expertise_label": "La mia Expertise",
+	"expertise_list": [
+		{
+			"name": "Assistenza Clinica Diretta",
+			"icon_class": "ti-heart",
+			"subtitle": "Fornire cure mediche e assistenza diretta ai pazienti in vari contesti clinici."
+		},
+		{
+			"name": "Educazione Sanitaria",
+			"icon_class": "ti-book",
+			"subtitle": "Informare e formare pazienti e comunità su temi legati alla salute e alla prevenzione."
+		},
+		{
+			"name": "Gestione del Paziente Cronico",
+			"icon_class": "ti-pulse",
+			"subtitle": "Supportare i pazienti con patologie croniche nella gestione quotidiana e nel miglioramento della qualità di vita."
+		}
+	],
+	"education_label": "Formazione",
+	"education_list": [
+		{
+			"period": "YYYY - YYYY",
+			"title": "Laurea in Medicina e Chirurgia / Scienze Infermieristiche",
+			"subtitle": "Formazione accademica completa con tirocinio clinico."
+		},
+		{
+			"period": "YYYY - YYYY",
+			"title": "Specializzazione in [Area Specifica, es. Medicina d'Urgenza]",
+			"subtitle": "Percorso di specializzazione post-laurea in un settore specifico della medicina/assistenza."
+		}
+	],
+	"work_experience_label": "Esperienze Lavorative",
+	"work_experience_list": [
+		{
+			"period": "YYYY - Presente",
+			"title": "Medico/Infermiere presso [Nome Struttura Sanitaria]",
+			"subtitle": "Attività clinica quotidiana, diagnosi, trattamenti e assistenza ai pazienti."
+		},
+		{
+			"period": "YYYY - YYYY",
+			"title": "Esperienza in Pronto Soccorso",
+			"subtitle": "Gestione di emergenze mediche e interventi rapidi in situazioni critiche."
+		}
+	],
+	"statistics": [
+		{
+			"icon": "ti-alarm-clock",
+			"count": 10000,
+			"label": "Ore di Servizio",
+			"icon_class": "icon-xl"
+		},
+		{
+			"icon": "ti-layers-alt",
+			"count": 500,
+			"label": "Pazienti Assistiti",
+			"icon_class": "icon-xl"
+		},
+		{
+			"icon": "ti-face-smile",
+			"count": 400,
+			"label": "Vite Migliorate",
+			"icon_class": "icon-xl"
+		},
+		{
+			"icon": "ti-heart-broken",
+			"count": "100+",
+			"label": "Emergenze Gestite",
+			"icon_class": "icon-xl"
+		}
+	],
+	"my_service_label": "I miei Servizi",
+	"services": [
+		{
+			"icon": "ti-stethoscope",
+			"icon_class": "text-danger",
+			"title": "Visite Mediche/Infermieristiche",
+			"description": "Consultazioni per diagnosi, trattamenti e follow-up."
+		},
+		{
+			"icon": "ti- syringe",
+			"icon_class": "text-danger",
+			"title": "Procedure Assistenziali",
+			"description": "Esecuzione di medicazioni, iniezioni, prelievi e altre procedure necessarie."
+		},
+		{
+			"icon": "ti-comments",
+			"icon_class": "text-danger",
+			"title": "Consulenza Sanitaria",
+			"description": "Orientamento su stili di vita sani, prevenzione e gestione delle patologie."
+		}
+	],
+
+	"contact_label": "Parliamone!",
+	"pricing_packs_label": "Packs<span> Pricing",
+	"pricing_packs": [
+		{
+			"title": "Visita Base",
+			"cost": "Costo Variabile",
+			"project": "1 Consultazione",
+			"storage": "-",
+			"domain": "-",
+			"users": "1 Paziente",
+			"special_class": ""
+		},
+		{
+			"title": "Assistenza Domiciliare",
+			"cost": "Costo Variabile",
+			"project": "Sessioni Multiple",
+			"storage": "Scheda Paziente",
+			"domain": "-",
+			"users": "1 Paziente",
+			"special_class": "price-card-requried"
+		},
+		{
+			"title": "Consulenza Specialistica",
+			"cost": "Preventivo Personalizzato",
+			"project": "Piano di Cura",
+			"storage": "Referti",
+			"domain": "-",
+			"users": "1 Paziente",
+			"special_class": ""
+		}
+	],
+	"freelancing_label": "Sono disponibile per servizi sanitari e assistenziali freelance.",
+	"hire_me_label": "Contattami",
+	"my_portfolio_label": "Il mio</span> Portfolio",
+	"portfolio_items": [
+		{
+			"title": "Intervento in Emergenza",
+			"subtitle": "Ospedale Civile",
+			"image": "static/assets/imgs/generic_health_1.jpg",
+			"alt": "#"
+		},
+		{
+			"title": "Programma di Prevenzione Diabete",
+			"subtitle": "ASL Locale",
+			"image": "static/assets/imgs/generic_health_2.jpg",
+			"alt": "#"
+		},
+		{
+			"title": "Assistenza Riabilitativa Post-Operatoria",
+			"subtitle": "Clinica Privata",
+			"image": "static/assets/imgs/generic_health_3.jpg",
+			"alt": "#"
+		}
+	],
+	"latest_label": " Ultime",
+	"news_label": " Notizie",
+	"blog_posts": [
+		{
+			"title": "L'importanza della vaccinazione antinfluenzale",
+			"author": "Admin",
+			"image": "static/assets/imgs/blog_health_1.jpg",
+			"likes_html": "",
+			"comments_html": "",
+			"alt": "#",
+			"description": "Informazioni sulla campagna vaccinale e i benefici della protezione.",
+			"full_description": "La vaccinazione antinfluenzale è uno strumento fondamentale per proteggere se stessi e gli altri, in particolare le categorie più fragili, dalle complicanze dell'influenza stagionale. Approfondiremo i benefici, le modalità di somministrazione e le raccomandazioni.",
+			"read_more_url": "#"
+		},
+		{
+			"title": "Gestire lo stress nella vita quotidiana",
+			"author": "Admin",
+			"likes_html": "",
+			"comments_html": "",
+			"image": "static/assets/imgs/blog_health_2.jpg",
+			"alt": "#",
+			"description": "Consigli pratici per affrontare e ridurre i livelli di stress.",
+			"full_description": "Lo stress può avere un impatto significativo sulla salute fisica e mentale. Esploreremo tecniche di rilassamento, strategie di coping e l'importanza dell'attività fisica e del sonno per una corretta gestione dello stress.",
+			"read_more_url": "#"
+		}
+	],
+	"form_title": "Invia un messaggio",
+	"form_placeholder_name": "Nome *",
+	"form_placeholder_email": "Email *",
+	"form_placeholder_message": "Messaggio *",
+	"form_button_text": "Invia Messaggio",
+	"contact_title": "Mettiti in contatto",
+	"phone_label": "Telefono :",
+	"phone_number": "+ (XX) XXXX XXXX",
+	"address_label": "Indirizzo :",
+	"address": "Via della Salute, 789, Città, Paese.",
+	"email_label": "Email :",
+	"email": "contatto.sanita@emailgenerica.com"
+}
