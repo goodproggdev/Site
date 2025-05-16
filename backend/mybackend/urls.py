@@ -37,7 +37,8 @@ urlpatterns = [
     path('auth/', include('dj_rest_auth.urls')),
     path('auth/registration/', include('dj_rest_auth.registration.urls')),
     path('api/analyze-cv/', analyze_cv, name='analyze-cv'),
-    path('api/contact/', contact_view, name='contact')
+    path('api/contact/', contact_view, name='contact'),
+    path('api/', include('api.urls'))
 
  #   re_path(r'^.*$', include_subdomain('test', 'test_app.urls')),
  #   re_path(r'^.*$', include_subdomain(None, 'main_app.urls')),
