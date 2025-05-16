@@ -1,83 +1,81 @@
-import { useState, useEffect } from "react"; // Importa useEffect
-import { Button, Modal, Spinner } from "flowbite-react"; // Importa Spinner
+import { useState, useEffect } from "react";
+import { Button, Modal, Spinner } from "flowbite-react";
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 
-// Importa il JSON di esempio. Assicurati che il percorso sia corretto
-import exampleData from './data.json';
+// Importa i JSON di default per ogni categoria
+// Assicurati che i percorsi siano corretti nel tuo progetto
+import defaultDataLogistica from './logistica.json';
+import defaultDataAmministra from './amministra.json';
+import defaultDataCommerciale from './commerciale.json';
+import defaultDataSanita from './sanita.json';
+import defaultDataTecnico from './Tecnico.json';
+import defaultDataIT from './IT.json';
 
-// Definisci la struttura JSON originale come base (rimane necessaria per inizializzare lo stato)
-// Assicurati che questa struttura corrisponda a quella nel backend Python
+// Mappa le chiavi delle categorie ai dati JSON importati e ai nomi dei file di output
+const categoryDataMap = {
+    'digitale-it': { data: defaultDataIT, fileName: 'IT.json' },
+    'ingegneri-tecnici': { data: defaultDataTecnico, fileName: 'Tecnico.json' },
+    'sanitari-assistenziali': { data: defaultDataSanita, fileName: 'sanita.json' },
+    'commerciale-vendita': { data: defaultDataCommerciale, fileName: 'commerciale.json' },
+    'amministrative-finanziarie': { data: defaultDataAmministra, fileName: 'amministra.json' },
+    'logistica': { data: defaultDataLogistica, fileName: 'logistica.json' },
+};
+
+// Definisci una struttura JSON iniziale vuota come base per lo stato
+// Usiamo la struttura del primo JSON come riferimento, ma con campi vuoti
 const initialJsonStructure = {
-	"name": "",
-	"presentation": "",
-	"header_mono_subtitle": "",
-	"print_resume": "",
-	"download_my_cv": "",
-	"social_links": {
-		"facebook": "#",
-		"twitter": "#",
-		"instagram": "#",
-		"github": "#"
-	},
-	"my_resume_label": {
-		"my": "My",
-		"resume": "Resume"
-	},
-	"who_am_i": "",
-	"about": {
-		"who": "",
-		"details": ""
-	},
-	"personal_info": {
-		"birthdate": "",
-		"work_email": "",
-		"personal_email": "",
-		"work_number": "",
-		"instagram": ""
-	},
-	"skills_label": "",
-	"skills": [],
-	"languages_label": "",
-	"languages": [],
-	"personal_info_label": "",
-	"my_expertise_label": "",
-	"expertise_list": [],
-	"education_label": "",
-	"education_list": [],
-	"work_experience_label": "",
-	"work_experience_list": [],
-	"statistics": [],
-	"my_service_label": "",
-	"services": [],
-	"contact_label": "",
-	"pricing_packs_label": "",
-	"pricing_packs": [],
-	"freelancing_label": "",
-	"hire_me_label": "",
-	"my_portfolio_label": "",
-	"portfolio_items": [],
-	"latest_label": "",
-	"news_label": "",
-	"blog_posts": [],
-	"form_title": "",
-	"form_placeholder_name": "",
-	"form_placeholder_email": "",
-	"form_placeholder_message": "",
-	"form_button_text": "",
-	"contact_title": "",
-	"phone_label": "",
-	"phone_number": "",
-	"address_label": "",
-	"address": "",
-	"email_label": "",
-	"email": ""
+    "name": "",
+    "presentation": "",
+    "header_mono_subtitle": "",
+    "print_resume": "",
+    "download_my_cv": "",
+    "social_links": { "facebook": "", "twitter": "", "instagram": "", "github": "" },
+    "my_resume_label": { "my": "", "resume": "" },
+    "who_am_i": "",
+    "about": { "who": "", "details": "" },
+    "personal_info": { "birthdate": "", "work_email": "", "personal_email": "", "work_number": "", "instagram": "" },
+    "skills_label": "",
+    "skills": [],
+    "languages_label": "",
+    "languages": [],
+    "personal_info_label": "",
+    "my_expertise_label": "",
+    "expertise_list": [],
+    "education_label": "",
+    "education_list": [],
+    "work_experience_label": "",
+    "work_experience_list": [],
+    "statistics": [],
+    "my_service_label": "",
+    "services": [],
+    "contact_label": "",
+    "pricing_packs_label": "",
+    "pricing_packs": [],
+    "freelancing_label": "",
+    "hire_me_label": "",
+    "my_portfolio_label": "",
+    "portfolio_items": [],
+    "latest_label": "",
+    "news_label": "",
+    "blog_posts": [],
+    "form_title": "",
+    "form_placeholder_name": "",
+    "form_placeholder_email": "",
+    "form_placeholder_message": "",
+    "form_button_text": "",
+    "contact_title": "",
+    "phone_label": "",
+    "phone_number": "",
+    "address_label": "",
+    "address": "",
+    "email_label": "",
+    "email": ""
 };
 
 
 const UploadModal = ({ isOpen, onClose }) => {
   // Stato principale che riflette la struttura del JSON
-  // Inizializzalo con la struttura base vuota
   const [formData, setFormData] = useState(initialJsonStructure);
 
   // Stato per tenere i file immagine selezionati, indicizzati per array e indice
@@ -91,29 +89,31 @@ const UploadModal = ({ isOpen, onClose }) => {
    // Stato per gestire eventuali errori di parsing
     const [parsingError, setParsingError] = useState(null);
 
-    // Stato per memorizzare il JSON di esempio caricato
-    const [exampleJson, setExampleJson] = useState(null);
+    // Stato per memorizzare la categoria selezionata
+    // Inizializza con la prima categoria di default ('digitale-it')
+    const [selectedCategory, setSelectedCategory] = useState('digitale-it');
 
-
-    // Carica il JSON di esempio all'apertura del modal
+    // Utilizza un useEffect per caricare i dati di default della categoria selezionata
+    // all'apertura del modal e quando la categoria selezionata cambia.
     useEffect(() => {
         if (isOpen) {
-            // Assumi che exampleData sia già importato correttamente
-             setExampleJson(exampleData);
-             console.log("JSON di esempio caricato:", exampleData);
+             const defaultData = categoryDataMap[selectedCategory]?.data || initialJsonStructure;
+             // Carica i dati di default nella form, sovrascrivendo i dati correnti
+             setFormData(defaultData);
+             console.log(`Caricato JSON di default per categoria: ${selectedCategory}`);
         }
-    }, [isOpen]);
+    }, [isOpen, selectedCategory]); // Dipende dall'apertura del modal e dalla categoria selezionata
 
 
     // Reset dello stato quando il modal viene chiuso
     useEffect(() => {
         if (!isOpen) {
             setFormData(initialJsonStructure); // Resetta la form ai valori iniziali
+            setSelectedCategory('digitale-it'); // Resetta la categoria selezionata al default
             setSelectedImageFiles({}); // Resetta i file immagine
             setSelectedCVFile(null); // Resetta il file CV
             setIsParsing(false); // Resetta lo stato di parsing
             setParsingError(null); // Resetta l'errore
-            setExampleJson(null); // Resetta il JSON di esempio
         }
     }, [isOpen]);
 
@@ -123,39 +123,37 @@ const UploadModal = ({ isOpen, onClose }) => {
     const { id, value } = e.target;
      // Gestisce anche i campi nidificati
     const keys = id.split('.'); // Suddivide l'id per gestire i percorsi nidificati
-    if (keys.length === 1) {
-        setFormData((prevFormData) => ({
-          ...prevFormData,
-          [id]: value,
-        }));
-    } else {
-        setFormData(prevFormData => {
-            const newData = { ...prevFormData };
-            let current = newData;
-            for (let i = 0; i < keys.length - 1; i++) {
-                // Assicurati che la chiave esista o crea un oggetto vuoto se necessario
-                if (current[keys[i]] === undefined || current[keys[i]] === null) {
-                    current[keys[i]] = {};
-                }
-                current = current[keys[i]];
+    setFormData(prevFormData => {
+        const newData = { ...prevFormData };
+        let current = newData;
+        for (let i = 0; i < keys.length - 1; i++) {
+            // Assicurati che la chiave esista o crea un oggetto vuoto se necessario
+            if (current[keys[i]] === undefined || current[keys[i]] === null) {
+                current[keys[i]] = {};
             }
-            current[keys[keys.length - 1]] = value;
-            return newData;
-        });
-    }
+            current = current[keys[i]];
+        }
+        current[keys[keys.length - 1]] = value;
+        return newData;
+    });
   };
 
 
   // Gestisce i cambiamenti negli input di testo per gli elementi degli array
   const handleArrayItemTextChange = (arrayName, index, fieldName, value) => {
         setFormData(prevFormData => {
-            const updatedArray = [...prevFormData[arrayName]];
+            // Assicurati che l'array esista e sia un array
+            const updatedArray = Array.isArray(prevFormData[arrayName]) ? [...prevFormData[arrayName]] : [];
             // Assicurati che l'elemento all'indice esista prima di modificarlo
             if (updatedArray[index]) {
                 updatedArray[index] = {
                     ...updatedArray[index],
                     [fieldName]: value
                 };
+            } else {
+                 // Se l'elemento non esiste, creane uno nuovo e aggiungilo (gestione di aggiunta tramite input diretto)
+                 // Questo caso non dovrebbe verificarsi con i bottoni "Aggiungi Item", ma è una sicurezza.
+                 updatedArray[index] = { [fieldName]: value };
             }
             return {
                 ...prevFormData,
@@ -171,15 +169,19 @@ const UploadModal = ({ isOpen, onClose }) => {
            ...prevSelectedFiles,
            [`${arrayName}_${index}_image`]: file // Esempio: 'portfolio_items_0_image'
        }));
-       // Aggiorna anche il nome del file nel formData per visualizzazione immediata se vuoi
+       // Aggiorna anche il nome del file nel formData per visualizzazione immediata
        setFormData(prevFormData => {
-           const updatedArray = [...prevFormData[arrayName]];
+            // Assicurati che l'array esista e sia un array
+           const updatedArray = Array.isArray(prevFormData[arrayName]) ? [...prevFormData[arrayName]] : [];
             // Assicurati che l'elemento all'indice esista
            if (updatedArray[index]) {
                updatedArray[index] = {
                    ...updatedArray[index],
-                   image: file ? `imgs/${file.name}` : '' // Aggiorna il percorso nel JSON preview
+                   image: file ? `imgs/${file.name}` : (updatedArray[index].image || '') // Mantieni l'immagine esistente se nessun file è selezionato
                };
+           } else {
+                // Se l'elemento non esiste, creane uno nuovo
+                 updatedArray[index] = { image: file ? `imgs/${file.name}` : '' };
            }
            return {
                ...prevFormData,
@@ -199,8 +201,11 @@ const UploadModal = ({ isOpen, onClose }) => {
            setIsParsing(true); // Imposta lo stato di parsing a true
            console.log(`Invio file CV '${file.name}' al backend per il parsing...`);
 
-           const formData = new FormData(); // Crea un oggetto FormData
-           formData.append('cv_file', file); // Aggiungi il file CV con il nome 'cv_file' (deve corrispondere al backend)
+           const formDataToSend = new FormData(); // Crea un oggetto FormData
+           formDataToSend.append('cv_file', file); // Aggiungi il file CV con il nome 'cv_file' (deve corrispondere al backend)
+           // Invia anche la categoria selezionata al backend
+           formDataToSend.append('category', selectedCategory);
+
 
            try {
                // Sostituisci con l'URL del tuo backend Flask
@@ -208,7 +213,7 @@ const UploadModal = ({ isOpen, onClose }) => {
 
                const response = await fetch(backendUrl, {
                    method: 'POST',
-                   body: formData // Invia il FormData con il file
+                   body: formDataToSend // Invia il FormData con il file e la categoria
                });
 
                 if (!response.ok) {
@@ -223,10 +228,9 @@ const UploadModal = ({ isOpen, onClose }) => {
 
                   console.log("Dati JSON ricevuti dal backend:", parsedData);
 
-                // *** Popola la form con i dati ricevuti ***
-                // Questo sovrascriverà lo stato attuale con i dati estratti
+                // Popola la form con i dati ricevuti, sovrascrivendo i dati generici correnti
                 setFormData(prevFormData => ({
-                    ...prevFormData, // Mantieni i campi non popolati dal parser o le strutture complesse se non modificate
+                    ...prevFormData, // Mantieni i campi non popolati dal parser o le strutture complesse non modificate
                     ...parsedData // Sovrascrivi con i dati estratti dal parser
                     // Nota: questa fusione funziona bene per i campi top-level e le strutture
                     // nidificate se il parser le restituisce. Per gli array, sovrascriverà l'intero array.
@@ -249,64 +253,66 @@ const UploadModal = ({ isOpen, onClose }) => {
   };
 
 
-    // Funzione per popolare un campo con il valore d'esempio
+    // Funzione per popolare un campo con il valore dal *corrente* formData (che proviene dal default o dal CV parsato)
     const populateFieldWithExample = (id) => {
-        if (!exampleJson) return; // Non fare nulla se il JSON di esempio non è caricato
-
         const keys = id.split('.');
-        let exampleValue = exampleJson;
-        let found = true;
+        let currentValue = formData; // Usa formData come sorgente
 
-        // Naviga attraverso le chiavi per trovare il valore nel JSON di esempio
+        // Naviga attraverso le chiavi per trovare il valore nel formData corrente
         for (let i = 0; i < keys.length; i++) {
-            if (exampleValue && typeof exampleValue === 'object' && exampleValue.hasOwnProperty(keys[i])) {
-                exampleValue = exampleValue[keys[i]];
+            if (currentValue && typeof currentValue === 'object' && currentValue.hasOwnProperty(keys[i])) {
+                currentValue = currentValue[keys[i]];
             } else {
-                found = false;
-                break;
+                // Se la chiave non esiste nel formData corrente, non possiamo popolarla con un "esempio"
+                console.warn(`Chiave "${id}" non trovata nel JSON corrente (categoria selezionata o dati parsati) per il popolamento esempio.`);
+                return;
             }
         }
 
-        if (found && exampleValue !== undefined && exampleValue !== null && typeof exampleValue !== 'object' && !Array.isArray(exampleValue)) {
-            // Aggiorna lo stato formData con il valore d'esempio solo se è un tipo primitivo
+        if (currentValue !== undefined && currentValue !== null && typeof currentValue !== 'object' && !Array.isArray(currentValue)) {
+            // Aggiorna lo stato formData con il valore corrente (che funge da "esempio")
             setFormData(prevFormData => {
                 const newData = { ...prevFormData };
                 let current = newData;
                 for (let i = 0; i < keys.length - 1; i++) {
-                     if (!current[keys[i]]) current[keys[i]] = {}; // Crea l'oggetto se non esiste
+                     // Crea l'oggetto se non esiste (utile se l'esempio proviene da una struttura parziale)
+                     if (!current[keys[i]] || typeof current[keys[i]] !== 'object') current[keys[i]] = {};
                      current = current[keys[i]];
                 }
-                current[keys[keys.length - 1]] = exampleValue;
+                current[keys[keys.length - 1]] = currentValue; // Popola con il valore trovato nel formData attuale
                 return newData;
             });
-        } else if (!found) {
-            console.warn(`Chiave "${id}" non trovata nel JSON di esempio per il popolamento.`);
-        } else if (exampleValue !== undefined && exampleValue !== null && typeof exampleValue === 'object') {
-             console.warn(`Il valore per la chiave "${id}" nel JSON di esempio è un oggetto/array. Non può essere usato per popolare un campo di testo singolo.`);
+        } else if (currentValue !== undefined && currentValue !== null && typeof currentValue === 'object') {
+             console.warn(`Il valore per la chiave "${id}" nel JSON corrente è un oggetto/array. Non può essere usato per popolare un campo di testo singolo.`);
         }
     };
 
-     // Funzione per popolare un campo all'interno di un array con il valore d'esempio
+     // Funzione per popolare un campo all'interno di un array con il valore dal *corrente* formData
     const populateArrayItemFieldWithExample = (arrayName, fieldName, index) => {
-        if (!exampleJson || !exampleJson[arrayName] || !exampleJson[arrayName][index]) return;
+        // Controlla se l'array e l'elemento all'indice esistono nel formData corrente
+        if (!formData || !formData[arrayName] || !Array.isArray(formData[arrayName]) || !formData[arrayName][index]) {
+             console.warn(`Array "${arrayName}" o indice ${index} non trovati nel JSON corrente per il popolamento esempio.`);
+             return;
+        }
 
-        const exampleValue = exampleJson[arrayName][index][fieldName];
+        const currentValue = formData[arrayName][index][fieldName]; // Usa formData come sorgente
 
-         if (exampleValue !== undefined && exampleValue !== null && typeof exampleValue !== 'object' && !Array.isArray(exampleValue)) {
-             handleArrayItemTextChange(arrayName, index, fieldName, exampleValue);
-         } else if (exampleValue !== undefined && exampleValue !== null && typeof exampleValue === 'object') {
-             console.warn(`Il valore per la chiave "${fieldName}" per l'elemento ${index} nell'array "${arrayName}" nel JSON di esempio è un oggetto/array. Non può essere usato per popolare un campo di testo singolo.`);
+         if (currentValue !== undefined && currentValue !== null && typeof currentValue !== 'object' && !Array.isArray(currentValue)) {
+             handleArrayItemTextChange(arrayName, index, fieldName, currentValue); // Popola con il valore trovato
+         } else if (currentValue !== undefined && currentValue !== null && typeof currentValue === 'object') {
+             console.warn(`Il valore per la chiave "${fieldName}" per l'elemento ${index} nell'array "${arrayName}" nel JSON corrente è un oggetto/array. Non può essere usato per popolare un campo di testo singolo.`);
          } else {
-             console.warn(`Chiave "${fieldName}" per l'elemento ${index} nell'array "${arrayName}" non trovata nel JSON di esempio per il popolamento.`);
+             console.warn(`Chiave "${fieldName}" per l'elemento ${index} nell'array "${arrayName}" non trovata nel JSON corrente per il popolamento esempio.`);
          }
     };
 
 
-    // Funzioni per aggiungere elementi agli array
+    // Funzioni per aggiungere elementi agli array (mantengono la struttura vuota per i nuovi elementi)
+    // Ho aggiunto un controllo per assicurare che l'array esista prima di aggiungere
     const addPortfolioItem = () => {
         setFormData(prevFormData => ({
             ...prevFormData,
-            portfolio_items: [...prevFormData.portfolio_items, {
+            portfolio_items: [...(Array.isArray(prevFormData.portfolio_items) ? prevFormData.portfolio_items : []), {
                 title: "",
                 subtitle: "",
                 image: "",
@@ -318,7 +324,7 @@ const UploadModal = ({ isOpen, onClose }) => {
      const addBlogPost = () => {
         setFormData(prevFormData => ({
             ...prevFormData,
-            blog_posts: [...prevFormData.blog_posts, {
+            blog_posts: [...(Array.isArray(prevFormData.blog_posts) ? prevFormData.blog_posts : []), {
                 title: "",
                 author: "",
                 likes_html: "",
@@ -332,10 +338,44 @@ const UploadModal = ({ isOpen, onClose }) => {
         }));
     };
 
+     const addSkill = () => {
+         setFormData(prev => ({...prev, skills: [...(Array.isArray(prev.skills) ? prev.skills : []), { name: "", level: "" }]}));
+     };
+
+     const addEducationItem = () => {
+         setFormData(prev => ({...prev, education_list: [...(Array.isArray(prev.education_list) ? prev.education_list : []), { period: "", title: "", subtitle: "" }]}));
+     };
+
+     const addWorkExperienceItem = () => {
+         setFormData(prev => ({...prev, work_experience_list: [...(Array.isArray(prev.work_experience_list) ? prev.work_experience_list : []), { period: "", title: "", subtitle: "" }]}));
+     };
+
+      const addLanguage = () => {
+         setFormData(prev => ({...prev, languages: [...(Array.isArray(prev.languages) ? prev.languages : []), { name: "", level: "" }]}));
+     };
+
+     const addExpertiseItem = () => {
+         setFormData(prev => ({...prev, expertise_list: [...(Array.isArray(prev.expertise_list) ? prev.expertise_list : []), { name: "", icon_class: "", subtitle: "" }]}));
+     };
+
+      const addService = () => {
+         setFormData(prev => ({...prev, services: [...(Array.isArray(prev.services) ? prev.services : []), { icon: "", icon_class: "", title: "", description: "" }]}));
+     };
+
+      const addStatistic = () => {
+         setFormData(prev => ({...prev, statistics: [...(Array.isArray(prev.statistics) ? prev.statistics : []), { icon: "", count: "", label: "", icon_class: "" }]}));
+     };
+
+      const addPricingPack = () => {
+         setFormData(prev => ({...prev, pricing_packs: [...(Array.isArray(prev.pricing_packs) ? prev.pricing_packs : []), { title: "", cost: "", project: "", storage: "", domain: "", users: "", special_class: "" }]}));
+     };
+
+
     // Funzioni per rimuovere elementi dagli array
+     // Ho aggiunto un controllo per assicurare che l'array esista prima di filtrare
     const removePortfolioItem = (index) => {
         setFormData(prevFormData => {
-            const updatedArray = prevFormData.portfolio_items.filter((_, i) => i !== index);
+            const updatedArray = (Array.isArray(prevFormData.portfolio_items) ? prevFormData.portfolio_items : []).filter((_, i) => i !== index);
             return {
                 ...prevFormData,
                 portfolio_items: updatedArray
@@ -351,7 +391,7 @@ const UploadModal = ({ isOpen, onClose }) => {
 
      const removeBlogPost = (index) => {
         setFormData(prevFormData => {
-            const updatedArray = prevFormData.blog_posts.filter((_, i) => i !== index);
+            const updatedArray = (Array.isArray(prevFormData.blog_posts) ? prevFormData.blog_posts : []).filter((_, i) => i !== index);
             return {
                 ...prevFormData,
                 blog_posts: updatedArray
@@ -365,6 +405,38 @@ const UploadModal = ({ isOpen, onClose }) => {
          });
     };
 
+     const removeSkill = (index) => {
+         setFormData(prev => ({...prev, skills: (Array.isArray(prev.skills) ? prev.skills : []).filter((_, i) => i !== index)}));
+     };
+
+     const removeEducationItem = (index) => {
+         setFormData(prev => ({...prev, education_list: (Array.isArray(prev.education_list) ? prev.education_list : []).filter((_, i) => i !== index)}));
+     };
+
+     const removeWorkExperienceItem = (index) => {
+         setFormData(prev => ({...prev, work_experience_list: (Array.isArray(prev.work_experience_list) ? prev.work_experience_list : []).filter((_, i) => i !== index)}));
+     };
+
+     const removeLanguage = (index) => {
+         setFormData(prev => ({...prev, languages: (Array.isArray(prev.languages) ? prev.languages : []).filter((_, i) => i !== index)}));
+     };
+
+      const removeExpertiseItem = (index) => {
+         setFormData(prev => ({...prev, expertise_list: (Array.isArray(prev.expertise_list) ? prev.expertise_list : []).filter((_, i) => i !== index)}));
+     };
+
+      const removeService = (index) => {
+         setFormData(prev => ({...prev, services: (Array.isArray(prev.services) ? prev.services : []).filter((_, i) => i !== index)}));
+     };
+
+      const removeStatistic = (index) => {
+         setFormData(prev => ({...prev, statistics: (Array.isArray(prev.statistics) ? prev.statistics : []).filter((_, i) => i !== index)}));
+     };
+
+      const removePricingPack = (index) => {
+         setFormData(prev => ({...prev, pricing_packs: (Array.isArray(prev.pricing_packs) ? prev.pricing_packs : []).filter((_, i) => i !== index)}));
+     };
+
 
   // Gestisce l'invio del form e crea l'archivio ZIP
   const handleSubmit = async (e) => {
@@ -377,19 +449,12 @@ const UploadModal = ({ isOpen, onClose }) => {
     const dataToSave = JSON.parse(JSON.stringify(formData)); // Crea una copia profonda dello stato attuale
 
     // Processa i file immagine e aggiungi i file immagine allo ZIP
-    // Nota: i percorsi delle immagini nel JSON sono già stati aggiornati in handleArrayItemImageChange
     for (const key in selectedImageFiles) {
         const file = selectedImageFiles[key];
         if (file) {
-             // La chiave è nel formato 'arrayName_index_image'
-             // Puoi estrarre nome_array e indice se necessario, ma per aggiungere allo ZIP
-             // serve solo il nome del file e il file stesso.
-             // Assicurati che il percorso nel JSON sia 'imgs/nome_file.estensione'
-             // E qui aggiungi il file allo ZIP nella cartella imgs.
              imgsFolder.file(file.name, file);
         }
     }
-
 
     // Aggiungi il file CV allo ZIP se è stato selezionato
     if (selectedCVFile) {
@@ -399,8 +464,11 @@ const UploadModal = ({ isOpen, onClose }) => {
     // Converti l'oggetto JavaScript risultante in una stringa JSON formattata
     const jsonString = JSON.stringify(dataToSave, null, 2);
 
+    // Determina il nome del file JSON in base alla categoria selezionata
+     const jsonFileName = categoryDataMap[selectedCategory]?.fileName || 'dati_compilati.json'; // Fallback name
+
     // Aggiungi il file JSON all'archivio ZIP
-    zip.file("dati_compilati.json", jsonString);
+    zip.file(jsonFileName, jsonString);
 
     // Genera il contenuto dello ZIP in formato Blob
     try {
@@ -419,18 +487,18 @@ const UploadModal = ({ isOpen, onClose }) => {
   };
 
   return (
-    <Modal show={isOpen} onClose={onClose} size="md"> {/* Puoi regolare la dimensione del modal */}
+    <Modal show={isOpen} onClose={onClose} size="md">
       <Modal.Header>
         <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-          Popola Dati da CV, Modifica e Scarica ZIP
+          Popola Dati e Scarica ZIP
         </h3>
       </Modal.Header>
-      <Modal.Body className="overflow-y-auto max-h-[80vh]"> {/* Aggiungi scroll al body */}
+      <Modal.Body className="overflow-y-auto max-h-[80vh]">
         <form className="max-w-sm mx-auto" onSubmit={handleSubmit}>
 
            {/* Campo per l'upload del CV con stato di parsing */}
             <div className="mb-5 border-b pb-4">
-                <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white" htmlFor="cv_file">Carica CV (PDF, Word, TXT, RTF)</label>
+                <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white" htmlFor="cv_file">Carica CV (Popola Campi da CV)</label>
                 <input
                     className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400"
                     id="cv_file"
@@ -453,9 +521,110 @@ const UploadModal = ({ isOpen, onClose }) => {
                  )}
                  {!isParsing && !parsingError && !selectedCVFile && (
                       <p className="mt-1 text-sm text-gray-500 dark:text-gray-300">
-                        Carica il tuo CV per popolare automaticamente la form. Potrebbe essere necessario modificare i dati estratti.
+                        Carica il tuo CV per popolare automaticamente la form (i dati generici correnti verranno sovrascritti).
                      </p>
                  )}
+            </div>
+
+            {/* Sezione per la selezione della categoria (secondo blocco) */}
+            <div className="mb-5 border-b pb-4">
+                 <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Seleziona Categoria (Applica Default):</label>
+                 <fieldset>
+                    <legend className="sr-only">Categorie di Lavoro</legend>
+
+                    <div className="flex items-center mb-4">
+                        <input
+                            id="category-digitale-it"
+                            type="radio"
+                            name="category"
+                            value="digitale-it"
+                            className="w-4 h-4 border-gray-300 focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-600 dark:focus:bg-blue-600 dark:bg-gray-700 dark:border-gray-600"
+                            checked={selectedCategory === 'digitale-it'}
+                            onChange={(e) => setSelectedCategory(e.target.value)}
+                        />
+                        <label htmlFor="category-digitale-it" className="block ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                            Professionisti del Digitale e IT
+                        </label>
+                    </div>
+
+                    <div className="flex items-center mb-4">
+                        <input
+                            id="category-ingegneri-tecnici"
+                            type="radio"
+                            name="category"
+                            value="ingegneri-tecnici"
+                            className="w-4 h-4 border-gray-300 focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-600 dark:focus:bg-blue-600 dark:bg-gray-700 dark:border-gray-600"
+                            checked={selectedCategory === 'ingegneri-tecnici'}
+                            onChange={(e) => setSelectedCategory(e.target.value)}
+                        />
+                        <label htmlFor="category-ingegneri-tecnici" className="block ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                            Ingegneri e Tecnici Specializzati
+                        </label>
+                    </div>
+
+                    <div className="flex items-center mb-4">
+                        <input
+                            id="category-sanitari-assistenziali"
+                            type="radio"
+                            name="category"
+                            value="sanitari-assistenziali"
+                            className="w-4 h-4 border-gray-300 focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-600 dark:bg-gray-700 dark:border-gray-600"
+                            checked={selectedCategory === 'sanitari-assistenziali'}
+                            onChange={(e) => setSelectedCategory(e.target.value)}
+                        />
+                        <label htmlFor="category-sanitari-assistenziali" className="block ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                            Professionisti Sanitari e Assistenziali
+                        </label>
+                    </div>
+
+                    <div className="flex items-center mb-4">
+                        <input
+                            id="category-commerciale-vendita"
+                            type="radio"
+                            name="category"
+                            value="commerciale-vendita"
+                            className="w-4 h-4 border-gray-300 focus:ring-2 focus:ring-blue-300 dark:focus-ring-blue-600 dark:bg-gray-700 dark:border-gray-600"
+                            checked={selectedCategory === 'commerciale-vendita'}
+                            onChange={(e) => setSelectedCategory(e.target.value)}
+                        />
+                        <label htmlFor="category-commerciale-vendita" className="block ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                            Esperti Commerciali e di Vendita
+                        </label>
+                    </div>
+
+                    <div className="flex items-center mb-4">
+                        <input
+                            id="category-amministrative-finanziarie"
+                            type="radio"
+                            name="category"
+                            value="amministrative-finanziarie"
+                            className="w-4 h-4 border-gray-300 focus:ring-2 focus:ring-blue-300 dark:focus-ring-blue-600 dark:bg-gray-700 dark:border-gray-600"
+                            checked={selectedCategory === 'amministrative-finanziarie'}
+                            onChange={(e) => setSelectedCategory(e.target.value)}
+                        />
+                        <label htmlFor="category-amministrative-finanziarie" className="block ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                            Figure Amministrative e Finanziarie con competenze specifiche
+                        </label>
+                    </div>
+
+                    <div className="flex items-center mb-4">
+                        <input
+                            id="category-logistica"
+                            type="radio"
+                            name="category"
+                            value="logistica"
+                            className="w-4 h-4 border-gray-300 focus:ring-2 focus:ring-blue-300 dark:focus-ring-blue-600 dark:bg-gray-700 dark:border-gray-600"
+                            checked={selectedCategory === 'logistica'}
+                            onChange={(e) => setSelectedCategory(e.target.value)}
+                        />
+                        <label htmlFor="category-logistica" className="block ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                            Specialisti della Logistica
+                        </label>
+                    </div>
+                </fieldset>
+                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-300">
+                     Seleziona una categoria per caricare i dati di default corrispondenti nella form.
+                 </p>
             </div>
 
 
@@ -463,11 +632,11 @@ const UploadModal = ({ isOpen, onClose }) => {
             <div className="mb-5">
                 <label htmlFor="name" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Name
-                     {exampleJson && exampleJson.hasOwnProperty('name') && (
+                     {formData.hasOwnProperty('name') && ( // Controlla direttamente su formData corrente
                         <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('name')}
-                            title={`Esempio: ${exampleJson.name}`}
+                            title={`Esempio: ${formData.name}`} // Usa formData corrente per l'esempio
                         >
                             ℹ️
                         </span>
@@ -478,11 +647,11 @@ const UploadModal = ({ isOpen, onClose }) => {
              <div className="mb-5">
                 <label htmlFor="presentation" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Presentation
-                     {exampleJson && exampleJson.hasOwnProperty('presentation') && (
+                     {formData.hasOwnProperty('presentation') && (
                          <span
                              className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                               onClick={() => populateFieldWithExample('presentation')}
-                              title={`Esempio: ${exampleJson.presentation}`}
+                              title={`Esempio: ${formData.presentation}`}
                          >
                              ℹ️
                          </span>
@@ -493,11 +662,11 @@ const UploadModal = ({ isOpen, onClose }) => {
              <div className="mb-5">
                 <label htmlFor="header_mono_subtitle" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Header Mono Subtitle
-                     {exampleJson && exampleJson.hasOwnProperty('header_mono_subtitle') && (
+                     {formData.hasOwnProperty('header_mono_subtitle') && (
                          <span
                              className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                              onClick={() => populateFieldWithExample('header_mono_subtitle')}
-                             title={`Esempio: ${exampleJson.header_mono_subtitle}`}
+                             title={`Esempio: ${formData.header_mono_subtitle}`}
                          >
                              ℹ️
                          </span>
@@ -508,11 +677,11 @@ const UploadModal = ({ isOpen, onClose }) => {
              <div className="mb-5">
                 <label htmlFor="print_resume" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Print Resume
-                     {exampleJson && exampleJson.hasOwnProperty('print_resume') && (
+                     {formData.hasOwnProperty('print_resume') && (
                          <span
                              className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                              onClick={() => populateFieldWithExample('print_resume')}
-                             title={`Esempio: ${exampleJson.print_resume}`}
+                             title={`Esempio: ${formData.print_resume}`}
                          >
                              ℹ️
                          </span>
@@ -523,11 +692,11 @@ const UploadModal = ({ isOpen, onClose }) => {
              <div className="mb-5">
                 <label htmlFor="download_my_cv" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Download My CV
-                      {exampleJson && exampleJson.hasOwnProperty('download_my_cv') && (
+                      {formData.hasOwnProperty('download_my_cv') && (
                          <span
                              className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                              onClick={() => populateFieldWithExample('download_my_cv')}
-                             title={`Esempio: ${exampleJson.download_my_cv}`}
+                             title={`Esempio: ${formData.download_my_cv}`}
                          >
                              ℹ️
                          </span>
@@ -538,42 +707,42 @@ const UploadModal = ({ isOpen, onClose }) => {
               <div className="mb-5">
                 <label htmlFor="my_resume_label.my" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     My Resume Label (My)
-                     {exampleJson && exampleJson.my_resume_label && exampleJson.my_resume_label.hasOwnProperty('my') && (
+                     {formData.my_resume_label && formData.my_resume_label.hasOwnProperty('my') && (
                         <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('my_resume_label.my')}
-                             title={`Esempio: ${exampleJson.my_resume_label.my}`}
+                             title={`Esempio: ${formData.my_resume_label.my}`}
                         >
                             ℹ️
                         </span>
                      )}
                 </label>
-                <input type="text" id="my_resume_label.my" className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value={formData.my_resume_label.my || ''} onChange={handleTextChange} />
+                <input type="text" id="my_resume_label.my" className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value={formData.my_resume_label?.my || ''} onChange={handleTextChange} />
             </div>
              <div className="mb-5">
                 <label htmlFor="my_resume_label.resume" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     My Resume Label (Resume)
-                     {exampleJson && exampleJson.my_resume_label && exampleJson.my_resume_label.hasOwnProperty('resume') && (
+                     {formData.my_resume_label && formData.my_resume_label.hasOwnProperty('resume') && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('my_resume_label.resume')}
-                             title={`Esempio: ${exampleJson.my_resume_label.resume}`}
+                             title={`Esempio: ${formData.my_resume_label.resume}`}
                         >
                             ℹ️
                         </span>
                      )}
                 </label>
-                <input type="text" id="my_resume_label.resume" className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value={formData.my_resume_label.resume || ''} onChange={handleTextChange} />
+                <input type="text" id="my_resume_label.resume" className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value={formData.my_resume_label?.resume || ''} onChange={handleTextChange} />
             </div>
 
               <div className="mb-5">
                 <label htmlFor="who_am_i" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Who Am I?
-                    {exampleJson && exampleJson.hasOwnProperty('who_am_i') && (
+                    {formData.hasOwnProperty('who_am_i') && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('who_am_i')}
-                             title={`Esempio: ${exampleJson.who_am_i}`}
+                             title={`Esempio: ${formData.who_am_i}`}
                         >
                             ℹ️
                         </span>
@@ -588,11 +757,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                  <div className="mb-5">
                      <label htmlFor="about.who" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                          Who
-                          {exampleJson && exampleJson.about && exampleJson.about.hasOwnProperty('who') && (
+                          {formData.about && formData.about.hasOwnProperty('who') && (
                              <span
                                 className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                 onClick={() => populateFieldWithExample('about.who')}
-                                 title={`Esempio: ${exampleJson.about.who}`}
+                                 title={`Esempio: ${formData.about.who}`}
                             >
                                 ℹ️
                             </span>
@@ -601,7 +770,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                       <textarea
                          id="about.who"
                          className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                         value={formData.about.who || ''}
+                         value={formData.about?.who || ''}
                          onChange={handleTextChange}
                          rows={3}
                       ></textarea>
@@ -609,11 +778,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                   <div className="mb-5">
                      <label htmlFor="about.details" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                          Details
-                          {exampleJson && exampleJson.about && exampleJson.about.hasOwnProperty('details') && (
+                          {formData.about && formData.about.hasOwnProperty('details') && (
                               <span
                                 className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                 onClick={() => populateFieldWithExample('about.details')}
-                                 title={`Esempio: ${exampleJson.about.details}`}
+                                 title={`Esempio: ${formData.about.details}`}
                             >
                                 ℹ️
                             </span>
@@ -622,7 +791,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                       <textarea
                          id="about.details"
                          className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                         value={formData.about.details || ''}
+                         value={formData.about?.details || ''}
                          onChange={handleTextChange}
                          rows={5}
                       ></textarea>
@@ -635,11 +804,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                   <div className="mb-5">
                      <label htmlFor="personal_info.birthdate" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                          Birthdate
-                          {exampleJson && exampleJson.personal_info && exampleJson.personal_info.hasOwnProperty('birthdate') && (
+                          {formData.personal_info && formData.personal_info.hasOwnProperty('birthdate') && (
                              <span
                                 className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                 onClick={() => populateFieldWithExample('personal_info.birthdate')}
-                                 title={`Esempio: ${exampleJson.personal_info.birthdate}`}
+                                 title={`Esempio: ${formData.personal_info.birthdate}`}
                             >
                                 ℹ️
                             </span>
@@ -649,18 +818,18 @@ const UploadModal = ({ isOpen, onClose }) => {
                          type="text"
                          id="personal_info.birthdate"
                          className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                         value={formData.personal_info.birthdate || ''}
+                         value={formData.personal_info?.birthdate || ''}
                          onChange={handleTextChange}
                      />
                  </div>
                   <div className="mb-5">
                      <label htmlFor="personal_info.work_email" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                          Work Email
-                          {exampleJson && exampleJson.personal_info && exampleJson.personal_info.hasOwnProperty('work_email') && (
+                          {formData.personal_info && formData.personal_info.hasOwnProperty('work_email') && (
                               <span
                                 className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                 onClick={() => populateFieldWithExample('personal_info.work_email')}
-                                 title={`Esempio: ${exampleJson.personal_info.work_email}`}
+                                 title={`Esempio: ${formData.personal_info.work_email}`}
                             >
                                 ℹ️
                             </span>
@@ -670,18 +839,18 @@ const UploadModal = ({ isOpen, onClose }) => {
                          type="text"
                          id="personal_info.work_email"
                          className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                         value={formData.personal_info.work_email || ''}
+                         value={formData.personal_info?.work_email || ''}
                          onChange={handleTextChange}
                      />
                  </div>
                   <div className="mb-5">
                      <label htmlFor="personal_info.personal_email" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                          Personal Email
-                          {exampleJson && exampleJson.personal_info && exampleJson.personal_info.hasOwnProperty('personal_email') && (
+                          {formData.personal_info && formData.personal_info.hasOwnProperty('personal_email') && (
                               <span
                                 className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                 onClick={() => populateFieldWithExample('personal_info.personal_email')}
-                                 title={`Esempio: ${exampleJson.personal_info.personal_email}`}
+                                 title={`Esempio: ${formData.personal_info.personal_email}`}
                             >
                                 ℹ️
                             </span>
@@ -691,18 +860,18 @@ const UploadModal = ({ isOpen, onClose }) => {
                          type="text"
                          id="personal_info.personal_email"
                          className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                         value={formData.personal_info.personal_email || ''}
+                         value={formData.personal_info?.personal_email || ''}
                          onChange={handleTextChange}
                      />
                  </div>
                   <div className="mb-5">
                      <label htmlFor="personal_info.work_number" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                          Work Number
-                          {exampleJson && exampleJson.personal_info && exampleJson.personal_info.hasOwnProperty('work_number') && (
+                          {formData.personal_info && formData.personal_info.hasOwnProperty('work_number') && (
                               <span
                                 className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                 onClick={() => populateFieldWithExample('personal_info.work_number')}
-                                 title={`Esempio: ${exampleJson.personal_info.work_number}`}
+                                 title={`Esempio: ${formData.personal_info.work_number}`}
                             >
                                 ℹ️
                             </span>
@@ -712,18 +881,18 @@ const UploadModal = ({ isOpen, onClose }) => {
                          type="text"
                          id="personal_info.work_number"
                          className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                         value={formData.personal_info.work_number || ''}
+                         value={formData.personal_info?.work_number || ''}
                          onChange={handleTextChange}
                      />
                  </div>
                   <div className="mb-5">
                      <label htmlFor="personal_info.instagram" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                          Instagram
-                          {exampleJson && exampleJson.personal_info && exampleJson.personal_info.hasOwnProperty('instagram') && (
+                          {formData.personal_info && formData.personal_info.hasOwnProperty('instagram') && (
                               <span
                                 className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                 onClick={() => populateFieldWithExample('personal_info.instagram')}
-                                 title={`Esempio: ${exampleJson.personal_info.instagram}`}
+                                 title={`Esempio: ${formData.personal_info.instagram}`}
                             >
                                 ℹ️
                             </span>
@@ -733,7 +902,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                          type="text"
                          id="personal_info.instagram"
                          className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                         value={formData.personal_info.instagram || ''}
+                         value={formData.personal_info?.instagram || ''}
                          onChange={handleTextChange}
                      />
                  </div>
@@ -742,11 +911,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                <div className="mb-5">
                 <label htmlFor="skills_label" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Skills Label
-                     {exampleJson && exampleJson.hasOwnProperty('skills_label') && (
+                     {formData.hasOwnProperty('skills_label') && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('skills_label')}
-                             title={`Esempio: ${exampleJson.skills_label}`}
+                             title={`Esempio: ${formData.skills_label}`}
                         >
                             ℹ️
                         </span>
@@ -757,26 +926,26 @@ const UploadModal = ({ isOpen, onClose }) => {
               <div className="mb-5">
                 <label htmlFor="languages_label" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Languages Label
-                     {exampleJson && exampleJson.hasOwnProperty('languages_label') && (
+                     {formData.hasOwnProperty('languages_label') && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('languages_label')}
-                             title={`Esempio: ${exampleJson.languages_label}`}
+                             title={`Esempio: ${formData.languages_label}`}
                         >
                             ℹ️
                         </span>
                      )}
                 </label>
-                <input type="text" id="languages_label" className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value={formData.languages_label || ''} onChange={handleTextChange} />
+                <input type="text" id="languages_label" className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value={formData.languages_label || ''} onChange={handleTextChange} />
             </div>
                <div className="mb-5">
                 <label htmlFor="personal_info_label" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Personal Info Label
-                     {exampleJson && exampleJson.hasOwnProperty('personal_info_label') && (
+                     {formData.hasOwnProperty('personal_info_label') && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('personal_info_label')}
-                             title={`Esempio: ${exampleJson.personal_info_label}`}
+                             title={`Esempio: ${formData.personal_info_label}`}
                         >
                             ℹ️
                         </span>
@@ -787,11 +956,11 @@ const UploadModal = ({ isOpen, onClose }) => {
               <div className="mb-5">
                 <label htmlFor="my_expertise_label" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     My Expertise Label
-                     {exampleJson && exampleJson.hasOwnProperty('my_expertise_label') && (
+                     {formData.hasOwnProperty('my_expertise_label') && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('my_expertise_label')}
-                             title={`Esempio: ${exampleJson.my_expertise_label}`}
+                             title={`Esempio: ${formData.my_expertise_label}`}
                         >
                             ℹ️
                         </span>
@@ -802,11 +971,11 @@ const UploadModal = ({ isOpen, onClose }) => {
              <div className="mb-5">
                 <label htmlFor="education_label" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Education Label
-                     {exampleJson && exampleJson.hasOwnProperty('education_label') && (
+                     {formData.hasOwnProperty('education_label') && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('education_label')}
-                             title={`Esempio: ${exampleJson.education_label}`}
+                             title={`Esempio: ${formData.education_label}`}
                         >
                             ℹ️
                         </span>
@@ -817,11 +986,11 @@ const UploadModal = ({ isOpen, onClose }) => {
              <div className="mb-5">
                 <label htmlFor="work_experience_label" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Work Experience Label
-                     {exampleJson && exampleJson.hasOwnProperty('work_experience_label') && (
+                     {formData.hasOwnProperty('work_experience_label') && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('work_experience_label')}
-                             title={`Esempio: ${exampleJson.work_experience_label}`}
+                             title={`Esempio: ${formData.work_experience_label}`}
                         >
                             ℹ️
                         </span>
@@ -832,11 +1001,11 @@ const UploadModal = ({ isOpen, onClose }) => {
               <div className="mb-5">
                 <label htmlFor="my_service_label" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     My Service Label
-                     {exampleJson && exampleJson.hasOwnProperty('my_service_label') && (
+                     {formData.hasOwnProperty('my_service_label') && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('my_service_label')}
-                             title={`Esempio: ${exampleJson.my_service_label}`}
+                             title={`Esempio: ${formData.my_service_label}`}
                         >
                             ℹ️
                         </span>
@@ -847,11 +1016,11 @@ const UploadModal = ({ isOpen, onClose }) => {
              <div className="mb-5">
                 <label htmlFor="contact_label" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Contact Label
-                     {exampleJson && exampleJson.hasOwnProperty('contact_label') && (
+                     {formData.hasOwnProperty('contact_label') && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('contact_label')}
-                             title={`Esempio: ${exampleJson.contact_label}`}
+                             title={`Esempio: ${formData.contact_label}`}
                         >
                             ℹ️
                         </span>
@@ -862,11 +1031,11 @@ const UploadModal = ({ isOpen, onClose }) => {
               <div className="mb-5">
                 <label htmlFor="pricing_packs_label" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Pricing Packs Label
-                     {exampleJson && exampleJson.hasOwnProperty('pricing_packs_label') && (
+                     {formData.hasOwnProperty('pricing_packs_label') && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('pricing_packs_label')}
-                             title={`Esempio: ${exampleJson.pricing_packs_label}`}
+                             title={`Esempio: ${formData.pricing_packs_label}`}
                         >
                             ℹ️
                         </span>
@@ -877,11 +1046,11 @@ const UploadModal = ({ isOpen, onClose }) => {
             <div className="mb-5">
                 <label htmlFor="freelancing_label" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Freelancing Label
-                     {exampleJson && exampleJson.hasOwnProperty('freelancing_label') && (
+                     {formData.hasOwnProperty('freelancing_label') && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('freelancing_label')}
-                             title={`Esempio: ${exampleJson.freelancing_label}`}
+                             title={`Esempio: ${formData.freelancing_label}`}
                         >
                             ℹ️
                         </span>
@@ -892,11 +1061,11 @@ const UploadModal = ({ isOpen, onClose }) => {
             <div className="mb-5">
                 <label htmlFor="hire_me_label" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Hire Me Label
-                     {exampleJson && exampleJson.hasOwnProperty('hire_me_label') && (
+                     {formData.hasOwnProperty('hire_me_label') && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('hire_me_label')}
-                             title={`Esempio: ${exampleJson.hire_me_label}`}
+                             title={`Esempio: ${formData.hire_me_label}`}
                         >
                             ℹ️
                         </span>
@@ -907,11 +1076,11 @@ const UploadModal = ({ isOpen, onClose }) => {
              <div className="mb-5">
                 <label htmlFor="my_portfolio_label" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     My Portfolio Label
-                     {exampleJson && exampleJson.hasOwnProperty('my_portfolio_label') && (
+                     {formData.hasOwnProperty('my_portfolio_label') && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('my_portfolio_label')}
-                             title={`Esempio: ${exampleJson.my_portfolio_label}`}
+                             title={`Esempio: ${formData.my_portfolio_label}`}
                         >
                             ℹ️
                         </span>
@@ -922,11 +1091,11 @@ const UploadModal = ({ isOpen, onClose }) => {
              <div className="mb-5">
                 <label htmlFor="latest_label" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Latest Label
-                     {exampleJson && exampleJson.hasOwnProperty('latest_label') && (
+                     {formData.hasOwnProperty('latest_label') && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('latest_label')}
-                             title={`Esempio: ${exampleJson.latest_label}`}
+                             title={`Esempio: ${formData.latest_label}`}
                         >
                             ℹ️
                         </span>
@@ -937,11 +1106,11 @@ const UploadModal = ({ isOpen, onClose }) => {
               <div className="mb-5">
                 <label htmlFor="news_label" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     News Label
-                     {exampleJson && exampleJson.hasOwnProperty('news_label') && (
+                     {formData.hasOwnProperty('news_label') && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('news_label')}
-                             title={`Esempio: ${exampleJson.news_label}`}
+                             title={`Esempio: ${formData.news_label}`}
                         >
                             ℹ️
                         </span>
@@ -952,11 +1121,11 @@ const UploadModal = ({ isOpen, onClose }) => {
               <div className="mb-5">
                 <label htmlFor="form_title" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Form Title
-                     {exampleJson && exampleJson.hasOwnProperty('form_title') && (
+                     {formData.hasOwnProperty('form_title') && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('form_title')}
-                             title={`Esempio: ${exampleJson.form_title}`}
+                             title={`Esempio: ${formData.form_title}`}
                         >
                             ℹ️
                         </span>
@@ -967,11 +1136,11 @@ const UploadModal = ({ isOpen, onClose }) => {
              <div className="mb-5">
                 <label htmlFor="form_placeholder_name" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Form Placeholder Name
-                     {exampleJson && exampleJson.hasOwnProperty('form_placeholder_name') && (
+                     {formData.hasOwnProperty('form_placeholder_name') && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('form_placeholder_name')}
-                             title={`Esempio: ${exampleJson.form_placeholder_name}`}
+                             title={`Esempio: ${formData.form_placeholder_name}`}
                         >
                             ℹ️
                         </span>
@@ -982,11 +1151,11 @@ const UploadModal = ({ isOpen, onClose }) => {
               <div className="mb-5">
                 <label htmlFor="form_placeholder_email" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Form Placeholder Email
-                     {exampleJson && exampleJson.hasOwnProperty('form_placeholder_email') && (
+                     {formData.hasOwnProperty('form_placeholder_email') && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('form_placeholder_email')}
-                             title={`Esempio: ${exampleJson.form_placeholder_email}`}
+                             title={`Esempio: ${formData.form_placeholder_email}`}
                         >
                             ℹ️
                         </span>
@@ -997,11 +1166,11 @@ const UploadModal = ({ isOpen, onClose }) => {
              <div className="mb-5">
                 <label htmlFor="form_placeholder_message" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Form Placeholder Message
-                     {exampleJson && exampleJson.hasOwnProperty('form_placeholder_message') && (
+                     {formData.hasOwnProperty('form_placeholder_message') && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('form_placeholder_message')}
-                             title={`Esempio: ${exampleJson.form_placeholder_message}`}
+                             title={`Esempio: ${formData.form_placeholder_message}`}
                         >
                             ℹ️
                         </span>
@@ -1012,11 +1181,11 @@ const UploadModal = ({ isOpen, onClose }) => {
               <div className="mb-5">
                 <label htmlFor="form_button_text" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Form Button Text
-                     {exampleJson && exampleJson.hasOwnProperty('form_button_text') && (
+                     {formData.hasOwnProperty('form_button_text') && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('form_button_text')}
-                             title={`Esempio: ${exampleJson.form_button_text}`}
+                             title={`Esempio: ${formData.form_button_text}`}
                         >
                             ℹ️
                         </span>
@@ -1027,11 +1196,11 @@ const UploadModal = ({ isOpen, onClose }) => {
              <div className="mb-5">
                 <label htmlFor="contact_title" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Contact Title
-                     {exampleJson && exampleJson.hasOwnProperty('contact_title') && (
+                     {formData.hasOwnProperty('contact_title') && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('contact_title')}
-                             title={`Esempio: ${exampleJson.contact_title}`}
+                             title={`Esempio: ${formData.contact_title}`}
                         >
                             ℹ️
                         </span>
@@ -1042,11 +1211,11 @@ const UploadModal = ({ isOpen, onClose }) => {
               <div className="mb-5">
                 <label htmlFor="phone_label" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Phone Label
-                     {exampleJson && exampleJson.hasOwnProperty('phone_label') && (
+                     {formData.hasOwnProperty('phone_label') && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('phone_label')}
-                             title={`Esempio: ${exampleJson.phone_label}`}
+                             title={`Esempio: ${formData.phone_label}`}
                         >
                             ℹ️
                         </span>
@@ -1057,11 +1226,11 @@ const UploadModal = ({ isOpen, onClose }) => {
              <div className="mb-5">
                 <label htmlFor="phone_number" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Phone Number
-                     {exampleJson && exampleJson.hasOwnProperty('phone_number') && (
+                     {formData.hasOwnProperty('phone_number') && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('phone_number')}
-                             title={`Esempio: ${exampleJson.phone_number}`}
+                             title={`Esempio: ${formData.phone_number}`}
                         >
                             ℹ️
                         </span>
@@ -1072,11 +1241,11 @@ const UploadModal = ({ isOpen, onClose }) => {
              <div className="mb-5">
                 <label htmlFor="address_label" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Address Label
-                     {exampleJson && exampleJson.hasOwnProperty('address_label') && (
+                     {formData.hasOwnProperty('address_label') && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('address_label')}
-                             title={`Esempio: ${exampleJson.address_label}`}
+                             title={`Esempio: ${formData.address_label}`}
                         >
                             ℹ️
                         </span>
@@ -1087,11 +1256,11 @@ const UploadModal = ({ isOpen, onClose }) => {
               <div className="mb-5">
                 <label htmlFor="address" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Address
-                     {exampleJson && exampleJson.hasOwnProperty('address') && (
+                     {formData.hasOwnProperty('address') && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('address')}
-                             title={`Esempio: ${exampleJson.address}`}
+                             title={`Esempio: ${formData.address}`}
                         >
                             ℹ️
                         </span>
@@ -1102,11 +1271,11 @@ const UploadModal = ({ isOpen, onClose }) => {
              <div className="mb-5">
                 <label htmlFor="email_label" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Email Label
-                     {exampleJson && exampleJson.hasOwnProperty('email_label') && (
+                     {formData.hasOwnProperty('email_label') && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('email_label')}
-                             title={`Esempio: ${exampleJson.email_label}`}
+                             title={`Esempio: ${formData.email_label}`}
                         >
                             ℹ️
                         </span>
@@ -1117,11 +1286,11 @@ const UploadModal = ({ isOpen, onClose }) => {
               <div className="mb-5">
                 <label htmlFor="email" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Email
-                     {exampleJson && exampleJson.hasOwnProperty('email') && (
+                     {formData.hasOwnProperty('email') && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('email')}
-                             title={`Esempio: ${exampleJson.email}`}
+                             title={`Esempio: ${formData.email}`}
                         >
                             ℹ️
                         </span>
@@ -1134,7 +1303,7 @@ const UploadModal = ({ isOpen, onClose }) => {
            {/* Sezione dinamica per Portfolio Items - Aggiunta icona */}
           <div className="mb-5 mt-10 border-t pt-4">
              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Portfolio Items</h4>
-             {formData.portfolio_items.map((item, index) => (
+             {(formData.portfolio_items || []).map((item, index) => (
                  <div key={index} className="mb-8 p-4 border rounded-lg dark:border-gray-700 relative">
                     {/* Bottone per rimuovere l'elemento */}
                      <button
@@ -1148,11 +1317,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                      <div className="mb-5">
                          <label htmlFor={`portfolio_items_${index}_title`} className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                              Title
-                              {exampleJson && exampleJson.portfolio_items && exampleJson.portfolio_items[index] && exampleJson.portfolio_items[index].hasOwnProperty('title') && (
+                              {formData.portfolio_items && formData.portfolio_items[index] && formData.portfolio_items[index].hasOwnProperty('title') && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('portfolio_items', 'title', index)}
-                                      title={`Esempio: ${exampleJson.portfolio_items[index].title}`}
+                                      title={`Esempio: ${formData.portfolio_items[index].title}`}
                                  >
                                      ℹ️
                                  </span>
@@ -1169,11 +1338,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                      <div className="mb-5">
                          <label htmlFor={`portfolio_items_${index}_subtitle`} className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                              Subtitle
-                             {exampleJson && exampleJson.portfolio_items && exampleJson.portfolio_items[index] && exampleJson.portfolio_items[index].hasOwnProperty('subtitle') && (
+                             {formData.portfolio_items && formData.portfolio_items[index] && formData.portfolio_items[index].hasOwnProperty('subtitle') && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('portfolio_items', 'subtitle', index)}
-                                      title={`Esempio: ${exampleJson.portfolio_items[index].subtitle}`}
+                                      title={`Esempio: ${formData.portfolio_items[index].subtitle}`}
                                  >
                                      ℹ️
                                  </span>
@@ -1190,11 +1359,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                       <div className="mb-5">
                          <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white" htmlFor={`portfolio_items_${index}_alt`}>
                              Alt Text / Link
-                              {exampleJson && exampleJson.portfolio_items && exampleJson.portfolio_items[index] && exampleJson.portfolio_items[index].hasOwnProperty('alt') && (
+                              {formData.portfolio_items && formData.portfolio_items[index] && formData.portfolio_items[index].hasOwnProperty('alt') && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('portfolio_items', 'alt', index)}
-                                      title={`Esempio: ${exampleJson.portfolio_items[index].alt}`}
+                                      title={`Esempio: ${formData.portfolio_items[index].alt}`}
                                  >
                                      ℹ️
                                  </span>
@@ -1224,7 +1393,6 @@ const UploadModal = ({ isOpen, onClose }) => {
                      </div>
                  </div>
              ))}
-             {/* Puoi aggiungere qui la logica per popolare automaticamente i primi elementi se exampleJson è disponibile */}
              <Button type="button" onClick={addPortfolioItem}>Aggiungi Portfolio Item</Button>
           </div>
 
@@ -1232,7 +1400,7 @@ const UploadModal = ({ isOpen, onClose }) => {
            {/* Sezione dinamica per Blog Posts - Aggiunta icona */}
           <div className="mb-5 mt-10 border-t pt-4">
              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Blog Posts</h4>
-              {formData.blog_posts.map((item, index) => (
+              {(formData.blog_posts || []).map((item, index) => (
                  <div key={index} className="mb-8 p-4 border rounded-lg dark:border-gray-700 relative">
                      {/* Bottone per rimuovere l'elemento */}
                       <button
@@ -1246,11 +1414,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                       <div className="mb-5">
                          <label htmlFor={`blog_posts_${index}_title`} className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                              Title
-                             {exampleJson && exampleJson.blog_posts && exampleJson.blog_posts[index] && exampleJson.blog_posts[index].hasOwnProperty('title') && (
+                             {formData.blog_posts && formData.blog_posts[index] && formData.blog_posts[index].hasOwnProperty('title') && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('blog_posts', 'title', index)}
-                                      title={`Esempio: ${exampleJson.blog_posts[index].title}`}
+                                      title={`Esempio: ${formData.blog_posts[index].title}`}
                                  >
                                      ℹ️
                                  </span>
@@ -1267,11 +1435,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                       <div className="mb-5">
                          <label htmlFor={`blog_posts_${index}_author`} className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                              Author
-                             {exampleJson && exampleJson.blog_posts && exampleJson.blog_posts[index] && exampleJson.blog_posts[index].hasOwnProperty('author') && (
+                             {formData.blog_posts && formData.blog_posts[index] && formData.blog_posts[index].hasOwnProperty('author') && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('blog_posts', 'author', index)}
-                                      title={`Esempio: ${exampleJson.blog_posts[index].author}`}
+                                      title={`Esempio: ${formData.blog_posts[index].author}`}
                                  >
                                      ℹ️
                                  </span>
@@ -1302,11 +1470,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                       <div className="mb-5">
                          <label htmlFor={`blog_posts_${index}_alt`} className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                              Alt Text / Link
-                             {exampleJson && exampleJson.blog_posts && exampleJson.blog_posts[index] && exampleJson.blog_posts[index].hasOwnProperty('alt') && (
+                             {formData.blog_posts && formData.blog_posts[index] && formData.blog_posts[index].hasOwnProperty('alt') && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('blog_posts', 'alt', index)}
-                                      title={`Esempio: ${exampleJson.blog_posts[index].alt}`}
+                                      title={`Esempio: ${formData.blog_posts[index].alt}`}
                                  >
                                      ℹ️
                                  </span>
@@ -1323,11 +1491,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                      <div className="mb-5">
                          <label htmlFor={`blog_posts_${index}_description`} className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                              Description
-                             {exampleJson && exampleJson.blog_posts && exampleJson.blog_posts[index] && exampleJson.blog_posts[index].hasOwnProperty('description') && (
+                             {formData.blog_posts && formData.blog_posts[index] && formData.blog_posts[index].hasOwnProperty('description') && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('blog_posts', 'description', index)}
-                                      title={`Esempio: ${exampleJson.blog_posts[index].description}`}
+                                      title={`Esempio: ${formData.blog_posts[index].description}`}
                                  >
                                      ℹ️
                                  </span>
@@ -1344,11 +1512,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                       <div className="mb-5">
                          <label htmlFor={`blog_posts_${index}_full_description`} className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                              Full Description
-                              {exampleJson && exampleJson.blog_posts && exampleJson.blog_posts[index] && exampleJson.blog_posts[index].hasOwnProperty('full_description') && (
+                              {formData.blog_posts && formData.blog_posts[index] && formData.blog_posts[index].hasOwnProperty('full_description') && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('blog_posts', 'full_description', index)}
-                                      title={`Esempio: ${exampleJson.blog_posts[index].full_description}`}
+                                      title={`Esempio: ${formData.blog_posts[index].full_description}`}
                                  >
                                      ℹ️
                                  </span>
@@ -1365,11 +1533,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                       <div className="mb-5">
                          <label htmlFor={`blog_posts_${index}_read_more_url`} className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                              Read More URL
-                             {exampleJson && exampleJson.blog_posts && exampleJson.blog_posts[index] && exampleJson.blog_posts[index].hasOwnProperty('read_more_url') && (
+                             {formData.blog_posts && formData.blog_posts[index] && formData.blog_posts[index].hasOwnProperty('read_more_url') && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('blog_posts', 'read_more_url', index)}
-                                      title={`Esempio: ${exampleJson.blog_posts[index].read_more_url}`}
+                                      title={`Esempio: ${formData.blog_posts[index].read_more_url}`}
                                  >
                                      ℹ️
                                  </span>
@@ -1383,23 +1551,19 @@ const UploadModal = ({ isOpen, onClose }) => {
                              onChange={(e) => handleArrayItemTextChange('blog_posts', index, 'read_more_url', e.target.value)}
                          />
                      </div>
-                      {/* Puoi aggiungere likes_html e comments_html se vuoi gestirli */}
                  </div>
              ))}
-             {/* Puoi aggiungere qui la logica per popolare automaticamente i primi elementi se exampleJson è disponibile */}
              <Button type="button" onClick={addBlogPost}>Aggiungi Blog Post</Button>
           </div>
-           {/* Aggiungi qui sezioni dinamiche per altri array (skills, education_list, ecc.) in modo simile */}
-           {/* Questo richiederà l'implementazione della logica di aggiunta/rimozione e handler per ogni array */}
-           {/* Esempio per skills (solo i campi name e level) - Aggiunta icona */}
+
+           {/* Sezione dinamica per Skills */}
             <div className="mb-5 mt-10 border-t pt-4">
              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Skills</h4>
-             {/* Aggiungi un bottone o logica per aggiungere una nuova skill vuota se l'array estratto è vuoto */}
-             {formData.skills.map((item, index) => (
+             {(formData.skills || []).map((item, index) => (
                  <div key={index} className="mb-4 p-3 border rounded-lg dark:border-gray-700 relative flex items-center space-x-4">
                       <button
                          type="button"
-                         onClick={() => setFormData(prev => ({...prev, skills: prev.skills.filter((_, i) => i !== index)}))}
+                         onClick={() => removeSkill(index)}
                          className=" text-red-600 hover:text-red-800 dark:text-red-500 dark:hover:text-red-700"
                      >
                         Rimuovi
@@ -1407,11 +1571,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                     <div className="flex-grow">
                          <label htmlFor={`skills_${index}_name`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Skill Name
-                              {exampleJson && exampleJson.skills && exampleJson.skills[index] && exampleJson.skills[index].hasOwnProperty('name') && (
+                              {formData.skills && formData.skills[index] && formData.skills[index].hasOwnProperty('name') && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('skills', 'name', index)}
-                                      title={`Esempio: ${exampleJson.skills[index].name}`}
+                                      title={`Esempio: ${formData.skills[index].name}`}
                                  >
                                      ℹ️
                                  </span>
@@ -1428,11 +1592,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                      <div className="flex-grow">
                          <label htmlFor={`skills_${index}_level`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Level
-                              {exampleJson && exampleJson.skills && exampleJson.skills[index] && exampleJson.skills[index].hasOwnProperty('level') && (
+                              {formData.skills && formData.skills[index] && formData.skills[index].hasOwnProperty('level') && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('skills', 'level', index)}
-                                      title={`Esempio: ${exampleJson.skills[index].level}`}
+                                      title={`Esempio: ${formData.skills[index].level}`}
                                  >
                                      ℹ️
                                  </span>
@@ -1448,18 +1612,17 @@ const UploadModal = ({ isOpen, onClose }) => {
                      </div>
                  </div>
              ))}
-             {/* Puoi aggiungere qui la logica per popolare automaticamente i primi elementi se exampleJson è disponibile */}
-             <Button type="button" onClick={() => setFormData(prev => ({...prev, skills: [...prev.skills, { name: "", level: "" }]}))}>Aggiungi Skill</Button>
+             <Button type="button" onClick={addSkill}>Aggiungi Skill</Button>
             </div>
 
-            {/* Esempio per education_list - Aggiunta icona */}
+            {/* Sezione dinamica per Education */}
             <div className="mb-5 mt-10 border-t pt-4">
              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Education</h4>
-             {formData.education_list.map((item, index) => (
+             {(formData.education_list || []).map((item, index) => (
                  <div key={index} className="mb-4 p-3 border rounded-lg dark:border-gray-700 relative">
                       <button
                          type="button"
-                         onClick={() => setFormData(prev => ({...prev, education_list: prev.education_list.filter((_, i) => i !== index)}))}
+                         onClick={() => removeEducationItem(index)}
                          className="absolute top-2 right-2 text-red-600 hover:text-red-800 dark:text-red-500 dark:hover:text-red-700"
                      >
                         Rimuovi
@@ -1468,11 +1631,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                     <div className="mb-5">
                          <label htmlFor={`education_list_${index}_period`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Period
-                             {exampleJson && exampleJson.education_list && exampleJson.education_list[index] && exampleJson.education_list[index].hasOwnProperty('period') && (
+                             {formData.education_list && formData.education_list[index] && formData.education_list[index].hasOwnProperty('period') && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('education_list', 'period', index)}
-                                      title={`Esempio: ${exampleJson.education_list[index].period}`}
+                                      title={`Esempio: ${formData.education_list[index].period}`}
                                  >
                                      ℹ️
                                  </span>
@@ -1489,11 +1652,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                       <div className="mb-5">
                          <label htmlFor={`education_list_${index}_title`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Title
-                             {exampleJson && exampleJson.education_list && exampleJson.education_list[index] && exampleJson.education_list[index].hasOwnProperty('title') && (
+                             {formData.education_list && formData.education_list[index] && formData.education_list[index].hasOwnProperty('title') && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('education_list', 'title', index)}
-                                      title={`Esempio: ${exampleJson.education_list[index].title}`}
+                                      title={`Esempio: ${formData.education_list[index].title}`}
                                  >
                                      ℹ️
                                  </span>
@@ -1510,11 +1673,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                      <div className="mb-5">
                          <label htmlFor={`education_list_${index}_subtitle`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Subtitle
-                              {exampleJson && exampleJson.education_list && exampleJson.education_list[index] && exampleJson.education_list[index].hasOwnProperty('subtitle') && (
+                              {formData.education_list && formData.education_list[index] && formData.education_list[index].hasOwnProperty('subtitle') && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('education_list', 'subtitle', index)}
-                                      title={`Esempio: ${exampleJson.education_list[index].subtitle}`}
+                                      title={`Esempio: ${formData.education_list[index].subtitle}`}
                                  >
                                      ℹ️
                                  </span>
@@ -1530,18 +1693,17 @@ const UploadModal = ({ isOpen, onClose }) => {
                      </div>
                  </div>
              ))}
-              {/* Puoi aggiungere qui la logica per popolare automaticamente i primi elementi se exampleJson è disponibile */}
-             <Button type="button" onClick={() => setFormData(prev => ({...prev, education_list: [...prev.education_list, { period: "", title: "", subtitle: "" }]}))}>Aggiungi Education Item</Button>
+             <Button type="button" onClick={addEducationItem}>Aggiungi Education Item</Button>
             </div>
 
-            {/* Esempio per work_experience_list - Aggiunta icona */}
+            {/* Sezione dinamica per Work Experience */}
             <div className="mb-5 mt-10 border-t pt-4">
              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Work Experience</h4>
-             {formData.work_experience_list.map((item, index) => (
+             {(formData.work_experience_list || []).map((item, index) => (
                  <div key={index} className="mb-4 p-3 border rounded-lg dark:border-gray-700 relative">
                       <button
                          type="button"
-                         onClick={() => setFormData(prev => ({...prev, work_experience_list: prev.work_experience_list.filter((_, i) => i !== index)}))}
+                         onClick={() => removeWorkExperienceItem(index)}
                          className="absolute top-2 right-2 text-red-600 hover:text-red-800 dark:text-red-500 dark:hover:text-red-700"
                      >
                         Rimuovi
@@ -1550,11 +1712,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                     <div className="mb-5">
                          <label htmlFor={`work_experience_list_${index}_period`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Period
-                             {exampleJson && exampleJson.work_experience_list && exampleJson.work_experience_list[index] && exampleJson.work_experience_list[index].hasOwnProperty('period') && (
+                             {formData.work_experience_list && formData.work_experience_list[index] && formData.work_experience_list[index].hasOwnProperty('period') && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('work_experience_list', 'period', index)}
-                                      title={`Esempio: ${exampleJson.work_experience_list[index].period}`}
+                                      title={`Esempio: ${formData.work_experience_list[index].period}`}
                                  >
                                      ℹ️
                                  </span>
@@ -1571,11 +1733,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                       <div className="mb-5">
                          <label htmlFor={`work_experience_list_${index}_title`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Title
-                             {exampleJson && exampleJson.work_experience_list && exampleJson.work_experience_list[index] && exampleJson.work_experience_list[index].hasOwnProperty('title') && (
+                             {formData.work_experience_list && formData.work_experience_list[index] && formData.work_experience_list[index].hasOwnProperty('title') && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('work_experience_list', 'title', index)}
-                                      title={`Esempio: ${exampleJson.work_experience_list[index].title}`}
+                                      title={`Esempio: ${formData.work_experience_list[index].title}`}
                                  >
                                      ℹ️
                                  </span>
@@ -1592,11 +1754,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                      <div className="mb-5">
                          <label htmlFor={`work_experience_list_${index}_subtitle`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Subtitle
-                             {exampleJson && exampleJson.work_experience_list && exampleJson.work_experience_list[index] && exampleJson.work_experience_list[index].hasOwnProperty('subtitle') && (
+                             {formData.work_experience_list && formData.work_experience_list[index] && formData.work_experience_list[index].hasOwnProperty('subtitle') && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('work_experience_list', 'subtitle', index)}
-                                      title={`Esempio: ${exampleJson.work_experience_list[index].subtitle}`}
+                                      title={`Esempio: ${formData.work_experience_list[index].subtitle}`}
                                  >
                                      ℹ️
                                  </span>
@@ -1612,18 +1774,17 @@ const UploadModal = ({ isOpen, onClose }) => {
                      </div>
                  </div>
              ))}
-               {/* Puoi aggiungere qui la logica per popolare automaticamente i primi elementi se exampleJson è disponibile */}
-             <Button type="button" onClick={() => setFormData(prev => ({...prev, work_experience_list: [...prev.work_experience_list, { period: "", title: "", subtitle: "" }]}))}>Aggiungi Work Experience Item</Button>
+             <Button type="button" onClick={addWorkExperienceItem}>Aggiungi Work Experience Item</Button>
             </div>
 
-             {/* Esempio per languages - Aggiunta icona */}
+             {/* Sezione dinamica per Languages */}
             <div className="mb-5 mt-10 border-t pt-4">
              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Languages</h4>
-             {formData.languages.map((item, index) => (
+             {(formData.languages || []).map((item, index) => (
                  <div key={index} className="mb-4 p-3 border rounded-lg dark:border-gray-700 relative flex items-center space-x-4">
                       <button
                          type="button"
-                         onClick={() => setFormData(prev => ({...prev, languages: prev.languages.filter((_, i) => i !== index)}))}
+                         onClick={() => removeLanguage(index)}
                          className=" text-red-600 hover:text-red-800 dark:text-red-500 dark:hover:text-red-700"
                      >
                         Rimuovi
@@ -1631,11 +1792,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                     <div className="flex-grow">
                          <label htmlFor={`languages_${index}_name`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Language Name
-                              {exampleJson && exampleJson.languages && exampleJson.languages[index] && exampleJson.languages[index].hasOwnProperty('name') && (
+                              {formData.languages && formData.languages[index] && formData.languages[index].hasOwnProperty('name') && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('languages', 'name', index)}
-                                      title={`Esempio: ${exampleJson.languages[index].name}`}
+                                      title={`Esempio: ${formData.languages[index].name}`}
                                  >
                                      ℹ️
                                  </span>
@@ -1652,11 +1813,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                      <div className="flex-grow">
                          <label htmlFor={`languages_${index}_level`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Level
-                             {exampleJson && exampleJson.languages && exampleJson.languages[index] && exampleJson.languages[index].hasOwnProperty('level') && (
+                             {formData.languages && formData.languages[index] && formData.languages[index].hasOwnProperty('level') && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('languages', 'level', index)}
-                                      title={`Esempio: ${exampleJson.languages[index].level}`}
+                                      title={`Esempio: ${formData.languages[index].level}`}
                                  >
                                      ℹ️
                                  </span>
@@ -1672,12 +1833,458 @@ const UploadModal = ({ isOpen, onClose }) => {
                      </div>
                  </div>
              ))}
-              {/* Puoi aggiungere qui la logica per popolare automaticamente i primi elementi se exampleJson è disponibile */}
-             <Button type="button" onClick={() => setFormData(prev => ({...prev, languages: [...prev.languages, { name: "", level: "" }]}))}>Aggiungi Language</Button>
+             <Button type="button" onClick={addLanguage}>Aggiungi Language</Button>
             </div>
 
-            {/* Aggiungi qui le altre sezioni dinamiche (expertise_list, services, statistics, pricing_packs) in modo simile, aggiungendo l'icona per ogni campo come mostrato sopra. */}
-            {/* Ricorda di adattare `populateArrayItemFieldWithExample` per ogni tipo di array e i suoi campi. */}
+             {/* Sezione dinamica per Expertise List */}
+            <div className="mb-5 mt-10 border-t pt-4">
+             <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Expertise List</h4>
+             {(formData.expertise_list || []).map((item, index) => (
+                 <div key={index} className="mb-4 p-3 border rounded-lg dark:border-gray-700 relative">
+                      <button
+                         type="button"
+                         onClick={() => removeExpertiseItem(index)}
+                         className="absolute top-2 right-2 text-red-600 hover:text-red-800 dark:text-red-500 dark:hover:text-red-700"
+                     >
+                        Rimuovi
+                     </button>
+                    <h5 className="text-md font-medium text-gray-900 dark:text-white mb-3">Item #{index + 1}</h5>
+                    <div className="mb-5">
+                         <label htmlFor={`expertise_list_${index}_name`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
+                             Name
+                             {formData.expertise_list && formData.expertise_list[index] && formData.expertise_list[index].hasOwnProperty('name') && (
+                                 <span
+                                     className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
+                                     onClick={() => populateArrayItemFieldWithExample('expertise_list', 'name', index)}
+                                      title={`Esempio: ${formData.expertise_list[index].name}`}
+                                 >
+                                     ℹ️
+                                 </span>
+                              )}
+                         </label>
+                         <input
+                            type="text"
+                            id={`expertise_list_${index}_name`}
+                            className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            value={item.name || ''}
+                            onChange={(e) => handleArrayItemTextChange('expertise_list', index, 'name', e.target.value)}
+                         />
+                     </div>
+                      <div className="mb-5">
+                         <label htmlFor={`expertise_list_${index}_icon_class`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
+                             Icon Class
+                              {formData.expertise_list && formData.expertise_list[index] && formData.expertise_list[index].hasOwnProperty('icon_class') && (
+                                 <span
+                                     className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
+                                     onClick={() => populateArrayItemFieldWithExample('expertise_list', 'icon_class', index)}
+                                      title={`Esempio: ${formData.expertise_list[index].icon_class}`}
+                                 >
+                                     ℹ️
+                                 </span>
+                              )}
+                         </label>
+                         <input
+                            type="text"
+                            id={`expertise_list_${index}_icon_class`}
+                            className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            value={item.icon_class || ''}
+                            onChange={(e) => handleArrayItemTextChange('expertise_list', index, 'icon_class', e.target.value)}
+                         />
+                     </div>
+                     <div className="mb-5">
+                         <label htmlFor={`expertise_list_${index}_subtitle`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
+                             Subtitle
+                              {formData.expertise_list && formData.expertise_list[index] && formData.expertise_list[index].hasOwnProperty('subtitle') && (
+                                 <span
+                                     className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
+                                     onClick={() => populateArrayItemFieldWithExample('expertise_list', 'subtitle', index)}
+                                      title={`Esempio: ${formData.expertise_list[index].subtitle}`}
+                                 >
+                                     ℹ️
+                                 </span>
+                              )}
+                         </label>
+                         <textarea
+                            id={`expertise_list_${index}_subtitle`}
+                            className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            value={item.subtitle || ''}
+                            onChange={(e) => handleArrayItemTextChange('expertise_list', index, 'subtitle', e.target.value)}
+                            rows={3}
+                         ></textarea>
+                     </div>
+                 </div>
+             ))}
+             <Button type="button" onClick={addExpertiseItem}>Aggiungi Expertise Item</Button>
+            </div>
+
+             {/* Sezione dinamica per Services */}
+             <div className="mb-5 mt-10 border-t pt-4">
+             <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Services</h4>
+             {(formData.services || []).map((item, index) => (
+                 <div key={index} className="mb-4 p-3 border rounded-lg dark:border-gray-700 relative">
+                      <button
+                         type="button"
+                         onClick={() => removeService(index)}
+                         className="absolute top-2 right-2 text-red-600 hover:text-red-800 dark:text-red-500 dark:hover:text-red-700"
+                     >
+                        Rimuovi
+                     </button>
+                    <h5 className="text-md font-medium text-gray-900 dark:text-white mb-3">Item #{index + 1}</h5>
+                    <div className="mb-5">
+                         <label htmlFor={`services_${index}_icon`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
+                             Icon
+                             {formData.services && formData.services[index] && formData.services[index].hasOwnProperty('icon') && (
+                                 <span
+                                     className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
+                                     onClick={() => populateArrayItemFieldWithExample('services', 'icon', index)}
+                                      title={`Esempio: ${formData.services[index].icon}`}
+                                 >
+                                     ℹ️
+                                 </span>
+                              )}
+                         </label>
+                         <input
+                            type="text"
+                            id={`services_${index}_icon`}
+                            className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            value={item.icon || ''}
+                            onChange={(e) => handleArrayItemTextChange('services', index, 'icon', e.target.value)}
+                         />
+                     </div>
+                      <div className="mb-5">
+                         <label htmlFor={`services_${index}_icon_class`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
+                             Icon Class
+                              {formData.services && formData.services[index] && formData.services[index].hasOwnProperty('icon_class') && (
+                                 <span
+                                     className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
+                                     onClick={() => populateArrayItemFieldWithExample('services', 'icon_class', index)}
+                                      title={`Esempio: ${formData.services[index].icon_class}`}
+                                 >
+                                     ℹ️
+                                 </span>
+                              )}
+                         </label>
+                         <input
+                            type="text"
+                            id={`services_${index}_icon_class`}
+                            className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            value={item.icon_class || ''}
+                            onChange={(e) => handleArrayItemTextChange('services', index, 'icon_class', e.target.value)}
+                         />
+                     </div>
+                      <div className="mb-5">
+                         <label htmlFor={`services_${index}_title`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
+                             Title
+                             {formData.services && formData.services[index] && formData.services[index].hasOwnProperty('title') && (
+                                 <span
+                                     className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
+                                     onClick={() => populateArrayItemFieldWithExample('services', 'title', index)}
+                                      title={`Esempio: ${formData.services[index].title}`}
+                                 >
+                                     ℹ️
+                                 </span>
+                              )}
+                         </label>
+                         <input
+                            type="text"
+                            id={`services_${index}_title`}
+                            className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            value={item.title || ''}
+                            onChange={(e) => handleArrayItemTextChange('services', index, 'title', e.target.value)}
+                         />
+                     </div>
+                     <div className="mb-5">
+                         <label htmlFor={`services_${index}_description`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
+                             Description
+                              {formData.services && formData.services[index] && formData.services[index].hasOwnProperty('description') && (
+                                 <span
+                                     className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
+                                     onClick={() => populateArrayItemFieldWithExample('services', 'description', index)}
+                                      title={`Esempio: ${formData.services[index].description}`}
+                                 >
+                                     ℹ️
+                                 </span>
+                              )}
+                         </label>
+                         <textarea
+                            id={`services_${index}_description`}
+                            className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            value={item.description || ''}
+                            onChange={(e) => handleArrayItemTextChange('services', index, 'description', e.target.value)}
+                            rows={3}
+                         ></textarea>
+                     </div>
+                 </div>
+             ))}
+             <Button type="button" onClick={addService}>Aggiungi Service</Button>
+            </div>
+
+            {/* Sezione dinamica per Statistics */}
+             <div className="mb-5 mt-10 border-t pt-4">
+             <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Statistics</h4>
+             {(formData.statistics || []).map((item, index) => (
+                 <div key={index} className="mb-4 p-3 border rounded-lg dark:border-gray-700 relative">
+                      <button
+                         type="button"
+                         onClick={() => removeStatistic(index)}
+                         className="absolute top-2 right-2 text-red-600 hover:text-red-800 dark:text-red-500 dark:hover:text-red-700"
+                     >
+                        Rimuovi
+                     </button>
+                    <h5 className="text-md font-medium text-gray-900 dark:text-white mb-3">Item #{index + 1}</h5>
+                    <div className="mb-5">
+                         <label htmlFor={`statistics_${index}_icon`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
+                             Icon
+                             {formData.statistics && formData.statistics[index] && formData.statistics[index].hasOwnProperty('icon') && (
+                                 <span
+                                     className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
+                                     onClick={() => populateArrayItemFieldWithExample('statistics', 'icon', index)}
+                                      title={`Esempio: ${formData.statistics[index].icon}`}
+                                 >
+                                     ℹ️
+                                 </span>
+                              )}
+                         </label>
+                         <input
+                            type="text"
+                            id={`statistics_${index}_icon`}
+                            className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            value={item.icon || ''}
+                            onChange={(e) => handleArrayItemTextChange('statistics', index, 'icon', e.target.value)}
+                         />
+                     </div>
+                      <div className="mb-5">
+                         <label htmlFor={`statistics_${index}_count`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
+                             Count
+                              {formData.statistics && formData.statistics[index] && formData.statistics[index].hasOwnProperty('count') && (
+                                 <span
+                                     className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
+                                     onClick={() => populateArrayItemFieldWithExample('statistics', 'count', index)}
+                                      title={`Esempio: ${formData.statistics[index].count}`}
+                                 >
+                                     ℹ️
+                                 </span>
+                              )}
+                         </label>
+                         <input
+                            type="text"
+                            id={`statistics_${index}_count`}
+                            className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            value={item.count || ''}
+                            onChange={(e) => handleArrayItemTextChange('statistics', index, 'count', e.target.value)}
+                         />
+                     </div>
+                     <div className="mb-5">
+                         <label htmlFor={`statistics_${index}_label`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
+                             Label
+                             {formData.statistics && formData.statistics[index] && formData.statistics[index].hasOwnProperty('label') && (
+                                 <span
+                                     className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
+                                     onClick={() => populateArrayItemFieldWithExample('statistics', 'label', index)}
+                                      title={`Esempio: ${formData.statistics[index].label}`}
+                                 >
+                                     ℹ️
+                                 </span>
+                              )}
+                         </label>
+                         <input
+                            type="text"
+                            id={`statistics_${index}_label`}
+                            className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            value={item.label || ''}
+                            onChange={(e) => handleArrayItemTextChange('statistics', index, 'label', e.target.value)}
+                         />
+                     </div>
+                      <div className="mb-5">
+                         <label htmlFor={`statistics_${index}_icon_class`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
+                             Icon Class
+                             {formData.statistics && formData.statistics[index] && formData.statistics[index].hasOwnProperty('icon_class') && (
+                                 <span
+                                     className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
+                                     onClick={() => populateArrayItemFieldWithExample('statistics', 'icon_class', index)}
+                                      title={`Esempio: ${formData.statistics[index].icon_class}`}
+                                 >
+                                     ℹ️
+                                 </span>
+                              )}
+                         </label>
+                         <input
+                            type="text"
+                            id={`statistics_${index}_icon_class`}
+                            className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            value={item.icon_class || ''}
+                            onChange={(e) => handleArrayItemTextChange('statistics', index, 'icon_class', e.target.value)}
+                         />
+                     </div>
+                 </div>
+             ))}
+             <Button type="button" onClick={addStatistic}>Aggiungi Statistic</Button>
+            </div>
+
+            {/* Sezione dinamica per Pricing Packs */}
+             <div className="mb-5 mt-10 border-t pt-4">
+             <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Pricing Packs</h4>
+             {(formData.pricing_packs || []).map((item, index) => (
+                 <div key={index} className="mb-4 p-3 border rounded-lg dark:border-gray-700 relative">
+                      <button
+                         type="button"
+                         onClick={() => removePricingPack(index)}
+                         className="absolute top-2 right-2 text-red-600 hover:text-red-800 dark:text-red-500 dark:hover:text-red-700"
+                     >
+                        Rimuovi
+                     </button>
+                    <h5 className="text-md font-medium text-gray-900 dark:text-white mb-3">Item #{index + 1}</h5>
+                    <div className="mb-5">
+                         <label htmlFor={`pricing_packs_${index}_title`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
+                             Title
+                             {formData.pricing_packs && formData.pricing_packs[index] && formData.pricing_packs[index].hasOwnProperty('title') && (
+                                 <span
+                                     className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
+                                     onClick={() => populateArrayItemFieldWithExample('pricing_packs', 'title', index)}
+                                      title={`Esempio: ${formData.pricing_packs[index].title}`}
+                                 >
+                                     ℹ️
+                                 </span>
+                              )}
+                         </label>
+                         <input
+                            type="text"
+                            id={`pricing_packs_${index}_title`}
+                            className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            value={item.title || ''}
+                            onChange={(e) => handleArrayItemTextChange('pricing_packs', index, 'title', e.target.value)}
+                         />
+                     </div>
+                      <div className="mb-5">
+                         <label htmlFor={`pricing_packs_${index}_cost`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
+                             Cost
+                              {formData.pricing_packs && formData.pricing_packs[index] && formData.pricing_packs[index].hasOwnProperty('cost') && (
+                                 <span
+                                     className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
+                                     onClick={() => populateArrayItemFieldWithExample('pricing_packs', 'cost', index)}
+                                      title={`Esempio: ${formData.pricing_packs[index].cost}`}
+                                 >
+                                     ℹ️
+                                 </span>
+                              )}
+                         </label>
+                         <input
+                            type="text"
+                            id={`pricing_packs_${index}_cost`}
+                            className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            value={item.cost || ''}
+                            onChange={(e) => handleArrayItemTextChange('pricing_packs', index, 'cost', e.target.value)}
+                         />
+                     </div>
+                      <div className="mb-5">
+                         <label htmlFor={`pricing_packs_${index}_project`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
+                             Project
+                              {formData.pricing_packs && formData.pricing_packs[index] && formData.pricing_packs[index].hasOwnProperty('project') && (
+                                 <span
+                                     className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
+                                     onClick={() => populateArrayItemFieldWithExample('pricing_packs', 'project', index)}
+                                      title={`Esempio: ${formData.pricing_packs[index].project}`}
+                                 >
+                                     ℹ️
+                                 </span>
+                              )}
+                         </label>
+                         <input
+                            type="text"
+                            id={`pricing_packs_${index}_project`}
+                            className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            value={item.project || ''}
+                            onChange={(e) => handleArrayItemTextChange('pricing_packs', index, 'project', e.target.value)}
+                         />
+                     </div>
+                     <div className="mb-5">
+                         <label htmlFor={`pricing_packs_${index}_storage`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
+                             Storage
+                              {formData.pricing_packs && formData.pricing_packs[index] && formData.pricing_packs[index].hasOwnProperty('storage') && (
+                                 <span
+                                     className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
+                                     onClick={() => populateArrayItemFieldWithExample('pricing_packs', 'storage', index)}
+                                      title={`Esempio: ${formData.pricing_packs[index].storage}`}
+                                 >
+                                     ℹ️
+                                 </span>
+                              )}
+                         </label>
+                         <input
+                            type="text"
+                            id={`pricing_packs_${index}_storage`}
+                            className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            value={item.storage || ''}
+                            onChange={(e) => handleArrayItemTextChange('pricing_packs', index, 'storage', e.target.value)}
+                         />
+                     </div>
+                      <div className="mb-5">
+                         <label htmlFor={`pricing_packs_${index}_domain`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
+                             Domain
+                              {formData.pricing_packs && formData.pricing_packs[index] && formData.pricing_packs[index].hasOwnProperty('domain') && (
+                                 <span
+                                     className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
+                                     onClick={() => populateArrayItemFieldWithExample('pricing_packs', 'domain', index)}
+                                      title={`Esempio: ${formData.pricing_packs[index].domain}`}
+                                 >
+                                     ℹ️
+                                 </span>
+                              )}
+                         </label>
+                         <input
+                            type="text"
+                            id={`pricing_packs_${index}_domain`}
+                            className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            value={item.domain || ''}
+                            onChange={(e) => handleArrayItemTextChange('pricing_packs', index, 'domain', e.target.value)}
+                         />
+                     </div>
+                      <div className="mb-5">
+                         <label htmlFor={`pricing_packs_${index}_users`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
+                             Users
+                             {formData.pricing_packs && formData.pricing_packs[index] && formData.pricing_packs[index].hasOwnProperty('users') && (
+                                 <span
+                                     className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
+                                     onClick={() => populateArrayItemFieldWithExample('pricing_packs', 'users', index)}
+                                      title={`Esempio: ${formData.pricing_packs[index].users}`}
+                                 >
+                                     ℹ️
+                                 </span>
+                              )}
+                         </label>
+                         <input
+                            type="text"
+                            id={`pricing_packs_${index}_users`}
+                            className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            value={item.users || ''}
+                            onChange={(e) => handleArrayItemTextChange('pricing_packs', index, 'users', e.target.value)}
+                         />
+                     </div>
+                      <div className="mb-5">
+                         <label htmlFor={`pricing_packs_${index}_special_class`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
+                             Special Class
+                             {formData.pricing_packs && formData.pricing_packs[index] && formData.pricing_packs[index].hasOwnProperty('special_class') && (
+                                 <span
+                                     className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
+                                     onClick={() => populateArrayItemFieldWithExample('pricing_packs', 'special_class', index)}
+                                      title={`Esempio: ${formData.pricing_packs[index].special_class}`}
+                                 >
+                                     ℹ️
+                                 </span>
+                              )}
+                         </label>
+                         <input
+                            type="text"
+                            id={`pricing_packs_${index}_special_class`}
+                            className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            value={item.special_class || ''}
+                            onChange={(e) => handleArrayItemTextChange('pricing_packs', index, 'special_class', e.target.value)}
+                         />
+                     </div>
+                 </div>
+             ))}
+             <Button type="button" onClick={addPricingPack}>Aggiungi Pricing Pack</Button>
+            </div>
 
 
           {/* Bottone per salvare che attiva handleSubmit */}
