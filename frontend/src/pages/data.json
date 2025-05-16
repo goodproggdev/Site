@@ -1,0 +1,365 @@
+{
+	"name": "Enrico Baldasso",
+	"presentation": "Ciao, Io Sono",
+	"header_mono_subtitle": "Backend & Integration Analyst | Software Developer",
+	"print_resume": "Print Resume",
+	"download_my_cv": "Download My CV ",
+	"social_links": {
+		"facebook": "#",
+		"twitter": "#",
+		"instagram": "#",
+		"github": "#"
+	},
+	"my_resume_label": {
+		"my": "My",
+		"resume": "Resume"
+	},
+	"who_am_i": "Chi Sono?",
+	"about": {
+		"who": "Mi occupo di Backend per gestsionali aziendali, Sviluppo eCommerce e Integrazione per sistemi Regionali, Ministeroiali ed Europei",
+		"details": "Lavoro a stretto contatto con piccole imprese per farle crescere sul mercato internazionale, tramite gestionali ed eCommerce. Inoltre faccio capo al governo europeo e italiano per permettere la condivisione dati tra i vari Paesi Membri dell'Europa"
+	},
+	"personal_info": {
+		"birthdate": "23/03/1999",
+		"work_email": "sitiegestionali@gmail.com",
+		"personal_email": "sitiegestionali@gmail.com",
+		"work_number": "+ (39) 3517287336",
+		"instagram": "enricobaldasso"
+	},
+	"skills_label": "Skills",
+	"skills": [
+		{
+			"name": "C",
+			"level": "97%"
+		},
+		{
+			"name": "TypeScript & JavaScript",
+			"level": "85%"
+		},
+		{
+			"name": "Python",
+			"level": "80%"
+		},
+		{
+			"name": "SQL",
+			"level": "90%"
+		},
+		{
+			"name": "Java",
+			"level": "90%"
+		},
+		{
+			"name": "F#",
+			"level": "90%"
+		}
+	],
+	"languages_label": "Languages",
+	"languages": [
+		{
+			"name": "Italiano",
+			"level": "100%"
+		},
+		{
+			"name": "Inglese",
+			"level": "75%"
+		},
+		{
+			"name": "Programming",
+			"level": "95%"
+		}
+	],
+	"personal_info_label": "Personal Info",
+	"my_expertise_label": "My Expertise",
+	"expertise_list": [
+		{
+			"name": "Business Management Software Development",
+			"icon_class": "ti-widget",
+			"subtitle": "Sviluppo di soluzioni software personalizzate per la gestione aziendale, tra cui CRM, ERP e strumenti di automazione dei processi, finalizzati a ottimizzare operazioni, migliorare l'efficienza e supportare decisioni strategiche."
+		},
+		{
+			"name": "eCommerce Development",
+			"icon_class": "ti-paint-bucket",
+			"subtitle": "Progettazione e sviluppo di piattaforme eCommerce su misura, con integrazione di funzionalità come pagamenti sicuri, gestione inventario e logistica, per garantire un'esperienza utente fluida e scalabile."
+		},
+		{
+			"name": "Design and Development - Backend and Middleware",
+			"icon_class": "ti-stats-up",
+			"subtitle": "Creazione e gestione di architetture backend robuste e middleware efficienti, con focus su scalabilità, sicurezza e integrazione tra sistemi, per supportare applicazioni complesse e garantire prestazioni ottimali."
+		}
+	],
+	"education_label": "Education",
+	"education_list": [
+		{
+			"period": "2024 - Present",
+			"title": "Università Ingegneria Informatica",
+			"subtitle": "Attualmente impegnato nel completamento del percorso di laurea in Ingegneria Informatica, dopo una sospensione di due anni per motivi lavorativi. Ripreso il percorso con focus su sviluppo software, architetture di sistema e ottimizzazione algoritmica, per acquisire competenze tecniche avanzate e una solida base ingegneristica."
+		},
+		{
+			"period": "2023 -2024",
+			"title": "Corso IBM Data Science",
+			"subtitle": "Completato un corso specializzato in Data Science promosso da IBM, con acquisizione di competenze in analisi dati, machine learning, Python e strumenti di visualizzazione, finalizzato alla risoluzione di problemi complessi attraverso l'uso dei dati."
+		},
+		{
+			"period": "2018 - 2020",
+			"title": "Università Informatica",
+			"subtitle": "Frequentato i primi due anni di laurea in Informatica presso l'Università Ca' Foscari, con introduzione alla programmazione, algoritmi e strutture dati. Il percorso è stato sospeso per motivi lavorativi, ma ora sto continuando gli studi per completare la mia formazione accademica."
+		},
+		{
+			"period": "2012 - 2018",
+			"title": "Liceo Scientifico opzione Scienze Applicate",
+			"subtitle": "Diploma conseguito con focus su materie scientifiche e tecnologiche, con particolare attenzione alla matematica, fisica e informatica, sviluppando un approccio analitico e metodologico alla risoluzione dei problemi."
+		}
+	],
+	"work_experience_label": "Esperienze Lavorative",
+	"work_experience_list": [
+		{
+			"period": "2024 - Presente",
+			"title": "Tecnico di Integrazione dei Sistemi Europei per il Governo Italiano",
+			"subtitle": "Responsabile dell'integrazione e del coordinamento di sistemi informatici europei con quelli del governo italiano, ministeri e regioni. Garantito il corretto allineamento delle infrastrutture IT con le normative e gli standard europei, supportando processi decisionali e operativi a livello istituzionale."
+		},
+		{
+			"period": "2023 - 2024",
+			"title": "Sviluppatore Gestionali e Backend Developer",
+			"subtitle": "Esperto nello sviluppo e manutenzione di sistemi gestionali e backend, con competenze nella progettazione di architetture scalabili e sicure. Implementazione di soluzioni personalizzate per ottimizzare i flussi di lavoro aziendali e migliorare l'efficienza operativa."
+		},
+		{
+			"period": "2018 - 2022",
+			"title": "Sviluppo Sistemi Chiave Gestionali",
+			"subtitle": "Progettazione e sviluppo di sistemi gestionali chiave, tra cui moduli per la gestione ordini, stampe e database. Creazione di soluzioni integrate per automatizzare processi aziendali, garantendo affidabilità, scalabilità e prestazioni ottimali."
+		},
+		{
+			"period": "2017",
+			"title": "Supporto Ricerca e Sviluppo",
+			"subtitle": "Supporto ricerca, sviluppo e sperimentazione vernici a base polimerica. Attività di sintesi polimerica."
+		}
+	],
+	"statistics": [
+		{
+			"icon": "ti-alarm-clock",
+			"count": 5000,
+			"label": "Hours Worked",
+			"icon_class": "icon-xl"
+		},
+		{
+			"icon": "ti-layers-alt",
+			"count": 70,
+			"label": "Project Finished",
+			"icon_class": "icon-xl"
+		},
+		{
+			"icon": "ti-face-smile",
+			"count": 50,
+			"label": "Happy Clients",
+			"icon_class": "icon-xl"
+		},
+		{
+			"icon": "ti-heart-broken",
+			"count": "200k",
+			"label": "Bug Fixed",
+			"icon_class": "icon-xl"
+		}
+	],
+	"my_service_label": "My Services",
+	"services": [
+		{
+			"icon": "ti-vector",
+			"icon_class": "text-danger",
+			"title": "Sviluppo eCommerce",
+			"description": "Creazione di piattaforme eCommerce personalizzate, ottimizzate per l'usabilità e le performance, con integrazione di gateway di pagamento, gestione inventario e logistica."
+		},
+		{
+			"icon": "ti-write",
+			"icon_class": "text-danger",
+			"title": "Sviluppo Gestionali",
+			"description": "Progettazione e sviluppo di software gestionali per la pianificazione aziendale, la contabilità, la gestione del personale e l'ottimizzazione dei processi interni."
+		},
+		{
+			"icon": "ti-package",
+			"icon_class": "text-danger",
+			"title": "Sviluppo Database",
+			"description": "Progettazione e gestione di database relazionali e non relazionali, ottimizzazione delle query, migrazione dati e creazione di sistemi di reporting avanzati."
+		},
+		{
+			"icon": "ti-map-alt",
+			"icon_class": "text-danger",
+			"title": "Sviluppo Eseguibili",
+			"description": "Realizzazione di applicazioni standalone per qualsiasi sistema operativo, con particolare attenzione all'efficienza e alla sicurezza, utilizzando linguaggi di programmazione come C e C++."
+		},
+		{
+			"icon": "ti-bar-chart",
+			"icon_class": "text-danger",
+			"title": "Sviluppo Siti Vetrina",
+			"description": "Creazione di siti web vetrina responsive e moderni, con design accattivante, ottimizzazione SEO e integrazione di strumenti di analisi per il monitoraggio delle performance."
+		},
+		{
+			"icon": "ti-support",
+			"icon_class": "text-danger",
+			"title": "Elaborazione Dati",
+			"description": "Analisi, pulizia e trasformazione di dataset complessi, creazione di algoritmi per l'estrazione di informazioni utili e sviluppo di strumenti per l'analisi dati in tempo reale."
+		}
+	],
+	
+	"contact_label": "Parliamone!",
+	"pricing_packs_label": "Packs<span> Pricing",
+	"pricing_packs": [
+		{
+			"title": "Sito Vetrina",
+			"cost": "750€",
+			"project": "1",
+			"storage": "10GB",
+			"domain": "1",
+			"users": "1",
+			"special_class": ""
+		},
+		{
+			"title": "eCommerce",
+			"cost": "1600€",
+			"project": "2",
+			"storage": "50GB",
+			"domain": "1",
+			"users": "3",
+			"special_class": ""
+		},
+		{
+			"title": "Web App",
+			"cost": "3000€",
+			"project": "4",
+			"storage": "50GB",
+			"domain": "2",
+			"users": "10",
+			"special_class": "price-card-requried"
+		},
+		{
+			"title": "Gestionale",
+			"cost": "5000€",
+			"project": "10",
+			"storage": "1000GB",
+			"domain": "3",
+			"users": "Unlimited",
+			"special_class": ""
+		}
+	],
+	"freelancing_label": "Sono disponibile per progetti freelance nel campo dello sviluppo software.",
+	"hire_me_label": "Contattami",
+	"my_portfolio_label": "My</span> Portfolio",
+	"portfolio_items": [
+		{
+			"title": "Pircher",
+			"subtitle": "Cliente Gestionale",
+			"image": "static/assets/imgs/Pircher.jpg",
+			"alt": "https://www.pircher.eu/it/"
+		},
+		{
+			"title": "Maddalena Spa",
+			"subtitle": "Cliente Gestionale",
+			"image": "static/assets/imgs/maddalena02.jpg",
+			"alt": "https://www.maddalena.it/"
+		},
+		{
+			"title": "IBM",
+			"subtitle": "Partner",
+			"image": "static/assets/imgs/IBM01.jpg",
+			"alt": "https://www.ibm.com/it-it"
+		},
+		{
+			"title": "Accenture",
+			"subtitle": "Partner",
+			"image": "static/assets/imgs/Accenture01.jpg",
+			"alt": "https://www.accenture.com/it-it"
+		},
+		{
+			"title": "ABS Utensili",
+			"subtitle": "Sviluppo sito",
+			"image": "static/assets/imgs/ABS01.jpg",
+			"alt": "https://absutensili.com/it/home/"
+		},
+		{
+			"title": "Orologiaio da Sebastian",
+			"subtitle": "Sviluppo eCommerce",
+			"image": "static/assets/imgs/oro01.jpg",
+			"alt": "https://orologiaiodasebastian.com/"
+		}
+	],
+	"latest_label": " Latest",
+	"news_label": " News",
+	"blog_posts": [
+		{
+			"title": "Tecnico per Bruxells - Projectathon Europeo",
+			"author": "Admin",
+			"image": "static/assets/imgs/EU01.jpg",
+			"likes_html": "",
+			"comments_html": "",
+			"alt": "https://interoperable-europe.ec.europa.eu/collection/digital-building-blocks/solution/once-only-technical-system-oots",
+			"description": "Progetti chiave dell'Unione Europea per la semplificazione dell'accesso e dell'uso dei servizi pubblici",
+			"full_description": "Ho contribuito attivamente all'implementazione del sistema tecnico 'Once Only' (OOTS) e del portale digitale unico (SDG) in Italia. Ho collaborato con tutte le regioni e i ministeri italiani per garantire l'adozione e l'integrazione di questi sistemi, facilitando lo scambio transfrontaliero di dati e documenti e migliorando l'esperienza digitale di cittadini e imprese. Ho lavorato per garantire l'interoperabilità tra le pubbliche amministrazioni italiane e quelle degli altri Stati membri, in accordo con le normative europee.",
+			"read_more_url": "https://interoperable-europe.ec.europa.eu/collection/digital-building-blocks/solution/once-only-technical-system-oots"
+		},
+		{
+			"title": "Certificato IBM in Data Science",
+			"author": "Admin",
+			"likes_html": "",
+			"comments_html": "",
+			"image": "static/assets/imgs/Certi01.jpg",
+			"alt": "https://coursera.org/share/67a906a955411b3c4e85a8be587c848a",
+			"description": "Corso completo IBM in Data Science",
+			"full_description": "In questo certificato professionale, i partecipanti hanno sviluppato e affinato competenze pratiche in Data Science e Machine Learning. Hanno iniziato con un’introduzione alla Data Science e alla sua metodologia, familiarizzando e utilizzando una varietà di strumenti per la scienza dei dati, imparando Python e SQL, eseguendo attività di visualizz azione e analisi dei dati, e creando modelli di Machine Learning. Durante il percorso, hanno completato diversi laboratori e compiti nel cloud, inclusa la realizzazione di un Progetto Capstone finale per applicare e dimostrare le conoscenze e le competenze acquisite.",
+			"read_more_url": "https://coursera.org/share/67a906a955411b3c4e85a8be587c848a"
+		},
+		{
+			"title": "Partner Chiave",
+			"author": "Admin",
+			"likes_html": "",
+			"comments_html": "",
+			"image": "static/assets/imgs/dgs.jpg",
+			"alt": "https://www.dgsspa.com/",
+			"description": "Agenzia per cui lavoro spesso",
+			"full_description": "Esperienze professionalo maturate presso DGS SPA, azienda leader nel settore ICT, specializzata in soluzioni di cybersecurity, digital solutions e management consulting. La mia attività è stata incentrata su vari progetti di trasformazione digitale e sviluppo software.",
+			"read_more_url": "https://www.dgsspa.com/"
+		},
+		{
+			"title": "La mia esperienza da chimico",
+			"author": "Admin",
+			"likes_html": "",
+			"comments_html": "",
+			"image": "static/assets/imgs/Akzo01.jpg",
+			"alt": "https://www.akzonobel.com/en",
+			"description": "AkzoNobel - Ricerca e Sviluppo Polimeri",
+			"full_description": "Ho lavorato per un periodo a Como per l' AkzoNobel, multinazionale di riferimento nel settore dei prodotti vernicianti, con responsabilità nelle aree di logistica, produzione e ricerca. Sono stato coinvolto in progetti di ricerca e sviluppo di nuove formulazioni di vernici a base polimerica.",
+			"read_more_url": "https://www.akzonobel.com/en"
+		},
+		{
+			"title": "Lavorando con il Governo",
+			"author": "Admin",
+			"likes_html": "",
+			"comments_html": "",
+			"image": "static/assets/imgs/agid.jpg",
+			"alt": "https://www.agid.gov.it/it",
+			"description": "AGID - Agenzia per l'Italia Digitale",
+			"full_description": "Presso l'AGID (Agenzia per l'Italia Digitale), l'agenzia governativa dedicata alla trasformazione digitale del Paese. Ho collaborato a progetti di innovazione dei servizi pubblici, finanziati dall'Unione Europea, per conto di Ministeri e Regioni italiane.",
+			"read_more_url": "https://www.agid.gov.it/it"
+		},
+		{
+			"title": "Capacità di mediazione",
+			"author": "Admin",
+			"likes_html": "",
+			"comments_html": "",
+			"image": "static/assets/imgs/meet01.jpg",
+			"alt": "Porro Quisqua",
+			"description": "Ho partecipato a una simulazione di parlamento europeo supervisionata da 2 Parlamentari Europei.",
+			"full_description": "Sono stato premiato da essi, come miglior mediatore. In particolare per le mie doti nel trovare fronti comunemente accettati dai vari schieramenti in molti ambiti, che vanno dal reperimento di risorse agricole alle tecnologie più vantaggiose nell'ambito energetico in base alla conformazione del territorio.",
+			"read_more_url": "#"
+		}
+	],
+	"form_title": "Send a message",
+	"form_placeholder_name": "Name *",
+	"form_placeholder_email": "Email *",
+	"form_placeholder_message": "Message *",
+	"form_button_text": "Send Message",
+	"contact_title": "Get in touch",
+	"phone_label": "Phone :",
+	"phone_number": "+ (123) 456-789",
+	"address_label": "Address :",
+	"address": "12345 Fake ST NoWhere AB Country.",
+	"email_label": "Email :",
+	"email": "info@website.com"
+}
