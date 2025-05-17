@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react"; // Importa useRef
 import { Button, Modal, Spinner } from "flowbite-react";
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
@@ -25,54 +25,175 @@ const categoryDataMap = {
 // Definisci una struttura JSON iniziale vuota come base per lo stato
 // Usiamo la struttura del primo JSON come riferimento, ma con campi vuoti
 const initialJsonStructure = {
-    "name": "",
-    "presentation": "",
-    "header_mono_subtitle": "",
-    "print_resume": "",
-    "download_my_cv": "",
-    "social_links": { "facebook": "", "twitter": "", "instagram": "", "github": "" },
-    "my_resume_label": { "my": "", "resume": "" },
-    "who_am_i": "",
-    "about": { "who": "", "details": "" },
-    "personal_info": { "birthdate": "", "work_email": "", "personal_email": "", "work_number": "", "instagram": "" },
-    "skills_label": "",
-    "skills": [],
-    "languages_label": "",
-    "languages": [],
-    "personal_info_label": "",
-    "my_expertise_label": "",
-    "expertise_list": [],
-    "education_label": "",
-    "education_list": [],
-    "work_experience_label": "",
-    "work_experience_list": [],
-    "statistics": [],
-    "my_service_label": "",
-    "services": [],
-    "contact_label": "",
-    "pricing_packs_label": "",
-    "pricing_packs": [],
-    "freelancing_label": "",
-    "hire_me_label": "",
-    "my_portfolio_label": "",
-    "portfolio_items": [],
-    "latest_label": "",
-    "news_label": "",
-    "blog_posts": [],
-    "form_title": "",
-    "form_placeholder_name": "",
-    "form_placeholder_email": "",
-    "form_placeholder_message": "",
-    "form_button_text": "",
-    "contact_title": "",
-    "phone_label": "",
-    "phone_number": "",
-    "address_label": "",
-    "address": "",
-    "email_label": "",
-    "email": ""
+	"name": "",
+	"presentation": "",
+	"header_mono_subtitle": "",
+	"print_resume": "",
+	"download_my_cv": "",
+	"social_links": { "facebook": "", "twitter": "", "instagram": "", "github": "" },
+	"my_resume_label": { "my": "", "resume": "" },
+	"who_am_i": "",
+	"about": { "who": "", "details": "" },
+	"personal_info": { "birthdate": "", "work_email": "", "personal_email": "", "work_number": "", "instagram": "" },
+	"skills_label": "",
+	"skills": [],
+	"languages_label": "",
+	"languages": [],
+	"personal_info_label": "",
+	"my_expertise_label": "",
+	"expertise_list": [],
+	"education_label": "",
+	"education_list": [],
+	"work_experience_label": "",
+	"work_experience_list": [],
+	"statistics": [],
+	"my_service_label": "",
+	"services": [],
+	"contact_label": "",
+	"pricing_packs_label": "",
+	"pricing_packs": [],
+	"freelancing_label": "",
+	"hire_me_label": "",
+	"my_portfolio_label": "",
+	"portfolio_items": [],
+	"latest_label": "",
+	"news_label": "",
+	"blog_posts": [],
+	"form_title": "",
+	"form_placeholder_name": "",
+	"form_placeholder_email": "",
+	"form_placeholder_message": "",
+	"form_button_text": "",
+	"contact_title": "",
+	"phone_label": "",
+	"phone_number": "",
+	"address_label": "",
+	"address": "",
+	"email_label": "",
+	"email": ""
 };
 
+
+// Funzione per verificare se un valore è "vuoto"
+const isEmptyValue = (value) => {
+    return value === null || value === undefined ||
+           (typeof value === 'string' && value.trim() === '') ||
+           (Array.isArray(value) && value.length === 0) ||
+           (typeof value === 'object' && value !== null && Object.keys(value).length === 0 && !Array.isArray(value));
+};
+
+// Funzione ricorsiva per ottenere un valore nidificato in modo sicuro
+const getNestedValue = (data, keys) => {
+    let current = data;
+    if (!data || typeof data !== 'object') return undefined; // Gestisce caso base non oggetto
+
+    for (let i = 0; i < keys.length; i++) {
+        const key = keys[i];
+         if (current && typeof current === 'object' && current.hasOwnProperty(key)) {
+             current = current[key];
+         } else {
+             return undefined; // Percorso non esiste
+         }
+    }
+    return current;
+};
+
+
+// Funzione di merge: i dati di origine (es. CV parsato) sovrascrivono la destinazione SOLO SE NON SONO VUOTI
+// Utilizzata quando si applicano i dati parsati dal CV.
+const mergeSourceDataIfNotEmpty = (destinationData, sourceData) => {
+    const newData = { ...destinationData }; // Inizia con una copia dei dati di destinazione
+
+    if (sourceData) {
+        for (const key in sourceData) {
+            if (sourceData.hasOwnProperty(key)) {
+                const sourceValue = sourceData[key];
+                const destinationValue = newData[key];
+
+                // Se il valore di origine NON è vuoto, usalo
+                if (!isEmptyValue(sourceValue)) {
+                    if (Array.isArray(sourceValue)) {
+                        // Se il valore di origine è un array (non vuoto), sostituisci l'array nella destinazione
+                        newData[key] = [...sourceValue]; // Copia l'array
+                    } else if (typeof sourceValue === 'object' && sourceValue !== null && typeof destinationValue === 'object' && destinationValue !== null && !Array.isArray(destinationValue)) {
+                        // Se entrambi (origine e destinazione) sono oggetti non null e non array, fai un merge ricorsivo
+                         newData[key] = mergeSourceDataIfNotEmpty(destinationValue, sourceValue);
+                    } else {
+                        // Per valori primitivi non vuoti o in caso di mismatch di tipo dove sourceValue non è un oggetto/array,
+                        // il valore di origine sovrascrive la destinazione.
+                        newData[key] = sourceValue;
+                    }
+                }
+                // Se il valore di origine è vuoto, non facciamo nulla, mantenendo il destinationValue originale.
+            }
+        }
+    }
+    return newData;
+};
+
+// Funzione di merge: i dati di origine (es. default categoria) riempiono la destinazione SOLO SE IL CAMPO NELLA DESTINAZIONE
+// È VUOTO O CORRISPONDE AI DATI DI DEFAULT PRECEDENTEMENTE APPLICATI.
+// Utilizzata quando si cambia categoria.
+// Funzione di merge modificata: i dati di origine (es. default categoria) riempiono la destinazione SOLO SE IL CAMPO NELLA DESTINAZIONE
+// È VUOTO O CORRISPONDE AI DATI DI DEFAULT PRECEDENTEMENTE APPLICATI.
+// Vengono applicati anche i valori vuoti/null dal nuovo default in questi casi.
+// Funzione di merge modificata: i dati di origine (es. default categoria) riempiono la destinazione SOLO SE IL CAMPO NELLA DESTINAZIONE
+// È VUOTO O CORRISPONDE AI DATI DI DEFAULT PRECEDENTEMENTE APPLICATI.
+// Vengono applicati anche i valori vuoti/null dal nuovo default in questi casi.
+// Funzione di merge modificata: i dati di origine (es. default categoria) riempiono la destinazione SOLO SE IL CAMPO NELLA DESTINAZIONE
+// È VUOTO O CORRISPONDE AI DATI DI DEFAULT PRECEDENTEMENTE APPLICATI.
+// Vengono applicati anche i valori vuoti/null dal nuovo default in questi casi.
+const updateUntouchedGenericFields = (currentData, newGenericData, previousGenericData) => {
+    const newData = { ...currentData };
+
+    if (newGenericData) {
+        for (const key in newGenericData) {
+            if (newGenericData.hasOwnProperty(key)) {
+                const newGenericValue = newGenericData[key];
+                const currentValue = newData[key];
+
+                // Ottieni il valore corrispondente dai dati di default precedentemente applicati
+                // Usiamo la navigazione nidificata sicura se necessario
+                 const previousGenericValue = previousGenericData?.[key];
+
+
+                // Determina se il valore corrente nella form è vuoto OPPURE se corrisponde al valore
+                // che aveva dai dati di default precedentemente applicati (e quel valore non era vuoto)
+                 // Usiamo JSON.stringify per un confronto profondo di oggetti/array, che funziona per dati serializzabili.
+                 // Confrontiamo solo se il previousGenericValue non era esso stesso vuoto, per evitare
+                 // di considerare "intoccato" un campo sempre vuoto.
+                const isCurrentValueEmptyOrMatchesPreviousGeneric = isEmptyValue(currentValue) || (
+                    !isEmptyValue(previousGenericValue) && JSON.stringify(currentValue) === JSON.stringify(previousGenericValue)
+                );
+
+                // **Punto di Modifica:** Se il campo corrente è vuoto O non è stato toccato (corrisponde al default precedente),
+                // applica SEMPRE il nuovo valore di default, anche se è vuoto o null.
+                if (isCurrentValueEmptyOrMatchesPreviousGeneric) { // <<< Modificato: rimossa la condizione && !isEmptyValue(newGenericValue)
+                    if (Array.isArray(newGenericValue)) {
+                         // Se il nuovo valore di default è un array, sostituisci l'array corrente
+                         newData[key] = [...newGenericValue]; // Copia l'array
+                    } else if (typeof newGenericValue === 'object' && newGenericValue !== null && typeof currentValue === 'object' && currentValue !== null && !Array.isArray(currentValue)) {
+                         // Se entrambi (nuovo default e corrente) sono oggetti non null e non array, fai un merge ricorsivo.
+                         // Passiamo anche il corrispondente sotto-oggetto del previousGenericData alla chiamata ricorsiva.
+                         // Nota: La ricorsione userà la stessa logica modificata.
+                         newData[key] = updateUntouchedGenericFields(currentValue, newGenericValue, previousGenericData?.[key]);
+                    } else {
+                         // Per valori primitivi, applica il nuovo valore di default (che può essere vuoto/null)
+                         newData[key] = newGenericValue;
+                    }
+                } else if (typeof newGenericValue === 'object' && newGenericValue !== null && typeof currentValue === 'object' && currentValue !== null && !Array.isArray(currentValue)) {
+                    // Anche se il campo di primo livello non è vuoto o non corrisponde al default precedente,
+                    // dobbiamo comunque fare un merge ricorsivo per riempire eventuali campi vuoti o intoccati
+                    // ALL'INTERNO di quell'oggetto nidificato.
+                    // Nota: La ricorsione userà la stessa logica modificata.
+                     newData[key] = updateUntouchedGenericFields(currentValue, newGenericValue, previousGenericData?.[key]);
+                }
+                 // Altrimenti (il campo corrente non è vuoto e non corrisponde al default precedente), manteniamo il currentValue originale.
+            }
+        }
+    }
+    return newData;
+};
 
 const UploadModal = ({ isOpen, onClose }) => {
   // Stato principale che riflette la struttura del JSON
@@ -93,16 +214,45 @@ const UploadModal = ({ isOpen, onClose }) => {
     // Inizializza con la prima categoria di default ('digitale-it')
     const [selectedCategory, setSelectedCategory] = useState('digitale-it');
 
-    // Utilizza un useEffect per caricare i dati di default della categoria selezionata
-    // all'apertura del modal e quando la categoria selezionata cambia.
+     // Ref per memorizzare i dati di default della categoria *precedentemente* applicata.
+     // Usiamo useRef perché non vogliamo che il suo cambiamento causi un re-render,
+     // ma vogliamo che il valore persista tra i render.
+     const previousGenericDataRef = useRef(initialJsonStructure);
+
+
+    // Effetto per gestire l'apertura del modal e il cambio categoria
     useEffect(() => {
         if (isOpen) {
-             const defaultData = categoryDataMap[selectedCategory]?.data || initialJsonStructure;
-             // Carica i dati di default nella form, sovrascrivendo i dati correnti
-             setFormData(defaultData);
-             console.log(`Caricato JSON di default per categoria: ${selectedCategory}`);
+             const newGenericData = categoryDataMap[selectedCategory]?.data || initialJsonStructure;
+
+             setFormData(prevFormData => {
+                 // Utilizza la nuova logica di merge: applica i nuovi dati di default
+                 // solo ai campi che sono vuoti O che corrispondono ai dati di default precedentemente applicati.
+                 const updatedFormData = updateUntouchedGenericFields(prevFormData, newGenericData, previousGenericDataRef.current);
+
+                 // Aggiorna il ref per memorizzare i dati di default appena applicati.
+                 // Questo valore sarà "previousGenericData" nella prossima esecuzione di questo useEffect
+                 // dovuta a un cambio di categoria.
+                 previousGenericDataRef.current = newGenericData;
+
+                 return updatedFormData;
+             });
+
+
+             // Resetta file states etc.
+             // Note: Resetting selectedCVFile here means if you change category after parsing,
+             // the CV data won't be prioritized with the *new* generic data unless you re-upload.
+             // This seems consistent with "se si cambia categoria più volte" - each category selection
+             // applies the *new* default based on the *current* state.
+             setSelectedImageFiles({});
+             // Non resettiamo selectedCVFile qui, così sappiamo se un CV è stato caricato.
+             // La form data è già stata fusa in base alla priorità del CV.
+             setParsingError(null);
+             setIsParsing(false);
+
+             console.log(`Applicati nuovi dati di default per categoria: ${selectedCategory} ai campi vuoti o intoccati.`);
         }
-    }, [isOpen, selectedCategory]); // Dipende dall'apertura del modal e dalla categoria selezionata
+    }, [isOpen, selectedCategory]); // Depend on modal open state and selected category
 
 
     // Reset dello stato quando il modal viene chiuso
@@ -114,6 +264,7 @@ const UploadModal = ({ isOpen, onClose }) => {
             setSelectedCVFile(null); // Resetta il file CV
             setIsParsing(false); // Resetta lo stato di parsing
             setParsingError(null); // Resetta l'errore
+            previousGenericDataRef.current = initialJsonStructure; // Resetta anche il ref del default precedente
         }
     }, [isOpen]);
 
@@ -128,8 +279,8 @@ const UploadModal = ({ isOpen, onClose }) => {
         let current = newData;
         for (let i = 0; i < keys.length - 1; i++) {
             // Assicurati che la chiave esista o crea un oggetto vuoto se necessario
-            if (current[keys[i]] === undefined || current[keys[i]] === null) {
-                current[keys[i]] = {};
+            if (current[keys[i]] === undefined || current[keys[i]] === null || typeof current[keys[i]] !== 'object' || Array.isArray(current[keys[i]])) {
+                current[keys[i]] = {}; // Crea un oggetto vuoto se non lo è o se è un array (probabilmente un errore nella struttura)
             }
             current = current[keys[i]];
         }
@@ -151,9 +302,12 @@ const UploadModal = ({ isOpen, onClose }) => {
                     [fieldName]: value
                 };
             } else {
-                 // Se l'elemento non esiste, creane uno nuovo e aggiungilo (gestione di aggiunta tramite input diretto)
-                 // Questo caso non dovrebbe verificarsi con i bottoni "Aggiungi Item", ma è una sicurezza.
-                 updatedArray[index] = { [fieldName]: value };
+                 // Se l'elemento non esiste (es. aggiunta tramite input diretto), creane uno nuovo.
+                 // Questo caso è meno comune se si usano i bottoni "Aggiungi Item".
+                 console.warn(`Aggiunta/modifica di un elemento inesistente all'indice ${index} nell'array "${arrayName}". Considera l'uso dei bottoni "Aggiungi Item".`);
+                 const newItem = {};
+                 newItem[fieldName] = value;
+                 updatedArray[index] = newItem; // Potrebbe essere necessario gestire correttamente gli indici
             }
             return {
                 ...prevFormData,
@@ -177,10 +331,10 @@ const UploadModal = ({ isOpen, onClose }) => {
            if (updatedArray[index]) {
                updatedArray[index] = {
                    ...updatedArray[index],
-                   image: file ? `imgs/${file.name}` : (updatedArray[index].image || '') // Mantieni l'immagine esistente se nessun file è selezionato
+                   image: file ? `imgs/${file.name}` : (updatedArray[index]?.image || '') // Mantieni l'immagine esistente se nessun file è selezionato
                };
            } else {
-                // Se l'elemento non esiste, creane uno nuovo
+                // Se l'elemento non esiste, creane uno nuovo con l'immagine
                  updatedArray[index] = { image: file ? `imgs/${file.name}` : '' };
            }
            return {
@@ -203,7 +357,7 @@ const UploadModal = ({ isOpen, onClose }) => {
 
            const formDataToSend = new FormData(); // Crea un oggetto FormData
            formDataToSend.append('cv_file', file); // Aggiungi il file CV con il nome 'cv_file' (deve corrispondere al backend)
-           // Invia anche la categoria selezionata al backend
+           // Invia anche la categoria selezionata al backend - Potrebbe influenzare il parsing
            formDataToSend.append('category', selectedCategory);
 
 
@@ -228,16 +382,14 @@ const UploadModal = ({ isOpen, onClose }) => {
 
                   console.log("Dati JSON ricevuti dal backend:", parsedData);
 
-                // Popola la form con i dati ricevuti, sovrascrivendo i dati generici correnti
-                setFormData(prevFormData => ({
-                    ...prevFormData, // Mantieni i campi non popolati dal parser o le strutture complesse non modificate
-                    ...parsedData // Sovrascrivi con i dati estratti dal parser
-                    // Nota: questa fusione funziona bene per i campi top-level e le strutture
-                    // nidificate se il parser le restituisce. Per gli array, sovrascriverà l'intero array.
-                    // Se vuoi unire elementi degli array (es. aggiungere esperienze estratte
-                    // a quelle già presenti), la logica qui deve essere più complessa.
-                    // Per semplicità, qui sostituiamo gli array con quelli estratti.
-                }));
+                // === Logica di Fusione: i dati parsati sovrascrivono solo se non sono vuoti ===
+                // Questo avviene INDIPENDENTEMENTE dalla categoria selezionata al momento del parsing.
+                // I dati del CV hanno la priorità sui dati correnti della form (che potrebbero essere default o modificati).
+                setFormData(prevFormData => {
+                    return mergeSourceDataIfNotEmpty(prevFormData, parsedData);
+                });
+                // ====================================================================
+
 
                 // Potresti voler pulire i file immagine selezionati in precedenza se il CV ne ha di nuovi
                  setSelectedImageFiles({});
@@ -276,7 +428,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                 let current = newData;
                 for (let i = 0; i < keys.length - 1; i++) {
                      // Crea l'oggetto se non esiste (utile se l'esempio proviene da una struttura parziale)
-                     if (!current[keys[i]] || typeof current[keys[i]] !== 'object') current[keys[i]] = {};
+                     if (!current[keys[i]] || typeof current[keys[i]] !== 'object' || Array.isArray(current[keys[i]])) current[keys[i]] = {};
                      current = current[keys[i]];
                 }
                 current[keys[keys.length - 1]] = currentValue; // Popola con il valore trovato nel formData attuale
@@ -367,7 +519,8 @@ const UploadModal = ({ isOpen, onClose }) => {
      };
 
       const addPricingPack = () => {
-         setFormData(prev => ({...prev, pricing_packs: [...(Array.isArray(prev.pricing_packs) ? prev.pricing_packs : []), { title: "", cost: "", project: "", storage: "", domain: "", users: "", special_class: "" }]}));
+         setFormData(prev => ({...prev, pricing_packs: [...(Array.isArray(prev.pricing_packs) ? prev.pricing_packs : []).filter(item => item && typeof item === 'object'), { title: "", cost: "", project: "", storage: "", domain: "", users: "", special_class: "" }]}));
+        // Aggiunto un filtro per sicurezza nel caso ci siano elementi null/undefined nell'array esistente
      };
 
 
@@ -521,14 +674,14 @@ const UploadModal = ({ isOpen, onClose }) => {
                  )}
                  {!isParsing && !parsingError && !selectedCVFile && (
                       <p className="mt-1 text-sm text-gray-500 dark:text-gray-300">
-                        Carica il tuo CV per popolare automaticamente la form (i dati generici correnti verranno sovrascritti).
+                        Carica il tuo CV per popolare automaticamente la form (i dati estratti verranno fusi con i dati attuali, con priorità per i campi non vuoti del CV).
                      </p>
                  )}
             </div>
 
             {/* Sezione per la selezione della categoria (secondo blocco) */}
             <div className="mb-5 border-b pb-4">
-                 <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Seleziona Categoria (Applica Default):</label>
+                 <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Seleziona Categoria (Applica Default ai Campi Intoccati):</label>
                  <fieldset>
                     <legend className="sr-only">Categorie di Lavoro</legend>
 
@@ -623,7 +776,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                     </div>
                 </fieldset>
                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-300">
-                     Seleziona una categoria per caricare i dati di default corrispondenti nella form.
+                     Seleziona una categoria per popolare i campi vuoti o non modificati.
                  </p>
             </div>
 
@@ -2282,8 +2435,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                          />
                      </div>
                  </div>
-             ))}
-             <Button type="button" onClick={addPricingPack}>Aggiungi Pricing Pack</Button>
+             ))}<Button type="button" onClick={addPricingPack}>Aggiungi Pricing Pack</Button>
             </div>
 
 
