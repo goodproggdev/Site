@@ -79,10 +79,10 @@ const LOCAL_STORAGE_KEY = 'cvFormData';
 
 // Funzione per verificare se un valore è "vuoto" in modo robusto
 const isEmptyValue = (value) => {
-    return value === null || value === undefined ||
-           (typeof value === 'string' && value.trim() === '') ||
-           (Array.isArray(value) && value.length === 0) ||
-           (typeof value === 'object' && value !== null && Object.keys(value).length === 0 && !Array.isArray(value));
+      return value === null || value === undefined ||
+    (typeof value === 'string' && value.trim() === '') ||
+    (Array.isArray(value) && value.length === 0) ||
+    (typeof value === 'object' && value !== null && Object.keys(value).length === 0 && !Array.isArray(value));
 };
 
 
@@ -92,6 +92,7 @@ const isEmptyValue = (value) => {
 
 // Funzione di merge: i dati di origine (es. CV parsato) sovrascrivono la destinazione SOLO SE NON SONO VUOTI
 // Utilizzata quando si applicano i dati parsati dal CV.
+// Funzione di merge: i dati di origine (es. CV parsato) sovrascrivono la destinazione SOLO SE NON SONO VUOTI
 const mergeSourceDataIfNotEmpty = (destinationData, sourceData) => {
     const newData = { ...destinationData };
 
@@ -101,17 +102,15 @@ const mergeSourceDataIfNotEmpty = (destinationData, sourceData) => {
                 const sourceValue = sourceData[key];
                 const destinationValue = newData[key];
 
-                // Se il valore di origine NON è vuoto, usalo per sovrascrivere
                 if (!isEmptyValue(sourceValue)) {
                      if (Array.isArray(sourceValue)) {
-                        newData[key] = [...sourceValue]; // Sostituisci array
+                        newData[key] = [...sourceValue];
                      } else if (typeof sourceValue === 'object' && sourceValue !== null && typeof destinationValue === 'object' && destinationValue !== null && !Array.isArray(destinationValue)) {
-                        newData[key] = mergeSourceDataIfNotEmpty(destinationValue, sourceValue); // Merge ricorsivo per oggetti
+                        newData[key] = mergeSourceDataIfNotEmpty(destinationValue, sourceValue);
                      } else {
-                        newData[key] = sourceValue; // Sovrascrivi primitivi
+                        newData[key] = sourceValue;
                      }
                 }
-                 // Se il valore di origine è vuoto, manteniamo il destinationValue originale.
             }
         }
     }
@@ -119,76 +118,63 @@ const mergeSourceDataIfNotEmpty = (destinationData, sourceData) => {
 };
 
 
-// === FUNZIONE MODIFICATA PER IL MERGE DEI DEFAULT ===
-// Riempie/cambia i campi SOLO SE NON SEMBRANO ESSERE STATI TOCCATI DALL'UTENTE/CV.
+// === FUNZIONE PER IL MERGE DEI DEFAULT ===
+// Riempie/cambia i campi SOLO SE SONO VUOTI O NON SEMBRANO ESSERE STATI TOCCATI DALL'UTENTE/CV (corrispondono al default precedente).
+// Vengono applicati anche i valori vuoti/null dal nuovo default in questi casi.
 const updateUntouchedGenericFields = (currentData, newGenericData, previousGenericData) => {
     const newData = { ...currentData };
 
-    // Se non ci sono nuovi dati di default da applicare, restituisci i dati correnti così come sono.
     if (!newGenericData) {
         return newData;
     }
 
-    // Log iniziale per debug
     // console.log("updateUntouchedGenericFields started");
-    // console.log("  currentData:", JSON.parse(JSON.stringify(currentData))); // Log copia per evitare mutazioni nel log
+    // console.log("  currentData:", JSON.parse(JSON.stringify(currentData)));
     // console.log("  newGenericData:", JSON.parse(JSON.stringify(newGenericData)));
     // console.log("  previousGenericData:", JSON.parse(JSON.stringify(previousGenericData)));
 
 
     for (const key in newGenericData) {
-        // Controlla che la chiave esista nel nuovo default
         if (newGenericData.hasOwnProperty(key)) {
             const newGenericValue = newGenericData[key];
-            const currentValue = newData[key]; // Ottieni il valore corrente nello stato che stiamo modificando
-            // Ottieni il valore corrispondente dai dati di default *precedentemente* applicati.
-             const previousGenericValue = previousGenericData && typeof previousGenericData === 'object' ? previousGenericData[key] : undefined;
+            const currentValue = newData[key];
+            const previousGenericValue = previousGenericData && typeof previousGenericData === 'object' ? previousGenericData[key] : undefined;
 
 
-            // === LOGGING SPECIFICO PER DEBUG (puoi rimuoverlo dopo aver risolto) ===
+            // Aggiorna se il valore corrente è VUOTO,
+            // OPPURE se il valore corrente NON è vuoto ma CORRISPONDE al valore del default PRECEDENTE.
+            // Questa condizione copre anche il caso in cui il campo era intoccato e il NUOVO default è vuoto.
+            const shouldUpdate = isEmptyValue(currentValue) || (
+                 !isEmptyValue(currentValue) && JSON.stringify(currentValue) === JSON.stringify(previousGenericValue)
+            );
+
+
+            // === LOGGING SPECIFICO PER DEBUG (puoi decommentare se serve) ===
             // if (key === 'name' || key === 'about' || key === 'skills') { // Aggiungi altre chiavi se necessario
-            //     console.log(`--- Checking field: ${key} ---`);
-            //     console.log(`  currentValue:`, currentValue);
-            //     console.log(`  newGenericValue:`, newGenericValue);
-            //     console.log(`  previousGenericValue:`, previousGenericValue);
-            //     console.log(`  JSON.stringify(currentValue):`, JSON.stringify(currentValue));
-            //     console.log(`  JSON.stringify(previousGenericValue):`, JSON.stringify(previousGenericValue));
+            //      console.log(`--- Checking field: ${key} ---`);
+            //      console.log(`  currentValue:`, currentValue);
+            //      console.log(`  previousGenericValue:`, previousGenericValue);
+            //      console.log(`  shouldUpdate:`, shouldUpdate); // Controlla se questo è 'true' quando ti aspetti che il campo cambi
+            //      console.log(`  JSON.stringify(currentValue):`, JSON.stringify(currentValue));
+            //      console.log(`  JSON.stringify(previousGenericValue):`, JSON.stringify(previousGenericValue));
             // }
-            // =====================================================================
-
-
-            // Determina se il valore corrente nella form CORRISPONDE al valore
-            // che aveva dai dati di default precedentemente applicati.
-            // Se sono identici, assumiamo che il campo non sia stato toccato manualmente o dal CV.
-            // Usiamo JSON.stringify per un confronto profondo di oggetti/array, che è essenziale qui.
-            // Gestiamo esplicitamente il caso in cui previousGenericValue sia undefined/null
-            const valuesMatchPreviousDefault = JSON.stringify(currentValue) === JSON.stringify(previousGenericValue);
-
-
-            // === LOGGING SPECIFICO PER DEBUG CONTINUO ===
-            // if (key === 'name' || key === 'about' || key === 'skills') { // Aggiungi altre chiavi se necessario
-            //      console.log(`  valuesMatchPreviousDefault:`, valuesMatchPreviousDefault);
-            // }
-            // ==========================================
+            // ==============================================================
 
 
             // Logica per applicare il nuovo default:
-            // Applica il nuovo default SOLO SE il campo non è stato toccato (il suo valore è lo stesso del default precedente).
-            if (valuesMatchPreviousDefault) {
+            // Applica il nuovo default SOLO SE shouldUpdate è true.
+            if (shouldUpdate) {
                 // === LOGGING SPECIFICO PER DEBUG ===
                 // if (key === 'name' || key === 'about' || key === 'skills') {
-                //      console.log(`  Field ${key} considered UNTOUCHED. Applying new default:`, newGenericValue);
+                //      console.log(`  Field ${key} shouldUpdate is TRUE. Applying new default:`, newGenericValue);
                 // }
                 // ==================================
 
-                // Se il campo NON è stato toccato, applica il nuovo valore di default (che può essere vuoto/null)
                 if (Array.isArray(newGenericValue)) {
                      newData[key] = [...newGenericValue]; // Sostituisci l'array (copia)
                 } else if (typeof newGenericValue === 'object' && newGenericValue !== null) {
-                    // Se il nuovo valore è un oggetto (e non un array)
-                    // Controlla anche che il valore corrente sia un oggetto valido per un merge ricorsivo.
+                    // Se il nuovo valore è un oggetto (e non un array), fai un merge ricorsivo
                     const currentNestedValue = typeof currentValue === 'object' && currentValue !== null && !Array.isArray(currentValue) ? currentValue : {};
-                    // Assicurati che previousGenericData?.[key] sia un oggetto valido per il contesto ricorsivo
                     const previousNestedData = previousGenericData && typeof previousGenericData === 'object' ? previousGenericData[key] : undefined;
                      const previousNestedDataObject = (typeof previousNestedData === 'object' && previousNestedData !== null && !Array.isArray(previousNestedData))
                          ? previousNestedData : {}; // Fornisci un oggetto vuoto se il precedente non era un oggetto comparabile
@@ -196,28 +182,32 @@ const updateUntouchedGenericFields = (currentData, newGenericData, previousGener
                      newData[key] = updateUntouchedGenericFields(currentNestedValue, newGenericValue, previousNestedDataObject);
 
                 } else {
-                     // Per valori primitivi (string, number, boolean, null, undefined), applica il nuovo valore di default.
+                     // Per valori primitivi (string, number, boolean, null, undefined), applica il nuovo valore di default (anche se è vuoto/null).
                      newData[key] = newGenericValue;
                 }
-            } else {
+            } else if (typeof newGenericValue === 'object' && newGenericValue !== null && typeof currentValue === 'object' && currentValue !== null && !Array.isArray(currentValue)) {
                  // === LOGGING SPECIFICO PER DEBUG ===
-                // if (key === 'name' || key === 'about' || key === 'skills') {
-                //      console.log(`  Field ${key} considered TOUCHED. Keeping currentValue:`, currentValue);
-                // }
-                // ==================================
+                 // if (key === 'name' || key === 'about' || key === 'skills') {
+                 //      console.log(`  Field ${key} shouldUpdate is FALSE but is an object. Recursing.`);
+                 // }
+                 // ==================================
 
-                // Se il campo *è* stato toccato al livello più alto, mantieni il valore corrente.
-                // Fai un'eccezione e ricorsiva se il nuovo default è un oggetto
-                // e il valore corrente è anche un oggetto valido, per riempire eventuali sotto-campi intoccati.
-                 if (typeof newGenericValue === 'object' && newGenericValue !== null && typeof currentValue === 'object' && currentValue !== null && !Array.isArray(currentValue)) {
-                      // Assicurati che previousGenericData?.[key] sia un oggetto valido per il contesto ricorsivo
-                     const previousNestedData = previousGenericData && typeof previousGenericData === 'object' ? previousGenericData[key] : undefined;
-                      const previousNestedDataObject = (typeof previousNestedData === 'object' && previousNestedData !== null && !Array.isArray(previousNestedData))
-                          ? previousNestedData : {}; // Fornisci un oggetto vuoto se il precedente non era un oggetto comparabile
-                      newData[key] = updateUntouchedGenericFields(currentValue, newGenericValue, previousNestedDataObject);
-                 }
-                 // Se il campo è stato toccato e non è un oggetto (o il nuovo default non lo è), manteniamo il currentValue.
+                 // Se shouldUpdate è false (quindi il campo è stato toccato al livello superiore),
+                 // ma il campo è un oggetto, facciamo comunque una ricorsione
+                 // per dare la possibilità di riempire eventuali sotto-campi intoccati al suo interno.
+                 const previousNestedData = previousGenericData && typeof previousGenericData === 'object' ? previousGenericData[key] : undefined;
+                  const previousNestedDataObject = (typeof previousNestedData === 'object' && previousNestedData !== null && !Array.isArray(previousNestedData))
+                      ? previousNestedData : {};
+                 newData[key] = updateUntouchedGenericFields(currentValue, newGenericValue, previousNestedDataObject);
             }
+             // Altrimenti (shouldUpdate è false e non è un oggetto), manteniamo il currentValue.
+             // === LOGGING SPECIFICO PER DEBUG ===
+            // else {
+            //     if (key === 'name' || key === 'about' || key === 'skills') {
+            //          console.log(`  Field ${key} shouldUpdate is FALSE and not an object. Keeping currentValue:`, currentValue);
+            //     }
+            // }
+            // ==================================
         }
          // Se il nuovo default NON ha una chiave che esiste nel currentData,
          // non facciamo nulla per quella chiave, mantenendo il valore corrente (se esiste, potrebbe essere dal CV o utente).
@@ -227,16 +217,26 @@ const updateUntouchedGenericFields = (currentData, newGenericData, previousGener
 };
 
 const UploadModal = ({ isOpen, onClose }) => {
+    
+// Dentro UploadModal component, tra le dichiarazioni degli stati e dei ref esistenti
+    const [isResetting, setIsResetting] = useState(false);
+    const resetHandledRef = useRef(false); // Useremo questo per gestire il processo di reset
+
   // === CARICA STATO DA LOCAL STORAGE O USA STRUTTURA INIZIALE ===
-  const [formData, setFormData] = useState(() => {
-    try {
-      const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
-      return savedData ? JSON.parse(savedData) : initialJsonStructure;
-    } catch (error) {
-      console.error("Could not load form data from localStorage:", error);
-      return initialJsonStructure; // Fallback to initial structure on error
-    }
-  });
+  // Dentro UploadModal component, nella dichiarazione dello stato formData
+    const [formData, setFormData] = useState(() => {
+        try {
+            const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+            // === MODIFICATO: Ritorna semplicemente i dati caricati o la struttura iniziale vuota ===
+            const initialData = savedData ? JSON.parse(savedData) : initialJsonStructure;
+            console.log(savedData ? "Loading form data from localStorage." : "Initial state is empty (no saved data).");
+            return initialData; // La form inizierà vuota se non ci sono dati salvati
+        } catch (error) {
+            console.error("Could not load form data from localStorage:", error);
+            console.log("Error loading data. Starting with empty structure.");
+            return initialJsonStructure; // Fallback alla struttura vuota in caso di errore
+        }
+    });
 
   // Stato per tenere i file immagine selezionati, indicizzati per array e indice
   // NOTA: I file NON vengono salvati in localStorage per motivi di dimensione e sicurezza.
@@ -274,25 +274,7 @@ const UploadModal = ({ isOpen, onClose }) => {
    // Ref per memorizzare i dati di default della categoria *precedentemente* applicata.
      // Usiamo useRef perché non vogliamo che il suo cambiamento causi un re-render,
      // ma vogliamo che il valore persista tra i render.
-     const previousGenericDataRef = useRef(
-         (() => { // <-- Inizio della IIFE (Immediately Invoked Function Expression)
-             try {
-                  const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
-                  if (savedData) {
-                      const parsedData = JSON.parse(savedData);
-                      // Questa parte è un po' più complessa: il ref dovrebbe memorizzare il DEFAULT *che ha generato* i dati salvati.
-                      // Senza salvare esplicitamente il nome del default precedente, è difficile dedurlo.
-                      // Per ora, lo inizializziamo alla struttura salvata se esiste, altrimenti vuota.
-                      // Questo potrebbe non essere perfetto per il primissimo merge dopo il caricamento,
-                      // ma dovrebbe funzionare per i cambi di categoria successivi.
-                      return parsedData; // Inizializza il ref con i dati salvati per il confronto iniziale
-                  }
-             } catch (error) {
-                 console.error("Could not initialize previousGenericDataRef from localStorage:", error);
-             }
-             return initialJsonStructure; // Fallback
-         })() // <-- Fine della IIFE e sua immediata esecuzione. Il risultato viene passato a useRef
-     ); // <-- Chiude la chiamata a useRef()
+     const previousGenericDataRef = useRef(initialJsonStructure);
 
     // === EFFETTO PER SALVARE I DATI IN LOCAL STORAGE OGNI VOLTA CHE CAMBIANO ===
     useEffect(() => {
