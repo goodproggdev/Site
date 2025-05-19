@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"; // Importa useRef
+import { useState, useEffect, useRef } from "react";
 import { Button, Modal, Spinner } from "flowbite-react";
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
@@ -73,8 +73,11 @@ const initialJsonStructure = {
 	"email": ""
 };
 
+// Chiave per localStorage
+const LOCAL_STORAGE_KEY = 'cvFormData';
 
-// Funzione per verificare se un valore è "vuoto"
+
+// Funzione per verificare se un valore è "vuoto" in modo robusto
 const isEmptyValue = (value) => {
     return value === null || value === undefined ||
            (typeof value === 'string' && value.trim() === '') ||
@@ -82,27 +85,15 @@ const isEmptyValue = (value) => {
            (typeof value === 'object' && value !== null && Object.keys(value).length === 0 && !Array.isArray(value));
 };
 
-// Funzione ricorsiva per ottenere un valore nidificato in modo sicuro
-const getNestedValue = (data, keys) => {
-    let current = data;
-    if (!data || typeof data !== 'object') return undefined; // Gestisce caso base non oggetto
 
-    for (let i = 0; i < keys.length; i++) {
-        const key = keys[i];
-         if (current && typeof current === 'object' && current.hasOwnProperty(key)) {
-             current = current[key];
-         } else {
-             return undefined; // Percorso non esiste
-         }
-    }
-    return current;
-};
+// Funzione per un confronto profondo più robusto (opzionale, JSON.stringify è spesso sufficiente ma meno fragile)
+// const deepEqual = (a, b) => { ... implementazione confronto profondo ... };
 
 
 // Funzione di merge: i dati di origine (es. CV parsato) sovrascrivono la destinazione SOLO SE NON SONO VUOTI
 // Utilizzata quando si applicano i dati parsati dal CV.
 const mergeSourceDataIfNotEmpty = (destinationData, sourceData) => {
-    const newData = { ...destinationData }; // Inizia con una copia dei dati di destinazione
+    const newData = { ...destinationData };
 
     if (sourceData) {
         for (const key in sourceData) {
@@ -110,99 +101,150 @@ const mergeSourceDataIfNotEmpty = (destinationData, sourceData) => {
                 const sourceValue = sourceData[key];
                 const destinationValue = newData[key];
 
-                // Se il valore di origine NON è vuoto, usalo
+                // Se il valore di origine NON è vuoto, usalo per sovrascrivere
                 if (!isEmptyValue(sourceValue)) {
-                    if (Array.isArray(sourceValue)) {
-                        // Se il valore di origine è un array (non vuoto), sostituisci l'array nella destinazione
-                        newData[key] = [...sourceValue]; // Copia l'array
-                    } else if (typeof sourceValue === 'object' && sourceValue !== null && typeof destinationValue === 'object' && destinationValue !== null && !Array.isArray(destinationValue)) {
-                        // Se entrambi (origine e destinazione) sono oggetti non null e non array, fai un merge ricorsivo
-                         newData[key] = mergeSourceDataIfNotEmpty(destinationValue, sourceValue);
-                    } else {
-                        // Per valori primitivi non vuoti o in caso di mismatch di tipo dove sourceValue non è un oggetto/array,
-                        // il valore di origine sovrascrive la destinazione.
-                        newData[key] = sourceValue;
-                    }
+                     if (Array.isArray(sourceValue)) {
+                        newData[key] = [...sourceValue]; // Sostituisci array
+                     } else if (typeof sourceValue === 'object' && sourceValue !== null && typeof destinationValue === 'object' && destinationValue !== null && !Array.isArray(destinationValue)) {
+                        newData[key] = mergeSourceDataIfNotEmpty(destinationValue, sourceValue); // Merge ricorsivo per oggetti
+                     } else {
+                        newData[key] = sourceValue; // Sovrascrivi primitivi
+                     }
                 }
-                // Se il valore di origine è vuoto, non facciamo nulla, mantenendo il destinationValue originale.
+                 // Se il valore di origine è vuoto, manteniamo il destinationValue originale.
             }
         }
     }
     return newData;
 };
 
-// Funzione di merge: i dati di origine (es. default categoria) riempiono la destinazione SOLO SE IL CAMPO NELLA DESTINAZIONE
-// È VUOTO O CORRISPONDE AI DATI DI DEFAULT PRECEDENTEMENTE APPLICATI.
-// Utilizzata quando si cambia categoria.
-// Funzione di merge modificata: i dati di origine (es. default categoria) riempiono la destinazione SOLO SE IL CAMPO NELLA DESTINAZIONE
-// È VUOTO O CORRISPONDE AI DATI DI DEFAULT PRECEDENTEMENTE APPLICATI.
-// Vengono applicati anche i valori vuoti/null dal nuovo default in questi casi.
-// Funzione di merge modificata: i dati di origine (es. default categoria) riempiono la destinazione SOLO SE IL CAMPO NELLA DESTINAZIONE
-// È VUOTO O CORRISPONDE AI DATI DI DEFAULT PRECEDENTEMENTE APPLICATI.
-// Vengono applicati anche i valori vuoti/null dal nuovo default in questi casi.
-// Funzione di merge modificata: i dati di origine (es. default categoria) riempiono la destinazione SOLO SE IL CAMPO NELLA DESTINAZIONE
-// È VUOTO O CORRISPONDE AI DATI DI DEFAULT PRECEDENTEMENTE APPLICATI.
-// Vengono applicati anche i valori vuoti/null dal nuovo default in questi casi.
+
+// === FUNZIONE MODIFICATA PER IL MERGE DEI DEFAULT ===
+// Riempie/cambia i campi SOLO SE NON SEMBRANO ESSERE STATI TOCCATI DALL'UTENTE/CV.
 const updateUntouchedGenericFields = (currentData, newGenericData, previousGenericData) => {
     const newData = { ...currentData };
 
-    if (newGenericData) {
-        for (const key in newGenericData) {
-            if (newGenericData.hasOwnProperty(key)) {
-                const newGenericValue = newGenericData[key];
-                const currentValue = newData[key];
+    // Se non ci sono nuovi dati di default da applicare, restituisci i dati correnti così come sono.
+    if (!newGenericData) {
+        return newData;
+    }
 
-                // Ottieni il valore corrispondente dai dati di default precedentemente applicati
-                // Usiamo la navigazione nidificata sicura se necessario
-                 const previousGenericValue = previousGenericData?.[key];
+    // Log iniziale per debug
+    // console.log("updateUntouchedGenericFields started");
+    // console.log("  currentData:", JSON.parse(JSON.stringify(currentData))); // Log copia per evitare mutazioni nel log
+    // console.log("  newGenericData:", JSON.parse(JSON.stringify(newGenericData)));
+    // console.log("  previousGenericData:", JSON.parse(JSON.stringify(previousGenericData)));
 
 
-                // Determina se il valore corrente nella form è vuoto OPPURE se corrisponde al valore
-                // che aveva dai dati di default precedentemente applicati (e quel valore non era vuoto)
-                 // Usiamo JSON.stringify per un confronto profondo di oggetti/array, che funziona per dati serializzabili.
-                 // Confrontiamo solo se il previousGenericValue non era esso stesso vuoto, per evitare
-                 // di considerare "intoccato" un campo sempre vuoto.
-                const isCurrentValueEmptyOrMatchesPreviousGeneric = isEmptyValue(currentValue) || (
-                    !isEmptyValue(previousGenericValue) && JSON.stringify(currentValue) === JSON.stringify(previousGenericValue)
-                );
+    for (const key in newGenericData) {
+        // Controlla che la chiave esista nel nuovo default
+        if (newGenericData.hasOwnProperty(key)) {
+            const newGenericValue = newGenericData[key];
+            const currentValue = newData[key]; // Ottieni il valore corrente nello stato che stiamo modificando
+            // Ottieni il valore corrispondente dai dati di default *precedentemente* applicati.
+             const previousGenericValue = previousGenericData && typeof previousGenericData === 'object' ? previousGenericData[key] : undefined;
 
-                // **Punto di Modifica:** Se il campo corrente è vuoto O non è stato toccato (corrisponde al default precedente),
-                // applica SEMPRE il nuovo valore di default, anche se è vuoto o null.
-                if (isCurrentValueEmptyOrMatchesPreviousGeneric) { // <<< Modificato: rimossa la condizione && !isEmptyValue(newGenericValue)
-                    if (Array.isArray(newGenericValue)) {
-                         // Se il nuovo valore di default è un array, sostituisci l'array corrente
-                         newData[key] = [...newGenericValue]; // Copia l'array
-                    } else if (typeof newGenericValue === 'object' && newGenericValue !== null && typeof currentValue === 'object' && currentValue !== null && !Array.isArray(currentValue)) {
-                         // Se entrambi (nuovo default e corrente) sono oggetti non null e non array, fai un merge ricorsivo.
-                         // Passiamo anche il corrispondente sotto-oggetto del previousGenericData alla chiamata ricorsiva.
-                         // Nota: La ricorsione userà la stessa logica modificata.
-                         newData[key] = updateUntouchedGenericFields(currentValue, newGenericValue, previousGenericData?.[key]);
-                    } else {
-                         // Per valori primitivi, applica il nuovo valore di default (che può essere vuoto/null)
-                         newData[key] = newGenericValue;
-                    }
-                } else if (typeof newGenericValue === 'object' && newGenericValue !== null && typeof currentValue === 'object' && currentValue !== null && !Array.isArray(currentValue)) {
-                    // Anche se il campo di primo livello non è vuoto o non corrisponde al default precedente,
-                    // dobbiamo comunque fare un merge ricorsivo per riempire eventuali campi vuoti o intoccati
-                    // ALL'INTERNO di quell'oggetto nidificato.
-                    // Nota: La ricorsione userà la stessa logica modificata.
-                     newData[key] = updateUntouchedGenericFields(currentValue, newGenericValue, previousGenericData?.[key]);
+
+            // === LOGGING SPECIFICO PER DEBUG (puoi rimuoverlo dopo aver risolto) ===
+            // if (key === 'name' || key === 'about' || key === 'skills') { // Aggiungi altre chiavi se necessario
+            //     console.log(`--- Checking field: ${key} ---`);
+            //     console.log(`  currentValue:`, currentValue);
+            //     console.log(`  newGenericValue:`, newGenericValue);
+            //     console.log(`  previousGenericValue:`, previousGenericValue);
+            //     console.log(`  JSON.stringify(currentValue):`, JSON.stringify(currentValue));
+            //     console.log(`  JSON.stringify(previousGenericValue):`, JSON.stringify(previousGenericValue));
+            // }
+            // =====================================================================
+
+
+            // Determina se il valore corrente nella form CORRISPONDE al valore
+            // che aveva dai dati di default precedentemente applicati.
+            // Se sono identici, assumiamo che il campo non sia stato toccato manualmente o dal CV.
+            // Usiamo JSON.stringify per un confronto profondo di oggetti/array, che è essenziale qui.
+            // Gestiamo esplicitamente il caso in cui previousGenericValue sia undefined/null
+            const valuesMatchPreviousDefault = JSON.stringify(currentValue) === JSON.stringify(previousGenericValue);
+
+
+            // === LOGGING SPECIFICO PER DEBUG CONTINUO ===
+            // if (key === 'name' || key === 'about' || key === 'skills') { // Aggiungi altre chiavi se necessario
+            //      console.log(`  valuesMatchPreviousDefault:`, valuesMatchPreviousDefault);
+            // }
+            // ==========================================
+
+
+            // Logica per applicare il nuovo default:
+            // Applica il nuovo default SOLO SE il campo non è stato toccato (il suo valore è lo stesso del default precedente).
+            if (valuesMatchPreviousDefault) {
+                // === LOGGING SPECIFICO PER DEBUG ===
+                // if (key === 'name' || key === 'about' || key === 'skills') {
+                //      console.log(`  Field ${key} considered UNTOUCHED. Applying new default:`, newGenericValue);
+                // }
+                // ==================================
+
+                // Se il campo NON è stato toccato, applica il nuovo valore di default (che può essere vuoto/null)
+                if (Array.isArray(newGenericValue)) {
+                     newData[key] = [...newGenericValue]; // Sostituisci l'array (copia)
+                } else if (typeof newGenericValue === 'object' && newGenericValue !== null) {
+                    // Se il nuovo valore è un oggetto (e non un array)
+                    // Controlla anche che il valore corrente sia un oggetto valido per un merge ricorsivo.
+                    const currentNestedValue = typeof currentValue === 'object' && currentValue !== null && !Array.isArray(currentValue) ? currentValue : {};
+                    // Assicurati che previousGenericData?.[key] sia un oggetto valido per il contesto ricorsivo
+                    const previousNestedData = previousGenericData && typeof previousGenericData === 'object' ? previousGenericData[key] : undefined;
+                     const previousNestedDataObject = (typeof previousNestedData === 'object' && previousNestedData !== null && !Array.isArray(previousNestedData))
+                         ? previousNestedData : {}; // Fornisci un oggetto vuoto se il precedente non era un oggetto comparabile
+
+                     newData[key] = updateUntouchedGenericFields(currentNestedValue, newGenericValue, previousNestedDataObject);
+
+                } else {
+                     // Per valori primitivi (string, number, boolean, null, undefined), applica il nuovo valore di default.
+                     newData[key] = newGenericValue;
                 }
-                 // Altrimenti (il campo corrente non è vuoto e non corrisponde al default precedente), manteniamo il currentValue originale.
+            } else {
+                 // === LOGGING SPECIFICO PER DEBUG ===
+                // if (key === 'name' || key === 'about' || key === 'skills') {
+                //      console.log(`  Field ${key} considered TOUCHED. Keeping currentValue:`, currentValue);
+                // }
+                // ==================================
+
+                // Se il campo *è* stato toccato al livello più alto, mantieni il valore corrente.
+                // Fai un'eccezione e ricorsiva se il nuovo default è un oggetto
+                // e il valore corrente è anche un oggetto valido, per riempire eventuali sotto-campi intoccati.
+                 if (typeof newGenericValue === 'object' && newGenericValue !== null && typeof currentValue === 'object' && currentValue !== null && !Array.isArray(currentValue)) {
+                      // Assicurati che previousGenericData?.[key] sia un oggetto valido per il contesto ricorsivo
+                     const previousNestedData = previousGenericData && typeof previousGenericData === 'object' ? previousGenericData[key] : undefined;
+                      const previousNestedDataObject = (typeof previousNestedData === 'object' && previousNestedData !== null && !Array.isArray(previousNestedData))
+                          ? previousNestedData : {}; // Fornisci un oggetto vuoto se il precedente non era un oggetto comparabile
+                      newData[key] = updateUntouchedGenericFields(currentValue, newGenericValue, previousNestedDataObject);
+                 }
+                 // Se il campo è stato toccato e non è un oggetto (o il nuovo default non lo è), manteniamo il currentValue.
             }
         }
+         // Se il nuovo default NON ha una chiave che esiste nel currentData,
+         // non facciamo nulla per quella chiave, mantenendo il valore corrente (se esiste, potrebbe essere dal CV o utente).
     }
+    // console.log("updateUntouchedGenericFields finished. Returning:", JSON.parse(JSON.stringify(newData)));
     return newData;
 };
 
 const UploadModal = ({ isOpen, onClose }) => {
-  // Stato principale che riflette la struttura del JSON
-  const [formData, setFormData] = useState(initialJsonStructure);
+  // === CARICA STATO DA LOCAL STORAGE O USA STRUTTURA INIZIALE ===
+  const [formData, setFormData] = useState(() => {
+    try {
+      const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+      return savedData ? JSON.parse(savedData) : initialJsonStructure;
+    } catch (error) {
+      console.error("Could not load form data from localStorage:", error);
+      return initialJsonStructure; // Fallback to initial structure on error
+    }
+  });
 
   // Stato per tenere i file immagine selezionati, indicizzati per array e indice
+  // NOTA: I file NON vengono salvati in localStorage per motivi di dimensione e sicurezza.
+  // L'utente dovrà ricaricare le immagini ad ogni apertura del modal.
   const [selectedImageFiles, setSelectedImageFiles] = useState({});
 
-  // Stato per tenere il file CV selezionato
+   // Stato per tenere il file CV selezionato
+   // NOTA: Anche il file CV NON viene salvato in localStorage.
    const [selectedCVFile, setSelectedCVFile] = useState(null);
 
    // Stato per gestire lo stato di caricamento durante il parsing
@@ -211,62 +253,127 @@ const UploadModal = ({ isOpen, onClose }) => {
     const [parsingError, setParsingError] = useState(null);
 
     // Stato per memorizzare la categoria selezionata
-    // Inizializza con la prima categoria di default ('digitale-it')
-    const [selectedCategory, setSelectedCategory] = useState('digitale-it');
+    // Carica la categoria salvata se disponibile, altrimenti usa il default
+    const [selectedCategory, setSelectedCategory] = useState(() => {
+         try {
+             const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+              if (savedData) {
+                  const parsedData = JSON.parse(savedData);
+                   // Assumiamo che la categoria sia salvata in un campo specifico se necessario,
+                   // altrimenti usiamo il default o proviamo a dedurla.
+                   // Per ora, usiamo il default 'digitale-it' o un campo dedicato se lo aggiungiamo.
+                   // Manteniamo il default 'digitale-it' per semplicità a meno che non aggiungi un campo 'category' al JSON.
+              }
+         } catch (error) {
+             console.error("Could not load category from localStorage:", error);
+         }
+        return 'digitale-it'; // Usa sempre il default iniziale se non salvato esplicitamente o errore
+    });
 
-     // Ref per memorizzare i dati di default della categoria *precedentemente* applicata.
+
+   // Ref per memorizzare i dati di default della categoria *precedentemente* applicata.
      // Usiamo useRef perché non vogliamo che il suo cambiamento causi un re-render,
      // ma vogliamo che il valore persista tra i render.
-     const previousGenericDataRef = useRef(initialJsonStructure);
+     const previousGenericDataRef = useRef(
+         (() => { // <-- Inizio della IIFE (Immediately Invoked Function Expression)
+             try {
+                  const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+                  if (savedData) {
+                      const parsedData = JSON.parse(savedData);
+                      // Questa parte è un po' più complessa: il ref dovrebbe memorizzare il DEFAULT *che ha generato* i dati salvati.
+                      // Senza salvare esplicitamente il nome del default precedente, è difficile dedurlo.
+                      // Per ora, lo inizializziamo alla struttura salvata se esiste, altrimenti vuota.
+                      // Questo potrebbe non essere perfetto per il primissimo merge dopo il caricamento,
+                      // ma dovrebbe funzionare per i cambi di categoria successivi.
+                      return parsedData; // Inizializza il ref con i dati salvati per il confronto iniziale
+                  }
+             } catch (error) {
+                 console.error("Could not initialize previousGenericDataRef from localStorage:", error);
+             }
+             return initialJsonStructure; // Fallback
+         })() // <-- Fine della IIFE e sua immediata esecuzione. Il risultato viene passato a useRef
+     ); // <-- Chiude la chiamata a useRef()
 
+    // === EFFETTO PER SALVARE I DATI IN LOCAL STORAGE OGNI VOLTA CHE CAMBIANO ===
+    useEffect(() => {
+        try {
+             // Evita di salvare lo stato iniziale vuoto a meno che non sia l'unica cosa presente
+             // per non sovrascrivere dati salvati in precedenza con una form vuota all'apertura.
+             // Salva solo se il modal è aperto E formData non è l'esatta struttura iniziale vuota
+            if (isOpen && JSON.stringify(formData) !== JSON.stringify(initialJsonStructure)) {
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(formData));
+                // console.log("Form data saved to localStorage."); // Commento di logging
+            } else if (!isOpen) {
+                // Quando il modal si chiude, NON resettare più formData qui
+                // perché la persistenza è gestita da localStorage.
+                // Resetta solo stati temporanei non persistenti se necessario.
+                 // Esempio: setIsParsing(false); setParsingError(null);
+            }
+        } catch (error) {
+             console.error("Could not save form data to localStorage:", error);
+        }
+    }, [formData, isOpen]); // Dipende dallo stato della form e se il modal è aperto
 
     // Effetto per gestire l'apertura del modal e il cambio categoria
+    // NON resetta più la form quando il modal si chiude, grazie al salvataggio in localStorage
     useEffect(() => {
         if (isOpen) {
              const newGenericData = categoryDataMap[selectedCategory]?.data || initialJsonStructure;
 
+             // Log per debug
+             console.log("useEffect triggered by category change or modal open:", selectedCategory);
+             // console.log("Current formData before update:", formData); // Stato potrebbe non essere l'ultimissimo qui
+             console.log("Previous default data (from ref):", JSON.parse(JSON.stringify(previousGenericDataRef.current)));
+             console.log("New default data for selected category:", JSON.parse(JSON.stringify(newGenericData)));
+
+
              setFormData(prevFormData => {
-                 // Utilizza la nuova logica di merge: applica i nuovi dati di default
-                 // solo ai campi che sono vuoti O che corrispondono ai dati di default precedentemente applicati.
+                 // Log per debug dentro il callback di setFormData
+                 console.log("Inside setFormData callback. prevFormData:", JSON.parse(JSON.stringify(prevFormData)));
+                 // Utilizza la logica di merge: applica i nuovi dati di default
+                 // solo ai campi che non sono stati toccati dall'utente/CV.
                  const updatedFormData = updateUntouchedGenericFields(prevFormData, newGenericData, previousGenericDataRef.current);
-
-                 // Aggiorna il ref per memorizzare i dati di default appena applicati.
-                 // Questo valore sarà "previousGenericData" nella prossima esecuzione di questo useEffect
-                 // dovuta a un cambio di categoria.
-                 previousGenericDataRef.current = newGenericData;
-
+                 console.log("Result of updateUntouchedGenericFields:", JSON.parse(JSON.stringify(updatedFormData)));
                  return updatedFormData;
              });
 
+             // IMPORTANT: Aggiorna il ref per memorizzare i dati di default appena applicati.
+             // Questo valore sarà "previousGenericData" nella prossima esecuzione di questo useEffect
+             // dovuta a un cambio di categoria.
+             // Questo aggiornamento avviene *dopo* che la richiesta di aggiornamento dello stato è stata accodata.
+              previousGenericDataRef.current = newGenericData;
 
-             // Resetta file states etc.
-             // Note: Resetting selectedCVFile here means if you change category after parsing,
-             // the CV data won't be prioritized with the *new* generic data unless you re-upload.
-             // This seems consistent with "se si cambia categoria più volte" - each category selection
-             // applies the *new* default based on the *current* state.
+
+             // Resetta file states etc. (questi non persistono via localStorage)
              setSelectedImageFiles({});
-             // Non resettiamo selectedCVFile qui, così sappiamo se un CV è stato caricato.
-             // La form data è già stata fusa in base alla priorità del CV.
+             setSelectedCVFile(null); // Resetta il file CV selezionato all'apertura/cambio categoria
              setParsingError(null);
              setIsParsing(false);
 
-             console.log(`Applicati nuovi dati di default per categoria: ${selectedCategory} ai campi vuoti o intoccati.`);
+             console.log(`Applying new default data for category: ${selectedCategory} to untouched fields.`);
+        } else {
+            // Quando il modal si chiude, NON resettare più formData qui
+            // perché la persistenza è gestita da localStorage.
+            // Resetta solo stati temporanei non persistenti se necessario.
+             setIsParsing(false);
+             setParsingError(null);
         }
     }, [isOpen, selectedCategory]); // Depend on modal open state and selected category
 
 
-    // Reset dello stato quando il modal viene chiuso
-    useEffect(() => {
-        if (!isOpen) {
-            setFormData(initialJsonStructure); // Resetta la form ai valori iniziali
-            setSelectedCategory('digitale-it'); // Resetta la categoria selezionata al default
-            setSelectedImageFiles({}); // Resetta i file immagine
-            setSelectedCVFile(null); // Resetta il file CV
-            setIsParsing(false); // Resetta lo stato di parsing
-            setParsingError(null); // Resetta l'errore
-            previousGenericDataRef.current = initialJsonStructure; // Resetta anche il ref del default precedente
-        }
-    }, [isOpen]);
+    // === NUOVA FUNZIONE PER RESETTARE LA FORM E LOCAL STORAGE ===
+    const handleResetForm = () => {
+        setFormData(initialJsonStructure); // Resetta la form ai valori iniziali vuoti
+        setSelectedImageFiles({}); // Resetta i file immagine
+        setSelectedCVFile(null); // Resetta il file CV
+        setSelectedCategory('digitale-it'); // Resetta la categoria selezionata al default
+        setIsParsing(false); // Resetta lo stato di parsing
+        setParsingError(null); // Resetta l'errore
+        previousGenericDataRef.current = initialJsonStructure; // Resetta anche il ref del default precedente
+        localStorage.removeItem(LOCAL_STORAGE_KEY); // Rimuove i dati salvati da localStorage
+        console.log("Form data and localStorage cleared.");
+    };
+    // =========================================================
 
 
   // Gestisce i cambiamenti negli input di testo
@@ -279,8 +386,10 @@ const UploadModal = ({ isOpen, onClose }) => {
         let current = newData;
         for (let i = 0; i < keys.length - 1; i++) {
             // Assicurati che la chiave esista o crea un oggetto vuoto se necessario
+             // Controlla anche se il valore attuale non è un oggetto prima di sovrascriverlo
             if (current[keys[i]] === undefined || current[keys[i]] === null || typeof current[keys[i]] !== 'object' || Array.isArray(current[keys[i]])) {
-                current[keys[i]] = {}; // Crea un oggetto vuoto se non lo è o se è un array (probabilmente un errore nella struttura)
+                 // Se il percorso non è un oggetto o non esiste, crealo come oggetto vuoto per poterci navigare
+                current[keys[i]] = {};
             }
             current = current[keys[i]];
         }
@@ -392,7 +501,7 @@ const UploadModal = ({ isOpen, onClose }) => {
 
 
                 // Potresti voler pulire i file immagine selezionati in precedenza se il CV ne ha di nuovi
-                 setSelectedImageFiles({});
+                 // setSelectedImageFiles({}); // Decide based on requirements - keep or clear? Keeping for now.
 
 
            } catch (error) {
@@ -412,15 +521,17 @@ const UploadModal = ({ isOpen, onClose }) => {
 
         // Naviga attraverso le chiavi per trovare il valore nel formData corrente
         for (let i = 0; i < keys.length; i++) {
+            // Controlla che il percorso esista e sia un oggetto/array navigabile
             if (currentValue && typeof currentValue === 'object' && currentValue.hasOwnProperty(keys[i])) {
                 currentValue = currentValue[keys[i]];
             } else {
                 // Se la chiave non esiste nel formData corrente, non possiamo popolarla con un "esempio"
                 console.warn(`Chiave "${id}" non trovata nel JSON corrente (categoria selezionata o dati parsati) per il popolamento esempio.`);
-                return;
+                return; // Esci dalla funzione
             }
         }
 
+        // Popola solo se il valore corrente non è un oggetto/array e non è nullo/indefinito
         if (currentValue !== undefined && currentValue !== null && typeof currentValue !== 'object' && !Array.isArray(currentValue)) {
             // Aggiorna lo stato formData con il valore corrente (che funge da "esempio")
             setFormData(prevFormData => {
@@ -428,7 +539,10 @@ const UploadModal = ({ isOpen, onClose }) => {
                 let current = newData;
                 for (let i = 0; i < keys.length - 1; i++) {
                      // Crea l'oggetto se non esiste (utile se l'esempio proviene da una struttura parziale)
-                     if (!current[keys[i]] || typeof current[keys[i]] !== 'object' || Array.isArray(current[keys[i]])) current[keys[i]] = {};
+                      // Controlla anche che il valore attuale non sia già definito e non sia un oggetto
+                     if (!current[keys[i]] || typeof current[keys[i]] !== 'object' || Array.isArray(current[keys[i]])) {
+                         current[keys[i]] = {};
+                     }
                      current = current[keys[i]];
                 }
                 current[keys[keys.length - 1]] = currentValue; // Popola con il valore trovato nel formData attuale
@@ -436,6 +550,8 @@ const UploadModal = ({ isOpen, onClose }) => {
             });
         } else if (currentValue !== undefined && currentValue !== null && typeof currentValue === 'object') {
              console.warn(`Il valore per la chiave "${id}" nel JSON corrente è un oggetto/array. Non può essere usato per popolare un campo di testo singolo.`);
+        } else {
+             console.warn(`Il valore per la chiave "${id}" nel JSON corrente è nullo/indefinito. Non può essere usato per popolare un campo esempio.`);
         }
     };
 
@@ -454,7 +570,7 @@ const UploadModal = ({ isOpen, onClose }) => {
          } else if (currentValue !== undefined && currentValue !== null && typeof currentValue === 'object') {
              console.warn(`Il valore per la chiave "${fieldName}" per l'elemento ${index} nell'array "${arrayName}" nel JSON corrente è un oggetto/array. Non può essere usato per popolare un campo di testo singolo.`);
          } else {
-             console.warn(`Chiave "${fieldName}" per l'elemento ${index} nell'array "${arrayName}" non trovata nel JSON corrente per il popolamento esempio.`);
+             console.warn(`Chiave "${fieldName}" per l'elemento ${index} nell'array "${arrayName}" non trovata o è nullo/indefinito nel JSON corrente per il popolamento esempio.`);
          }
     };
 
@@ -611,6 +727,7 @@ const UploadModal = ({ isOpen, onClose }) => {
 
     // Aggiungi il file CV allo ZIP se è stato selezionato
     if (selectedCVFile) {
+        // Salva il CV con un nome standard o quello originale
         zip.file(selectedCVFile.name, selectedCVFile);
     }
 
@@ -636,18 +753,29 @@ const UploadModal = ({ isOpen, onClose }) => {
     }
 
     // Chiudi il modal solo se non ci sono errori gravi e il download è iniziato (o gestisci diversamente)
-    // onClose();
+    // onClose(); // Decide if modal should close on successful download
   };
 
   return (
     <Modal show={isOpen} onClose={onClose} size="md">
       <Modal.Header>
-        <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-          Popola Dati e Scarica ZIP
-        </h3>
+        {/* Titolo del Modal - Corretto warning h3 annidato */}
+        Popola Dati e Scarica ZIP
       </Modal.Header>
       <Modal.Body className="overflow-y-auto max-h-[80vh]">
         <form className="max-w-sm mx-auto" onSubmit={handleSubmit}>
+
+            {/* === BOTTONE SVUOTA FORM === */}
+            <div className="mb-5">
+                 <Button color="warning" onClick={handleResetForm}>
+                    Svuota Form
+                 </Button>
+                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-300">
+                     Clicca per resettare tutti i campi ai valori iniziali vuoti e cancellare i dati salvati.
+                 </p>
+            </div>
+            {/* ========================== */}
+
 
            {/* Campo per l'upload del CV con stato di parsing */}
             <div className="mb-5 border-b pb-4">
@@ -721,7 +849,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                             type="radio"
                             name="category"
                             value="sanitari-assistenziali"
-                            className="w-4 h-4 border-gray-300 focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-600 dark:bg-gray-700 dark:border-gray-600"
+                            className="w-4 h-4 border-gray-300 focus:ring-2 focus:ring-blue-300 dark:focus-ring-blue-600 dark:bg-gray-700 dark:border-gray-600"
                             checked={selectedCategory === 'sanitari-assistenziali'}
                             onChange={(e) => setSelectedCategory(e.target.value)}
                         />
@@ -785,11 +913,12 @@ const UploadModal = ({ isOpen, onClose }) => {
             <div className="mb-5">
                 <label htmlFor="name" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Name
-                     {formData.hasOwnProperty('name') && ( // Controlla direttamente su formData corrente
+                     {/* L'icona di esempio mostra il valore CORRENTE della form */}
+                     {!isEmptyValue(formData.name) && (
                         <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('name')}
-                            title={`Esempio: ${formData.name}`} // Usa formData corrente per l'esempio
+                            title={`Valore attuale: ${formData.name}`} // Usa formData corrente per l'esempio
                         >
                             ℹ️
                         </span>
@@ -800,11 +929,11 @@ const UploadModal = ({ isOpen, onClose }) => {
              <div className="mb-5">
                 <label htmlFor="presentation" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Presentation
-                     {formData.hasOwnProperty('presentation') && (
+                      {!isEmptyValue(formData.presentation) && (
                          <span
                              className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                               onClick={() => populateFieldWithExample('presentation')}
-                              title={`Esempio: ${formData.presentation}`}
+                              title={`Valore attuale: ${formData.presentation}`}
                          >
                              ℹ️
                          </span>
@@ -815,11 +944,11 @@ const UploadModal = ({ isOpen, onClose }) => {
              <div className="mb-5">
                 <label htmlFor="header_mono_subtitle" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Header Mono Subtitle
-                     {formData.hasOwnProperty('header_mono_subtitle') && (
+                      {!isEmptyValue(formData.header_mono_subtitle) && (
                          <span
                              className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                              onClick={() => populateFieldWithExample('header_mono_subtitle')}
-                             title={`Esempio: ${formData.header_mono_subtitle}`}
+                             title={`Valore attuale: ${formData.header_mono_subtitle}`}
                          >
                              ℹ️
                          </span>
@@ -830,11 +959,11 @@ const UploadModal = ({ isOpen, onClose }) => {
              <div className="mb-5">
                 <label htmlFor="print_resume" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Print Resume
-                     {formData.hasOwnProperty('print_resume') && (
+                       {!isEmptyValue(formData.print_resume) && (
                          <span
                              className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                              onClick={() => populateFieldWithExample('print_resume')}
-                             title={`Esempio: ${formData.print_resume}`}
+                             title={`Valore attuale: ${formData.print_resume}`}
                          >
                              ℹ️
                          </span>
@@ -845,11 +974,11 @@ const UploadModal = ({ isOpen, onClose }) => {
              <div className="mb-5">
                 <label htmlFor="download_my_cv" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Download My CV
-                      {formData.hasOwnProperty('download_my_cv') && (
+                       {!isEmptyValue(formData.download_my_cv) && (
                          <span
                              className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                              onClick={() => populateFieldWithExample('download_my_cv')}
-                             title={`Esempio: ${formData.download_my_cv}`}
+                             title={`Valore attuale: ${formData.download_my_cv}`}
                          >
                              ℹ️
                          </span>
@@ -860,11 +989,11 @@ const UploadModal = ({ isOpen, onClose }) => {
               <div className="mb-5">
                 <label htmlFor="my_resume_label.my" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     My Resume Label (My)
-                     {formData.my_resume_label && formData.my_resume_label.hasOwnProperty('my') && (
+                      {formData.my_resume_label && !isEmptyValue(formData.my_resume_label.my) && (
                         <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('my_resume_label.my')}
-                             title={`Esempio: ${formData.my_resume_label.my}`}
+                             title={`Valore attuale: ${formData.my_resume_label.my}`}
                         >
                             ℹ️
                         </span>
@@ -875,11 +1004,11 @@ const UploadModal = ({ isOpen, onClose }) => {
              <div className="mb-5">
                 <label htmlFor="my_resume_label.resume" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     My Resume Label (Resume)
-                     {formData.my_resume_label && formData.my_resume_label.hasOwnProperty('resume') && (
+                      {formData.my_resume_label && !isEmptyValue(formData.my_resume_label.resume) && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('my_resume_label.resume')}
-                             title={`Esempio: ${formData.my_resume_label.resume}`}
+                             title={`Valore attuale: ${formData.my_resume_label.resume}`}
                         >
                             ℹ️
                         </span>
@@ -891,11 +1020,11 @@ const UploadModal = ({ isOpen, onClose }) => {
               <div className="mb-5">
                 <label htmlFor="who_am_i" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Who Am I?
-                    {formData.hasOwnProperty('who_am_i') && (
+                     {!isEmptyValue(formData.who_am_i) && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('who_am_i')}
-                             title={`Esempio: ${formData.who_am_i}`}
+                             title={`Valore attuale: ${formData.who_am_i}`}
                         >
                             ℹ️
                         </span>
@@ -910,11 +1039,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                  <div className="mb-5">
                      <label htmlFor="about.who" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                          Who
-                          {formData.about && formData.about.hasOwnProperty('who') && (
+                           {formData.about && !isEmptyValue(formData.about.who) && (
                              <span
                                 className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                 onClick={() => populateFieldWithExample('about.who')}
-                                 title={`Esempio: ${formData.about.who}`}
+                                 title={`Valore attuale: ${formData.about.who}`}
                             >
                                 ℹ️
                             </span>
@@ -931,11 +1060,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                   <div className="mb-5">
                      <label htmlFor="about.details" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                          Details
-                          {formData.about && formData.about.hasOwnProperty('details') && (
+                           {formData.about && !isEmptyValue(formData.about.details) && (
                               <span
                                 className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                 onClick={() => populateFieldWithExample('about.details')}
-                                 title={`Esempio: ${formData.about.details}`}
+                                 title={`Valore attuale: ${formData.about.details}`}
                             >
                                 ℹ️
                             </span>
@@ -957,11 +1086,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                   <div className="mb-5">
                      <label htmlFor="personal_info.birthdate" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                          Birthdate
-                          {formData.personal_info && formData.personal_info.hasOwnProperty('birthdate') && (
+                           {formData.personal_info && !isEmptyValue(formData.personal_info.birthdate) && (
                              <span
                                 className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                 onClick={() => populateFieldWithExample('personal_info.birthdate')}
-                                 title={`Esempio: ${formData.personal_info.birthdate}`}
+                                 title={`Valore attuale: ${formData.personal_info.birthdate}`}
                             >
                                 ℹ️
                             </span>
@@ -978,11 +1107,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                   <div className="mb-5">
                      <label htmlFor="personal_info.work_email" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                          Work Email
-                          {formData.personal_info && formData.personal_info.hasOwnProperty('work_email') && (
+                           {formData.personal_info && !isEmptyValue(formData.personal_info.work_email) && (
                               <span
                                 className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                 onClick={() => populateFieldWithExample('personal_info.work_email')}
-                                 title={`Esempio: ${formData.personal_info.work_email}`}
+                                 title={`Valore attuale: ${formData.personal_info.work_email}`}
                             >
                                 ℹ️
                             </span>
@@ -999,11 +1128,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                   <div className="mb-5">
                      <label htmlFor="personal_info.personal_email" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                          Personal Email
-                          {formData.personal_info && formData.personal_info.hasOwnProperty('personal_email') && (
+                           {formData.personal_info && !isEmptyValue(formData.personal_info.personal_email) && (
                               <span
                                 className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                 onClick={() => populateFieldWithExample('personal_info.personal_email')}
-                                 title={`Esempio: ${formData.personal_info.personal_email}`}
+                                 title={`Valore attuale: ${formData.personal_info.personal_email}`}
                             >
                                 ℹ️
                             </span>
@@ -1020,11 +1149,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                   <div className="mb-5">
                      <label htmlFor="personal_info.work_number" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                          Work Number
-                          {formData.personal_info && formData.personal_info.hasOwnProperty('work_number') && (
+                           {formData.personal_info && !isEmptyValue(formData.personal_info.work_number) && (
                               <span
                                 className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                 onClick={() => populateFieldWithExample('personal_info.work_number')}
-                                 title={`Esempio: ${formData.personal_info.work_number}`}
+                                 title={`Valore attuale: ${formData.personal_info.work_number}`}
                             >
                                 ℹ️
                             </span>
@@ -1041,11 +1170,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                   <div className="mb-5">
                      <label htmlFor="personal_info.instagram" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                          Instagram
-                          {formData.personal_info && formData.personal_info.hasOwnProperty('instagram') && (
+                           {formData.personal_info && !isEmptyValue(formData.personal_info.instagram) && (
                               <span
                                 className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                 onClick={() => populateFieldWithExample('personal_info.instagram')}
-                                 title={`Esempio: ${formData.personal_info.instagram}`}
+                                 title={`Valore attuale: ${formData.personal_info.instagram}`}
                             >
                                 ℹ️
                             </span>
@@ -1064,11 +1193,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                <div className="mb-5">
                 <label htmlFor="skills_label" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Skills Label
-                     {formData.hasOwnProperty('skills_label') && (
+                      {!isEmptyValue(formData.skills_label) && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('skills_label')}
-                             title={`Esempio: ${formData.skills_label}`}
+                             title={`Valore attuale: ${formData.skills_label}`}
                         >
                             ℹ️
                         </span>
@@ -1079,11 +1208,11 @@ const UploadModal = ({ isOpen, onClose }) => {
               <div className="mb-5">
                 <label htmlFor="languages_label" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Languages Label
-                     {formData.hasOwnProperty('languages_label') && (
+                      {!isEmptyValue(formData.languages_label) && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('languages_label')}
-                             title={`Esempio: ${formData.languages_label}`}
+                             title={`Valore attuale: ${formData.languages_label}`}
                         >
                             ℹ️
                         </span>
@@ -1094,11 +1223,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                <div className="mb-5">
                 <label htmlFor="personal_info_label" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Personal Info Label
-                     {formData.hasOwnProperty('personal_info_label') && (
+                       {!isEmptyValue(formData.personal_info_label) && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('personal_info_label')}
-                             title={`Esempio: ${formData.personal_info_label}`}
+                             title={`Valore attuale: ${formData.personal_info_label}`}
                         >
                             ℹ️
                         </span>
@@ -1109,11 +1238,11 @@ const UploadModal = ({ isOpen, onClose }) => {
               <div className="mb-5">
                 <label htmlFor="my_expertise_label" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     My Expertise Label
-                     {formData.hasOwnProperty('my_expertise_label') && (
+                       {!isEmptyValue(formData.my_expertise_label) && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('my_expertise_label')}
-                             title={`Esempio: ${formData.my_expertise_label}`}
+                             title={`Valore attuale: ${formData.my_expertise_label}`}
                         >
                             ℹ️
                         </span>
@@ -1124,11 +1253,11 @@ const UploadModal = ({ isOpen, onClose }) => {
              <div className="mb-5">
                 <label htmlFor="education_label" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Education Label
-                     {formData.hasOwnProperty('education_label') && (
+                      {!isEmptyValue(formData.education_label) && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('education_label')}
-                             title={`Esempio: ${formData.education_label}`}
+                             title={`Valore attuale: ${formData.education_label}`}
                         >
                             ℹ️
                         </span>
@@ -1139,11 +1268,11 @@ const UploadModal = ({ isOpen, onClose }) => {
              <div className="mb-5">
                 <label htmlFor="work_experience_label" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Work Experience Label
-                     {formData.hasOwnProperty('work_experience_label') && (
+                      {!isEmptyValue(formData.work_experience_label) && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('work_experience_label')}
-                             title={`Esempio: ${formData.work_experience_label}`}
+                             title={`Valore attuale: ${formData.work_experience_label}`}
                         >
                             ℹ️
                         </span>
@@ -1154,11 +1283,11 @@ const UploadModal = ({ isOpen, onClose }) => {
               <div className="mb-5">
                 <label htmlFor="my_service_label" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     My Service Label
-                     {formData.hasOwnProperty('my_service_label') && (
+                      {!isEmptyValue(formData.my_service_label) && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('my_service_label')}
-                             title={`Esempio: ${formData.my_service_label}`}
+                             title={`Valore attuale: ${formData.my_service_label}`}
                         >
                             ℹ️
                         </span>
@@ -1169,11 +1298,11 @@ const UploadModal = ({ isOpen, onClose }) => {
              <div className="mb-5">
                 <label htmlFor="contact_label" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Contact Label
-                     {formData.hasOwnProperty('contact_label') && (
+                      {!isEmptyValue(formData.contact_label) && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('contact_label')}
-                             title={`Esempio: ${formData.contact_label}`}
+                             title={`Valore attuale: ${formData.contact_label}`}
                         >
                             ℹ️
                         </span>
@@ -1184,11 +1313,11 @@ const UploadModal = ({ isOpen, onClose }) => {
               <div className="mb-5">
                 <label htmlFor="pricing_packs_label" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Pricing Packs Label
-                     {formData.hasOwnProperty('pricing_packs_label') && (
+                      {!isEmptyValue(formData.pricing_packs_label) && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('pricing_packs_label')}
-                             title={`Esempio: ${formData.pricing_packs_label}`}
+                             title={`Valore attuale: ${formData.pricing_packs_label}`}
                         >
                             ℹ️
                         </span>
@@ -1199,11 +1328,11 @@ const UploadModal = ({ isOpen, onClose }) => {
             <div className="mb-5">
                 <label htmlFor="freelancing_label" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Freelancing Label
-                     {formData.hasOwnProperty('freelancing_label') && (
+                      {!isEmptyValue(formData.freelancing_label) && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('freelancing_label')}
-                             title={`Esempio: ${formData.freelancing_label}`}
+                             title={`Valore attuale: ${formData.freelancing_label}`}
                         >
                             ℹ️
                         </span>
@@ -1214,11 +1343,11 @@ const UploadModal = ({ isOpen, onClose }) => {
             <div className="mb-5">
                 <label htmlFor="hire_me_label" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Hire Me Label
-                     {formData.hasOwnProperty('hire_me_label') && (
+                      {!isEmptyValue(formData.hire_me_label) && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('hire_me_label')}
-                             title={`Esempio: ${formData.hire_me_label}`}
+                             title={`Valore attuale: ${formData.hire_me_label}`}
                         >
                             ℹ️
                         </span>
@@ -1229,11 +1358,11 @@ const UploadModal = ({ isOpen, onClose }) => {
              <div className="mb-5">
                 <label htmlFor="my_portfolio_label" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     My Portfolio Label
-                     {formData.hasOwnProperty('my_portfolio_label') && (
+                       {!isEmptyValue(formData.my_portfolio_label) && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('my_portfolio_label')}
-                             title={`Esempio: ${formData.my_portfolio_label}`}
+                             title={`Valore attuale: ${formData.my_portfolio_label}`}
                         >
                             ℹ️
                         </span>
@@ -1244,11 +1373,11 @@ const UploadModal = ({ isOpen, onClose }) => {
              <div className="mb-5">
                 <label htmlFor="latest_label" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Latest Label
-                     {formData.hasOwnProperty('latest_label') && (
+                       {!isEmptyValue(formData.latest_label) && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('latest_label')}
-                             title={`Esempio: ${formData.latest_label}`}
+                             title={`Valore attuale: ${formData.latest_label}`}
                         >
                             ℹ️
                         </span>
@@ -1259,11 +1388,11 @@ const UploadModal = ({ isOpen, onClose }) => {
               <div className="mb-5">
                 <label htmlFor="news_label" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     News Label
-                     {formData.hasOwnProperty('news_label') && (
+                       {!isEmptyValue(formData.news_label) && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('news_label')}
-                             title={`Esempio: ${formData.news_label}`}
+                             title={`Valore attuale: ${formData.news_label}`}
                         >
                             ℹ️
                         </span>
@@ -1274,11 +1403,11 @@ const UploadModal = ({ isOpen, onClose }) => {
               <div className="mb-5">
                 <label htmlFor="form_title" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Form Title
-                     {formData.hasOwnProperty('form_title') && (
+                      {!isEmptyValue(formData.form_title) && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('form_title')}
-                             title={`Esempio: ${formData.form_title}`}
+                             title={`Valore attuale: ${formData.form_title}`}
                         >
                             ℹ️
                         </span>
@@ -1289,11 +1418,11 @@ const UploadModal = ({ isOpen, onClose }) => {
              <div className="mb-5">
                 <label htmlFor="form_placeholder_name" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Form Placeholder Name
-                     {formData.hasOwnProperty('form_placeholder_name') && (
+                       {!isEmptyValue(formData.form_placeholder_name) && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('form_placeholder_name')}
-                             title={`Esempio: ${formData.form_placeholder_name}`}
+                             title={`Valore attuale: ${formData.form_placeholder_name}`}
                         >
                             ℹ️
                         </span>
@@ -1304,11 +1433,11 @@ const UploadModal = ({ isOpen, onClose }) => {
               <div className="mb-5">
                 <label htmlFor="form_placeholder_email" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Form Placeholder Email
-                     {formData.hasOwnProperty('form_placeholder_email') && (
+                      {!isEmptyValue(formData.form_placeholder_email) && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('form_placeholder_email')}
-                             title={`Esempio: ${formData.form_placeholder_email}`}
+                             title={`Valore attuale: ${formData.form_placeholder_email}`}
                         >
                             ℹ️
                         </span>
@@ -1319,11 +1448,11 @@ const UploadModal = ({ isOpen, onClose }) => {
              <div className="mb-5">
                 <label htmlFor="form_placeholder_message" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Form Placeholder Message
-                     {formData.hasOwnProperty('form_placeholder_message') && (
+                       {!isEmptyValue(formData.form_placeholder_message) && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('form_placeholder_message')}
-                             title={`Esempio: ${formData.form_placeholder_message}`}
+                             title={`Valore attuale: ${formData.form_placeholder_message}`}
                         >
                             ℹ️
                         </span>
@@ -1334,11 +1463,11 @@ const UploadModal = ({ isOpen, onClose }) => {
               <div className="mb-5">
                 <label htmlFor="form_button_text" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Form Button Text
-                     {formData.hasOwnProperty('form_button_text') && (
+                       {!isEmptyValue(formData.form_button_text) && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('form_button_text')}
-                             title={`Esempio: ${formData.form_button_text}`}
+                             title={`Valore attuale: ${formData.form_button_text}`}
                         >
                             ℹ️
                         </span>
@@ -1349,11 +1478,11 @@ const UploadModal = ({ isOpen, onClose }) => {
              <div className="mb-5">
                 <label htmlFor="contact_title" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Contact Title
-                     {formData.hasOwnProperty('contact_title') && (
+                      {!isEmptyValue(formData.contact_title) && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('contact_title')}
-                             title={`Esempio: ${formData.contact_title}`}
+                             title={`Valore attuale: ${formData.contact_title}`}
                         >
                             ℹ️
                         </span>
@@ -1364,11 +1493,11 @@ const UploadModal = ({ isOpen, onClose }) => {
               <div className="mb-5">
                 <label htmlFor="phone_label" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Phone Label
-                     {formData.hasOwnProperty('phone_label') && (
+                       {!isEmptyValue(formData.phone_label) && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('phone_label')}
-                             title={`Esempio: ${formData.phone_label}`}
+                             title={`Valore attuale: ${formData.phone_label}`}
                         >
                             ℹ️
                         </span>
@@ -1379,11 +1508,11 @@ const UploadModal = ({ isOpen, onClose }) => {
              <div className="mb-5">
                 <label htmlFor="phone_number" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Phone Number
-                     {formData.hasOwnProperty('phone_number') && (
+                       {!isEmptyValue(formData.phone_number) && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('phone_number')}
-                             title={`Esempio: ${formData.phone_number}`}
+                             title={`Valore attuale: ${formData.phone_number}`}
                         >
                             ℹ️
                         </span>
@@ -1394,11 +1523,11 @@ const UploadModal = ({ isOpen, onClose }) => {
              <div className="mb-5">
                 <label htmlFor="address_label" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Address Label
-                     {formData.hasOwnProperty('address_label') && (
+                       {!isEmptyValue(formData.address_label) && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('address_label')}
-                             title={`Esempio: ${formData.address_label}`}
+                             title={`Valore attuale: ${formData.address_label}`}
                         >
                             ℹ️
                         </span>
@@ -1409,11 +1538,11 @@ const UploadModal = ({ isOpen, onClose }) => {
               <div className="mb-5">
                 <label htmlFor="address" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Address
-                     {formData.hasOwnProperty('address') && (
+                      {!isEmptyValue(formData.address) && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('address')}
-                             title={`Esempio: ${formData.address}`}
+                             title={`Valore attuale: ${formData.address}`}
                         >
                             ℹ️
                         </span>
@@ -1424,11 +1553,11 @@ const UploadModal = ({ isOpen, onClose }) => {
              <div className="mb-5">
                 <label htmlFor="email_label" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Email Label
-                     {formData.hasOwnProperty('email_label') && (
+                       {!isEmptyValue(formData.email_label) && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('email_label')}
-                             title={`Esempio: ${formData.email_label}`}
+                             title={`Valore attuale: ${formData.email_label}`}
                         >
                             ℹ️
                         </span>
@@ -1439,11 +1568,11 @@ const UploadModal = ({ isOpen, onClose }) => {
               <div className="mb-5">
                 <label htmlFor="email" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     Email
-                     {formData.hasOwnProperty('email') && (
+                      {!isEmptyValue(formData.email) && (
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('email')}
-                             title={`Esempio: ${formData.email}`}
+                             title={`Valore attuale: ${formData.email}`}
                         >
                             ℹ️
                         </span>
@@ -1470,11 +1599,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                      <div className="mb-5">
                          <label htmlFor={`portfolio_items_${index}_title`} className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                              Title
-                              {formData.portfolio_items && formData.portfolio_items[index] && formData.portfolio_items[index].hasOwnProperty('title') && (
+                              {formData.portfolio_items && formData.portfolio_items[index] && !isEmptyValue(formData.portfolio_items[index].title) && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('portfolio_items', 'title', index)}
-                                      title={`Esempio: ${formData.portfolio_items[index].title}`}
+                                      title={`Valore attuale: ${formData.portfolio_items[index].title}`}
                                  >
                                      ℹ️
                                  </span>
@@ -1491,11 +1620,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                      <div className="mb-5">
                          <label htmlFor={`portfolio_items_${index}_subtitle`} className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                              Subtitle
-                             {formData.portfolio_items && formData.portfolio_items[index] && formData.portfolio_items[index].hasOwnProperty('subtitle') && (
+                             {formData.portfolio_items && formData.portfolio_items[index] && !isEmptyValue(formData.portfolio_items[index].subtitle) && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('portfolio_items', 'subtitle', index)}
-                                      title={`Esempio: ${formData.portfolio_items[index].subtitle}`}
+                                      title={`Valore attuale: ${formData.portfolio_items[index].subtitle}`}
                                  >
                                      ℹ️
                                  </span>
@@ -1512,11 +1641,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                       <div className="mb-5">
                          <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white" htmlFor={`portfolio_items_${index}_alt`}>
                              Alt Text / Link
-                              {formData.portfolio_items && formData.portfolio_items[index] && formData.portfolio_items[index].hasOwnProperty('alt') && (
+                              {formData.portfolio_items && formData.portfolio_items[index] && !isEmptyValue(formData.portfolio_items[index].alt) && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('portfolio_items', 'alt', index)}
-                                      title={`Esempio: ${formData.portfolio_items[index].alt}`}
+                                      title={`Valore attuale: ${formData.portfolio_items[index].alt}`}
                                  >
                                      ℹ️
                                  </span>
@@ -1567,11 +1696,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                       <div className="mb-5">
                          <label htmlFor={`blog_posts_${index}_title`} className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                              Title
-                             {formData.blog_posts && formData.blog_posts[index] && formData.blog_posts[index].hasOwnProperty('title') && (
+                             {formData.blog_posts && formData.blog_posts[index] && !isEmptyValue(formData.blog_posts[index].title) && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('blog_posts', 'title', index)}
-                                      title={`Esempio: ${formData.blog_posts[index].title}`}
+                                      title={`Valore attuale: ${formData.blog_posts[index].title}`}
                                  >
                                      ℹ️
                                  </span>
@@ -1588,11 +1717,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                       <div className="mb-5">
                          <label htmlFor={`blog_posts_${index}_author`} className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                              Author
-                             {formData.blog_posts && formData.blog_posts[index] && formData.blog_posts[index].hasOwnProperty('author') && (
+                             {formData.blog_posts && formData.blog_posts[index] && !isEmptyValue(formData.blog_posts[index].author) && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('blog_posts', 'author', index)}
-                                      title={`Esempio: ${formData.blog_posts[index].author}`}
+                                      title={`Valore attuale: ${formData.blog_posts[index].author}`}
                                  >
                                      ℹ️
                                  </span>
@@ -1623,11 +1752,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                       <div className="mb-5">
                          <label htmlFor={`blog_posts_${index}_alt`} className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                              Alt Text / Link
-                             {formData.blog_posts && formData.blog_posts[index] && formData.blog_posts[index].hasOwnProperty('alt') && (
+                             {formData.blog_posts && formData.blog_posts[index] && !isEmptyValue(formData.blog_posts[index].alt) && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('blog_posts', 'alt', index)}
-                                      title={`Esempio: ${formData.blog_posts[index].alt}`}
+                                      title={`Valore attuale: ${formData.blog_posts[index].alt}`}
                                  >
                                      ℹ️
                                  </span>
@@ -1644,11 +1773,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                      <div className="mb-5">
                          <label htmlFor={`blog_posts_${index}_description`} className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                              Description
-                             {formData.blog_posts && formData.blog_posts[index] && formData.blog_posts[index].hasOwnProperty('description') && (
+                             {formData.blog_posts && formData.blog_posts[index] && !isEmptyValue(formData.blog_posts[index].description) && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('blog_posts', 'description', index)}
-                                      title={`Esempio: ${formData.blog_posts[index].description}`}
+                                      title={`Valore attuale: ${formData.blog_posts[index].description}`}
                                  >
                                      ℹ️
                                  </span>
@@ -1665,11 +1794,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                       <div className="mb-5">
                          <label htmlFor={`blog_posts_${index}_full_description`} className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                              Full Description
-                              {formData.blog_posts && formData.blog_posts[index] && formData.blog_posts[index].hasOwnProperty('full_description') && (
+                              {formData.blog_posts && formData.blog_posts[index] && !isEmptyValue(formData.blog_posts[index].full_description) && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('blog_posts', 'full_description', index)}
-                                      title={`Esempio: ${formData.blog_posts[index].full_description}`}
+                                      title={`Valore attuale: ${formData.blog_posts[index].full_description}`}
                                  >
                                      ℹ️
                                  </span>
@@ -1686,11 +1815,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                       <div className="mb-5">
                          <label htmlFor={`blog_posts_${index}_read_more_url`} className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                              Read More URL
-                             {formData.blog_posts && formData.blog_posts[index] && formData.blog_posts[index].hasOwnProperty('read_more_url') && (
+                             {formData.blog_posts && formData.blog_posts[index] && !isEmptyValue(formData.blog_posts[index].read_more_url) && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('blog_posts', 'read_more_url', index)}
-                                      title={`Esempio: ${formData.blog_posts[index].read_more_url}`}
+                                      title={`Valore attuale: ${formData.blog_posts[index].read_more_url}`}
                                  >
                                      ℹ️
                                  </span>
@@ -1724,11 +1853,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                     <div className="flex-grow">
                          <label htmlFor={`skills_${index}_name`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Skill Name
-                              {formData.skills && formData.skills[index] && formData.skills[index].hasOwnProperty('name') && (
+                              {formData.skills && formData.skills[index] && !isEmptyValue(formData.skills[index].name) && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('skills', 'name', index)}
-                                      title={`Esempio: ${formData.skills[index].name}`}
+                                      title={`Valore attuale: ${formData.skills[index].name}`}
                                  >
                                      ℹ️
                                  </span>
@@ -1745,11 +1874,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                      <div className="flex-grow">
                          <label htmlFor={`skills_${index}_level`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Level
-                              {formData.skills && formData.skills[index] && formData.skills[index].hasOwnProperty('level') && (
+                              {formData.skills && formData.skills[index] && !isEmptyValue(formData.skills[index].level) && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('skills', 'level', index)}
-                                      title={`Esempio: ${formData.skills[index].level}`}
+                                      title={`Valore attuale: ${formData.skills[index].level}`}
                                  >
                                      ℹ️
                                  </span>
@@ -1784,11 +1913,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                     <div className="mb-5">
                          <label htmlFor={`education_list_${index}_period`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Period
-                             {formData.education_list && formData.education_list[index] && formData.education_list[index].hasOwnProperty('period') && (
+                             {formData.education_list && formData.education_list[index] && !isEmptyValue(formData.education_list[index].period) && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('education_list', 'period', index)}
-                                      title={`Esempio: ${formData.education_list[index].period}`}
+                                      title={`Valore attuale: ${formData.education_list[index].period}`}
                                  >
                                      ℹ️
                                  </span>
@@ -1805,11 +1934,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                       <div className="mb-5">
                          <label htmlFor={`education_list_${index}_title`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Title
-                             {formData.education_list && formData.education_list[index] && formData.education_list[index].hasOwnProperty('title') && (
+                             {formData.education_list && formData.education_list[index] && !isEmptyValue(formData.education_list[index].title) && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('education_list', 'title', index)}
-                                      title={`Esempio: ${formData.education_list[index].title}`}
+                                      title={`Valore attuale: ${formData.education_list[index].title}`}
                                  >
                                      ℹ️
                                  </span>
@@ -1826,11 +1955,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                      <div className="mb-5">
                          <label htmlFor={`education_list_${index}_subtitle`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Subtitle
-                              {formData.education_list && formData.education_list[index] && formData.education_list[index].hasOwnProperty('subtitle') && (
+                              {formData.education_list && formData.education_list[index] && !isEmptyValue(formData.education_list[index].subtitle) && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('education_list', 'subtitle', index)}
-                                      title={`Esempio: ${formData.education_list[index].subtitle}`}
+                                      title={`Valore attuale: ${formData.education_list[index].subtitle}`}
                                  >
                                      ℹ️
                                  </span>
@@ -1865,11 +1994,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                     <div className="mb-5">
                          <label htmlFor={`work_experience_list_${index}_period`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Period
-                             {formData.work_experience_list && formData.work_experience_list[index] && formData.work_experience_list[index].hasOwnProperty('period') && (
+                             {formData.work_experience_list && formData.work_experience_list[index] && !isEmptyValue(formData.work_experience_list[index].period) && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('work_experience_list', 'period', index)}
-                                      title={`Esempio: ${formData.work_experience_list[index].period}`}
+                                      title={`Valore attuale: ${formData.work_experience_list[index].period}`}
                                  >
                                      ℹ️
                                  </span>
@@ -1886,11 +2015,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                       <div className="mb-5">
                          <label htmlFor={`work_experience_list_${index}_title`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Title
-                             {formData.work_experience_list && formData.work_experience_list[index] && formData.work_experience_list[index].hasOwnProperty('title') && (
+                             {formData.work_experience_list && formData.work_experience_list[index] && !isEmptyValue(formData.work_experience_list[index].title) && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('work_experience_list', 'title', index)}
-                                      title={`Esempio: ${formData.work_experience_list[index].title}`}
+                                      title={`Valore attuale: ${formData.work_experience_list[index].title}`}
                                  >
                                      ℹ️
                                  </span>
@@ -1907,11 +2036,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                      <div className="mb-5">
                          <label htmlFor={`work_experience_list_${index}_subtitle`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Subtitle
-                             {formData.work_experience_list && formData.work_experience_list[index] && formData.work_experience_list[index].hasOwnProperty('subtitle') && (
+                             {formData.work_experience_list && formData.work_experience_list[index] && !isEmptyValue(formData.work_experience_list[index].subtitle) && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('work_experience_list', 'subtitle', index)}
-                                      title={`Esempio: ${formData.work_experience_list[index].subtitle}`}
+                                      title={`Valore attuale: ${formData.work_experience_list[index].subtitle}`}
                                  >
                                      ℹ️
                                  </span>
@@ -1945,11 +2074,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                     <div className="flex-grow">
                          <label htmlFor={`languages_${index}_name`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Language Name
-                              {formData.languages && formData.languages[index] && formData.languages[index].hasOwnProperty('name') && (
+                              {formData.languages && formData.languages[index] && !isEmptyValue(formData.languages[index].name) && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('languages', 'name', index)}
-                                      title={`Esempio: ${formData.languages[index].name}`}
+                                      title={`Valore attuale: ${formData.languages[index].name}`}
                                  >
                                      ℹ️
                                  </span>
@@ -1966,11 +2095,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                      <div className="flex-grow">
                          <label htmlFor={`languages_${index}_level`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Level
-                             {formData.languages && formData.languages[index] && formData.languages[index].hasOwnProperty('level') && (
+                             {formData.languages && formData.languages[index] && !isEmptyValue(formData.languages[index].level) && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('languages', 'level', index)}
-                                      title={`Esempio: ${formData.languages[index].level}`}
+                                      title={`Valore attuale: ${formData.languages[index].level}`}
                                  >
                                      ℹ️
                                  </span>
@@ -2005,11 +2134,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                     <div className="mb-5">
                          <label htmlFor={`expertise_list_${index}_name`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Name
-                             {formData.expertise_list && formData.expertise_list[index] && formData.expertise_list[index].hasOwnProperty('name') && (
+                             {formData.expertise_list && formData.expertise_list[index] && !isEmptyValue(formData.expertise_list[index].name) && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('expertise_list', 'name', index)}
-                                      title={`Esempio: ${formData.expertise_list[index].name}`}
+                                      title={`Valore attuale: ${formData.expertise_list[index].name}`}
                                  >
                                      ℹ️
                                  </span>
@@ -2026,11 +2155,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                       <div className="mb-5">
                          <label htmlFor={`expertise_list_${index}_icon_class`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Icon Class
-                              {formData.expertise_list && formData.expertise_list[index] && formData.expertise_list[index].hasOwnProperty('icon_class') && (
+                              {formData.expertise_list && formData.expertise_list[index] && !isEmptyValue(formData.expertise_list[index].icon_class) && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('expertise_list', 'icon_class', index)}
-                                      title={`Esempio: ${formData.expertise_list[index].icon_class}`}
+                                      title={`Valore attuale: ${formData.expertise_list[index].icon_class}`}
                                  >
                                      ℹ️
                                  </span>
@@ -2047,11 +2176,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                      <div className="mb-5">
                          <label htmlFor={`expertise_list_${index}_subtitle`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Subtitle
-                              {formData.expertise_list && formData.expertise_list[index] && formData.expertise_list[index].hasOwnProperty('subtitle') && (
+                              {formData.expertise_list && formData.expertise_list[index] && !isEmptyValue(formData.expertise_list[index].subtitle) && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('expertise_list', 'subtitle', index)}
-                                      title={`Esempio: ${formData.expertise_list[index].subtitle}`}
+                                      title={`Valore attuale: ${formData.expertise_list[index].subtitle}`}
                                  >
                                      ℹ️
                                  </span>
@@ -2086,11 +2215,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                     <div className="mb-5">
                          <label htmlFor={`services_${index}_icon`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Icon
-                             {formData.services && formData.services[index] && formData.services[index].hasOwnProperty('icon') && (
+                             {formData.services && formData.services[index] && !isEmptyValue(formData.services[index].icon) && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('services', 'icon', index)}
-                                      title={`Esempio: ${formData.services[index].icon}`}
+                                      title={`Valore attuale: ${formData.services[index].icon}`}
                                  >
                                      ℹ️
                                  </span>
@@ -2107,11 +2236,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                       <div className="mb-5">
                          <label htmlFor={`services_${index}_icon_class`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Icon Class
-                              {formData.services && formData.services[index] && formData.services[index].hasOwnProperty('icon_class') && (
+                              {formData.services && formData.services[index] && !isEmptyValue(formData.services[index].icon_class) && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('services', 'icon_class', index)}
-                                      title={`Esempio: ${formData.services[index].icon_class}`}
+                                      title={`Valore attuale: ${formData.services[index].icon_class}`}
                                  >
                                      ℹ️
                                  </span>
@@ -2128,11 +2257,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                       <div className="mb-5">
                          <label htmlFor={`services_${index}_title`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Title
-                             {formData.services && formData.services[index] && formData.services[index].hasOwnProperty('title') && (
+                             {formData.services && formData.services[index] && !isEmptyValue(formData.services[index].title) && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('services', 'title', index)}
-                                      title={`Esempio: ${formData.services[index].title}`}
+                                      title={`Valore attuale: ${formData.services[index].title}`}
                                  >
                                      ℹ️
                                  </span>
@@ -2149,11 +2278,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                      <div className="mb-5">
                          <label htmlFor={`services_${index}_description`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Description
-                              {formData.services && formData.services[index] && formData.services[index].hasOwnProperty('description') && (
+                              {formData.services && formData.services[index] && !isEmptyValue(formData.services[index].description) && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('services', 'description', index)}
-                                      title={`Esempio: ${formData.services[index].description}`}
+                                      title={`Valore attuale: ${formData.services[index].description}`}
                                  >
                                      ℹ️
                                  </span>
@@ -2188,11 +2317,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                     <div className="mb-5">
                          <label htmlFor={`statistics_${index}_icon`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Icon
-                             {formData.statistics && formData.statistics[index] && formData.statistics[index].hasOwnProperty('icon') && (
+                             {formData.statistics && formData.statistics[index] && !isEmptyValue(formData.statistics[index].icon) && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('statistics', 'icon', index)}
-                                      title={`Esempio: ${formData.statistics[index].icon}`}
+                                      title={`Valore attuale: ${formData.statistics[index].icon}`}
                                  >
                                      ℹ️
                                  </span>
@@ -2209,11 +2338,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                       <div className="mb-5">
                          <label htmlFor={`statistics_${index}_count`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Count
-                              {formData.statistics && formData.statistics[index] && formData.statistics[index].hasOwnProperty('count') && (
+                              {formData.statistics && formData.statistics[index] && !isEmptyValue(formData.statistics[index].count) && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('statistics', 'count', index)}
-                                      title={`Esempio: ${formData.statistics[index].count}`}
+                                      title={`Valore attuale: ${formData.statistics[index].count}`}
                                  >
                                      ℹ️
                                  </span>
@@ -2230,11 +2359,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                      <div className="mb-5">
                          <label htmlFor={`statistics_${index}_label`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Label
-                             {formData.statistics && formData.statistics[index] && formData.statistics[index].hasOwnProperty('label') && (
+                             {formData.statistics && formData.statistics[index] && !isEmptyValue(formData.statistics[index].label) && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('statistics', 'label', index)}
-                                      title={`Esempio: ${formData.statistics[index].label}`}
+                                      title={`Valore attuale: ${formData.statistics[index].label}`}
                                  >
                                      ℹ️
                                  </span>
@@ -2251,11 +2380,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                       <div className="mb-5">
                          <label htmlFor={`statistics_${index}_icon_class`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Icon Class
-                             {formData.statistics && formData.statistics[index] && formData.statistics[index].hasOwnProperty('icon_class') && (
+                             {formData.statistics && formData.statistics[index] && !isEmptyValue(formData.statistics[index].icon_class) && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('statistics', 'icon_class', index)}
-                                      title={`Esempio: ${formData.statistics[index].icon_class}`}
+                                      title={`Valore attuale: ${formData.statistics[index].icon_class}`}
                                  >
                                      ℹ️
                                  </span>
@@ -2290,11 +2419,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                     <div className="mb-5">
                          <label htmlFor={`pricing_packs_${index}_title`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Title
-                             {formData.pricing_packs && formData.pricing_packs[index] && formData.pricing_packs[index].hasOwnProperty('title') && (
+                             {formData.pricing_packs && formData.pricing_packs[index] && !isEmptyValue(formData.pricing_packs[index].title) && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('pricing_packs', 'title', index)}
-                                      title={`Esempio: ${formData.pricing_packs[index].title}`}
+                                      title={`Valore attuale: ${formData.pricing_packs[index].title}`}
                                  >
                                      ℹ️
                                  </span>
@@ -2311,11 +2440,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                       <div className="mb-5">
                          <label htmlFor={`pricing_packs_${index}_cost`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Cost
-                              {formData.pricing_packs && formData.pricing_packs[index] && formData.pricing_packs[index].hasOwnProperty('cost') && (
+                              {formData.pricing_packs && formData.pricing_packs[index] && !isEmptyValue(formData.pricing_packs[index].cost) && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('pricing_packs', 'cost', index)}
-                                      title={`Esempio: ${formData.pricing_packs[index].cost}`}
+                                      title={`Valore attuale: ${formData.pricing_packs[index].cost}`}
                                  >
                                      ℹ️
                                  </span>
@@ -2332,11 +2461,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                       <div className="mb-5">
                          <label htmlFor={`pricing_packs_${index}_project`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Project
-                              {formData.pricing_packs && formData.pricing_packs[index] && formData.pricing_packs[index].hasOwnProperty('project') && (
+                              {formData.pricing_packs && formData.pricing_packs[index] && !isEmptyValue(formData.pricing_packs[index].project) && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('pricing_packs', 'project', index)}
-                                      title={`Esempio: ${formData.pricing_packs[index].project}`}
+                                      title={`Valore attuale: ${formData.pricing_packs[index].project}`}
                                  >
                                      ℹ️
                                  </span>
@@ -2353,11 +2482,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                      <div className="mb-5">
                          <label htmlFor={`pricing_packs_${index}_storage`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Storage
-                              {formData.pricing_packs && formData.pricing_packs[index] && formData.pricing_packs[index].hasOwnProperty('storage') && (
+                              {formData.pricing_packs && formData.pricing_packs[index] && !isEmptyValue(formData.pricing_packs[index].storage) && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('pricing_packs', 'storage', index)}
-                                      title={`Esempio: ${formData.pricing_packs[index].storage}`}
+                                      title={`Valore attuale: ${formData.pricing_packs[index].storage}`}
                                  >
                                      ℹ️
                                  </span>
@@ -2374,11 +2503,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                       <div className="mb-5">
                          <label htmlFor={`pricing_packs_${index}_domain`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Domain
-                              {formData.pricing_packs && formData.pricing_packs[index] && formData.pricing_packs[index].hasOwnProperty('domain') && (
+                              {formData.pricing_packs && formData.pricing_packs[index] && !isEmptyValue(formData.pricing_packs[index].domain) && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('pricing_packs', 'domain', index)}
-                                      title={`Esempio: ${formData.pricing_packs[index].domain}`}
+                                      title={`Valore attuale: ${formData.pricing_packs[index].domain}`}
                                  >
                                      ℹ️
                                  </span>
@@ -2395,11 +2524,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                       <div className="mb-5">
                          <label htmlFor={`pricing_packs_${index}_users`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Users
-                             {formData.pricing_packs && formData.pricing_packs[index] && formData.pricing_packs[index].hasOwnProperty('users') && (
+                             {formData.pricing_packs && formData.pricing_packs[index] && !isEmptyValue(formData.pricing_packs[index].users) && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('pricing_packs', 'users', index)}
-                                      title={`Esempio: ${formData.pricing_packs[index].users}`}
+                                      title={`Valore attuale: ${formData.pricing_packs[index].users}`}
                                  >
                                      ℹ️
                                  </span>
@@ -2416,11 +2545,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                       <div className="mb-5">
                          <label htmlFor={`pricing_packs_${index}_special_class`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Special Class
-                             {formData.pricing_packs && formData.pricing_packs[index] && formData.pricing_packs[index].hasOwnProperty('special_class') && (
+                             {formData.pricing_packs && formData.pricing_packs[index] && !isEmptyValue(formData.pricing_packs[index].special_class) && (
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('pricing_packs', 'special_class', index)}
-                                      title={`Esempio: ${formData.pricing_packs[index].special_class}`}
+                                      title={`Valore attuale: ${formData.pricing_packs[index].special_class}`}
                                  >
                                      ℹ️
                                  </span>
