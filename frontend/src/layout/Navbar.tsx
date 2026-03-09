@@ -1,5 +1,6 @@
 import React,{ useState,useRef,useEffect,MouseEvent,ChangeEvent } from 'react'
 import { Flowbite,Modal,TextInput,Button,DarkThemeToggle } from 'flowbite-react'
+import { Link } from 'react-router-dom'
 interface MNavProps {
 	toggleMenu:()=>void
 	mobileMenuOpen:boolean
@@ -35,16 +36,16 @@ const MobileNavbar:React.FC<MNavProps>=({
 				<path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M1 1h15M1 7h15M1 13h15"/>
 			</svg>
 		</button>
-		<a href="https://flowbite.com/" className="flex items-center space-x-3 rtl:space-x-reverse">
-			<img src="https://flowbite.com/docs/images/logo.svg" className="h-8" alt="Flowbite Logo"/>
-			<span className="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">Flowbite</span>
-		</a>
+		<Link to="/" className="flex items-center space-x-3 rtl:space-x-reverse">
+			<img src="/logo-nordev.png" className="h-10" alt="Nordevit Logo"/>
+			<span className="self-center text-2xl font-bold whitespace-nowrap dark:text-white text-indigo-600">NORDEVIT</span>
+		</Link>
 		<div className="flex items-center gap-2">
 			<DarkThemeToggle/>
 {/* login
 			<div className="relative">
 				<button ref={mobileDropdownButtonRef} onClick={toggleDropdown} className="w-10 h-10 rounded-full overflow-hidden border border-gray-200">
-					<img src="https://flowbite.com/docs/images/people/profile-picture-5.jpg" alt="User avatar"/>
+					<img src="/logo-nordev.png" alt="User avatar"/>
 				</button>
 				{mobileDropdownOpen&&
 				<div ref={mobileDropdownRef} className="absolute right-0 mt-2 w-40 bg-white rounded divide-y divide-gray-100 shadow dark:bg-gray-700">
@@ -79,10 +80,10 @@ interface DNavProps {
 	logout:()=>void
 }
 const DesktopNavbar:React.FC<DNavProps>=({openLoginModal,openSignupModal,isLoggedIn,logout})=>(<div className="hidden md:flex flex-wrap items-center justify-between">
-	<a href="https://flowbite.com/" className="flex items-center space-x-3 rtl:space-x-reverse">
-		<img src="https://flowbite.com/docs/images/logo.svg" className="h-8" alt="Flowbite Logo"/>
-		<span className="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">Flowbite</span>
-	</a>
+	<Link to="/" className="flex items-center space-x-3 rtl:space-x-reverse">
+		<img src="/logo-nordev.png" className="h-10" alt="Nordevit Logo"/>
+		<span className="self-center text-2xl font-bold whitespace-nowrap dark:text-white text-indigo-600">NORDEVIT</span>
+	</Link>
 	<div className="flex items-center ml-auto space-x-6">
 		<DarkThemeToggle/>
 		<div className="ml-4"/>
@@ -90,23 +91,28 @@ const DesktopNavbar:React.FC<DNavProps>=({openLoginModal,openSignupModal,isLogge
 	<div className="hidden w-full md:block md:w-auto" id="navbar-default">
 		<div className="flex md:flex-row space-x-8 rtl:space-x-reverse">
 			<ul className="font-medium flex flex-col p-4 md:p-0 mt-4 border border-gray-100 rounded-lg bg-gray-50 md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:border-0 md:bg-white dark:bg-gray-800 md:dark:bg-gray-900 dark:border-gray-700">
-				<li><a href="#Home" className="block py-2 px-3 text-white bg-blue-700 rounded-sm md:bg-transparent md:text-blue-700 md:p-0 dark:text-white md:dark:text-blue-500" aria-current="page">Home</a></li>
+				<li><a href="#Home" className="block py-2 px-3 text-gray-900 rounded-sm hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent">Home</a></li>
 				<li><a href="#about" className="block py-2 px-3 text-gray-900 rounded-sm hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent">About</a></li>
 				<li><a href="#services" className="block py-2 px-3 text-gray-900 rounded-sm hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent">Services</a></li>
 				<li><a href="#price" className="block py-2 px-3 text-gray-900 rounded-sm hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent">Pricing</a></li>
 				<li><a href="#contact" className="block py-2 px-3 text-gray-900 rounded-sm hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent">Contact</a></li>
+                {isLoggedIn && (
+                    <li><Link to="/dashboard" className="block py-2 px-3 text-blue-600 font-bold rounded-sm hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0">Dashboard</Link></li>
+                )}
 			</ul>
 		</div>
 	</div>
 
-	<ul className="font-medium flex flex-col p-4 md:p-0 mt-4 border border-gray-100 rounded-lg bg-gray-50 md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:border-0 md:bg-white dark:bg-gray-800 md:dark:bg-gray-900 dark:border-gray-700 ml-auto">
-{/* login 
-		{!isLoggedIn?<>
-			<li><a href="#" onClick={openLoginModal} className="block py-2 px-3 text-gray-900 rounded-sm hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent">Login</a></li>
-			<li><a href="#" onClick={openSignupModal} className="block py-2 px-3 text-white bg-blue-700 rounded-sm md:bg-transparent md:text-blue-700 md:p-0 dark:text-white md:dark:text-blue-500">Sign up</a></li>
-		</>:<li><a href="#" onClick={logout} className="block py-2 px-3 text-gray-900 rounded-sm hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500">Logout</a></li>}
-*/}
-		</ul>
+	<ul className="font-medium flex flex-col p-4 md:p-0 mt-4 border border-gray-100 rounded-lg bg-gray-50 md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:border-0 md:bg-white dark:bg-gray-800 md:dark:bg-gray-900 dark:border-gray-700 ml-auto items-center">
+		{!isLoggedIn ? (
+            <>
+                <li><button onClick={openLoginModal} className="block py-2 px-3 text-gray-900 hover:text-blue-700">Login</button></li>
+                <li><button onClick={openSignupModal} className="btn-primary py-2 px-4 rounded-lg text-sm">Sign Up</button></li>
+            </>
+        ) : (
+            <li><button onClick={logout} className="text-gray-600 hover:text-red-500 text-sm font-medium">Logout</button></li>
+        )}
+	</ul>
 
 </div>)
 const Navbar:React.FC=()=>{
