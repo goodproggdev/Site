@@ -1,13 +1,34 @@
 import os
 import sys
 import json
-import spacy
+try:
+    import spacy
+except ImportError:
+    spacy = None
+    print("AVVISO: spaCy non installato.")
+
 import re
 import copy
-from pypdf import PdfReader
+
+try:
+    from pypdf import PdfReader
+except ImportError:
+    try:
+        from PyPDF2 import PdfReader
+    except ImportError:
+        PdfReader = None
+        print("AVVISO: pypdf/PyPDF2 non installato.")
+
 # from docx import Document # Se vuoi supportare .docx, assicurati di avere python-docx e decommenta
-from flask import Flask, request, jsonify
-from flask_cors import CORS # Importa CORS
+
+try:
+    from flask import Flask, request, jsonify
+    from flask_cors import CORS # Importa CORS
+except ImportError:
+    Flask = None
+    CORS = None
+    print("AVVISO: Flask o Flask-CORS non installati.")
+
 import tempfile # Per gestire file temporanei
 
 # Importa la libreria resume-parser

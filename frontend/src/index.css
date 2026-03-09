@@ -1,4 +1,54 @@
-@import "flowbite/src/themes/default";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-white text-gray-900 transition-colors duration-300 dark:bg-gray-900 dark:text-white;
+    background-attachment: fixed;
+  }
+}
+
+@layer components {
+  .mesh-gradient {
+    background-color: #ffffff;
+    background-image: 
+      radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+      radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+      radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+  }
+
+  .dark .mesh-gradient {
+    background-color: #030712;
+    background-image: 
+      radial-gradient(at 0% 0%, rgba(79, 70, 229, 0.15) 0, transparent 50%), 
+      radial-gradient(at 100% 100%, rgba(124, 58, 237, 0.15) 0, transparent 50%),
+      radial-gradient(at 50% 50%, rgba(30, 27, 75, 0.1) 0, transparent 50%);
+  }
+
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-xl dark:bg-gray-800/40 dark:border-gray-700/30;
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600;
+  }
+
+  .btn-primary-gradient {
+    @apply bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-3 px-8 rounded-2xl shadow-lg shadow-indigo-200 dark:shadow-none transition-all duration-300 transform hover:scale-105 active:scale-95;
+  }
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.section-padding {
+  @apply py-20 lg:py-32;
+}
