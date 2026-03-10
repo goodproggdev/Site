@@ -12,7 +12,7 @@ const About = () => {
 				</div>
 				<div className="mt-10 lg:mt-0 relative flex justify-center">
           <div className="absolute -inset-4 bg-purple-500/10 rounded-full blur-3xl"></div>
-					<img className="relative w-4/5 lg:w-full rounded-2xl shadow-2xl transform lg:rotate-2 hover:rotate-0 transition-transform duration-500 border border-gray-200 dark:border-gray-800" src="/logo-nordev.png" alt="Nordevit Brand" />
+					<img className="relative w-4/5 lg:w-full rounded-2xl shadow-2xl transform lg:rotate-2 hover:rotate-0 transition-transform duration-500 border border-gray-200 dark:border-gray-800" src="/src/assets/testCV.jpg" alt="Test" />
 				</div>
 			</div>
 		</section>
