@@ -2,6 +2,7 @@
  * ErrorBoundary — cattura errori React e mostra UI di fallback.
  */
 import React, { Component, type ReactNode } from "react";
+import i18n from "../i18n";
 
 interface Props {
   children: ReactNode;
@@ -44,12 +45,13 @@ class ErrorBoundary extends Component<Props, State> {
             }}
           >
             <h2 style={{ fontSize: "1.5rem", fontWeight: 700, color: "#e53e3e" }}>
-              Qualcosa è andato storto
+              {i18n.t("errors.boundaryTitle")}
             </h2>
             <p style={{ color: "#718096" }}>
-              {this.state.error?.message || "Errore sconosciuto"}
+              {this.state.error?.message || i18n.t("errors.boundaryUnknown")}
             </p>
             <button
+              type="button"
               onClick={() => this.setState({ hasError: false, error: null })}
               style={{
                 padding: "0.5rem 1.5rem",
@@ -60,7 +62,7 @@ class ErrorBoundary extends Component<Props, State> {
                 cursor: "pointer",
               }}
             >
-              Riprova
+              {i18n.t("errors.boundaryRetry")}
             </button>
           </div>
         )

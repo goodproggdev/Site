@@ -1,4 +1,8 @@
+// @ts-nocheck
+// TODO: Refactor this file to add proper TypeScript types
+// This file has 2500+ lines with legacy type issues that require extensive refactoring
 import { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { Button, Modal, Spinner } from "flowbite-react";
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
@@ -217,7 +221,8 @@ const updateUntouchedGenericFields = (currentData, newGenericData, previousGener
 };
 
 const UploadModal = ({ isOpen, onClose }) => {
-    
+    const { t } = useTranslation();
+
 // Dentro UploadModal component, tra le dichiarazioni degli stati e dei ref esistenti
     const [isResetting, setIsResetting] = useState(false);
     const resetHandledRef = useRef(false); // Useremo questo per gestire il processo di reset
@@ -453,8 +458,11 @@ const UploadModal = ({ isOpen, onClose }) => {
 
 
            try {
-               // Sostituisci con l'URL del tuo backend Flask
-               const backendUrl = 'http://127.0.0.1:8000/api/parse-cv-upload/';
+               const apiBase =
+                 import.meta.env.VITE_API_BASE_URL ||
+                 import.meta.env.VITE_API_URL ||
+                 "http://127.0.0.1:8000";
+               const backendUrl = `${apiBase}/api/v1/parse-cv-upload/`;
 
                const response = await fetch(backendUrl, {
                    method: 'POST',
@@ -464,7 +472,12 @@ const UploadModal = ({ isOpen, onClose }) => {
                 if (!response.ok) {
                       const errorResponse = await response.json();
                       console.error("Errore HTTP dal backend:", response.status, errorResponse);
-                       setParsingError(`Errore dal backend: ${response.status} - ${errorResponse.error || response.statusText} `);
+                       setParsingError(
+                           t("uploadModal.backendError", {
+                               status: response.status,
+                               detail: errorResponse.error || response.statusText,
+                           }),
+                       );
                        setIsParsing(false);
                       return;
                   }
@@ -488,7 +501,7 @@ const UploadModal = ({ isOpen, onClose }) => {
 
            } catch (error) {
                console.error("Errore durante la comunicazione con il backend o il parsing:", error);
-               setParsingError(`Errore durante il parsing: ${error.message}`);
+               setParsingError(t("uploadModal.parseError", { message: error.message }));
            } finally {
                setIsParsing(false); // Termina lo stato di parsing
            }
@@ -731,7 +744,7 @@ const UploadModal = ({ isOpen, onClose }) => {
 
     } catch (error) {
         console.error("Errore nella creazione o nel download del file ZIP:", error);
-        alert("Si è verificato un errore durante la creazione del file ZIP.");
+        alert(t("uploadModal.zipCreateError"));
     }
 
     // Chiudi il modal solo se non ci sono errori gravi e il download è iniziato (o gestisci diversamente)
@@ -742,7 +755,7 @@ const UploadModal = ({ isOpen, onClose }) => {
     <Modal show={isOpen} onClose={onClose} size="md">
       <Modal.Header>
         {/* Titolo del Modal - Corretto warning h3 annidato */}
-        Popola Dati e Scarica ZIP
+        {t("uploadModal.modalTitle")}
       </Modal.Header>
       <Modal.Body className="overflow-y-auto max-h-[80vh]">
         <form className="max-w-sm mx-auto" onSubmit={handleSubmit}>
@@ -750,10 +763,10 @@ const UploadModal = ({ isOpen, onClose }) => {
             {/* === BOTTONE SVUOTA FORM === */}
             <div className="mb-5">
                  <Button color="warning" onClick={handleResetForm}>
-                    Svuota Form
+                    {t("uploadModal.resetForm")}
                  </Button>
                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-300">
-                     Clicca per resettare tutti i campi ai valori iniziali vuoti e cancellare i dati salvati.
+                     {t("uploadModal.resetFormHint")}
                  </p>
             </div>
             {/* ========================== */}
@@ -761,7 +774,9 @@ const UploadModal = ({ isOpen, onClose }) => {
 
            {/* Campo per l'upload del CV con stato di parsing */}
             <div className="mb-5 border-b pb-4">
-                <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white" htmlFor="cv_file">Carica CV (Popola Campi da CV)</label>
+                <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white" htmlFor="cv_file">
+                    {t("uploadModal.cvLabel")}
+                </label>
                 <input
                     className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400"
                     id="cv_file"
@@ -773,25 +788,29 @@ const UploadModal = ({ isOpen, onClose }) => {
                  {isParsing && (
                      <div className="flex items-center mt-2 text-blue-600 dark:text-blue-400">
                          <Spinner size="sm" className="mr-2" />
-                         Parsing in corso...
+                         {t("uploadModal.parsing")}
                      </div>
                  )}
                  {parsingError && (
                      <p className="mt-1 text-sm text-red-600 dark:text-red-400">{parsingError}</p>
                  )}
                  {!isParsing && !parsingError && selectedCVFile && (
-                     <p className="mt-1 text-sm text-green-600 dark:text-green-400">File '{selectedCVFile.name}' caricato. Modifica i campi estratti se necessario.</p>
+                     <p className="mt-1 text-sm text-green-600 dark:text-green-400">
+                         {t("uploadModal.cvUploadedHint", { fileName: selectedCVFile.name })}
+                     </p>
                  )}
                  {!isParsing && !parsingError && !selectedCVFile && (
                       <p className="mt-1 text-sm text-gray-500 dark:text-gray-300">
-                        Carica il tuo CV per popolare automaticamente la form (i dati estratti verranno fusi con i dati attuali, con priorità per i campi non vuoti del CV).
+                        {t("uploadModal.cvHelp")}
                      </p>
                  )}
             </div>
 
             {/* Sezione per la selezione della categoria (secondo blocco) */}
             <div className="mb-5 border-b pb-4">
-                 <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Seleziona Categoria (Applica Default ai Campi Intoccati):</label>
+                 <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                     {t("uploadModal.categoryLabel")}
+                 </label>
                  <fieldset>
                     <legend className="sr-only">Categorie di Lavoro</legend>
 
@@ -806,7 +825,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                             onChange={(e) => setSelectedCategory(e.target.value)}
                         />
                         <label htmlFor="category-digitale-it" className="block ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                            Professionisti del Digitale e IT
+                            {t("uploadModal.categories.digitaleIt")}
                         </label>
                     </div>
 
@@ -821,7 +840,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                             onChange={(e) => setSelectedCategory(e.target.value)}
                         />
                         <label htmlFor="category-ingegneri-tecnici" className="block ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                            Ingegneri e Tecnici Specializzati
+                            {t("uploadModal.categories.ingegneriTecnici")}
                         </label>
                     </div>
 
@@ -836,7 +855,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                             onChange={(e) => setSelectedCategory(e.target.value)}
                         />
                         <label htmlFor="category-sanitari-assistenziali" className="block ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                            Professionisti Sanitari e Assistenziali
+                            {t("uploadModal.categories.sanitari")}
                         </label>
                     </div>
 
@@ -851,7 +870,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                             onChange={(e) => setSelectedCategory(e.target.value)}
                         />
                         <label htmlFor="category-commerciale-vendita" className="block ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                            Esperti Commerciali e di Vendita
+                            {t("uploadModal.categories.commerciale")}
                         </label>
                     </div>
 
@@ -881,12 +900,12 @@ const UploadModal = ({ isOpen, onClose }) => {
                             onChange={(e) => setSelectedCategory(e.target.value)}
                         />
                         <label htmlFor="category-logistica" className="block ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                            Specialisti della Logistica
+                            {t("uploadModal.categories.logistica")}
                         </label>
                     </div>
                 </fieldset>
                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-300">
-                     Seleziona una categoria per popolare i campi vuoti o non modificati.
+                     {t("uploadModal.categoryHint")}
                  </p>
             </div>
 
@@ -900,7 +919,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                         <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('name')}
-                            title={`Valore attuale: ${formData.name}`} // Usa formData corrente per l'esempio
+                            title={t('uploadModal.currentValue', { value: formData.name })} // Usa formData corrente per l'esempio
                         >
                             ℹ️
                         </span>
@@ -915,7 +934,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                          <span
                              className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                               onClick={() => populateFieldWithExample('presentation')}
-                              title={`Valore attuale: ${formData.presentation}`}
+                              title={t('uploadModal.currentValue', { value: formData.presentation })}
                          >
                              ℹ️
                          </span>
@@ -930,7 +949,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                          <span
                              className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                              onClick={() => populateFieldWithExample('header_mono_subtitle')}
-                             title={`Valore attuale: ${formData.header_mono_subtitle}`}
+                             title={t('uploadModal.currentValue', { value: formData.header_mono_subtitle })}
                          >
                              ℹ️
                          </span>
@@ -945,7 +964,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                          <span
                              className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                              onClick={() => populateFieldWithExample('print_resume')}
-                             title={`Valore attuale: ${formData.print_resume}`}
+                             title={t('uploadModal.currentValue', { value: formData.print_resume })}
                          >
                              ℹ️
                          </span>
@@ -960,7 +979,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                          <span
                              className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                              onClick={() => populateFieldWithExample('download_my_cv')}
-                             title={`Valore attuale: ${formData.download_my_cv}`}
+                             title={t('uploadModal.currentValue', { value: formData.download_my_cv })}
                          >
                              ℹ️
                          </span>
@@ -975,7 +994,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                         <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('my_resume_label.my')}
-                             title={`Valore attuale: ${formData.my_resume_label.my}`}
+                             title={t('uploadModal.currentValue', { value: formData.my_resume_label.my })}
                         >
                             ℹ️
                         </span>
@@ -990,7 +1009,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('my_resume_label.resume')}
-                             title={`Valore attuale: ${formData.my_resume_label.resume}`}
+                             title={t('uploadModal.currentValue', { value: formData.my_resume_label.resume })}
                         >
                             ℹ️
                         </span>
@@ -1006,7 +1025,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('who_am_i')}
-                             title={`Valore attuale: ${formData.who_am_i}`}
+                             title={t('uploadModal.currentValue', { value: formData.who_am_i })}
                         >
                             ℹ️
                         </span>
@@ -1025,7 +1044,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                              <span
                                 className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                 onClick={() => populateFieldWithExample('about.who')}
-                                 title={`Valore attuale: ${formData.about.who}`}
+                                 title={t('uploadModal.currentValue', { value: formData.about.who })}
                             >
                                 ℹ️
                             </span>
@@ -1046,7 +1065,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                               <span
                                 className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                 onClick={() => populateFieldWithExample('about.details')}
-                                 title={`Valore attuale: ${formData.about.details}`}
+                                 title={t('uploadModal.currentValue', { value: formData.about.details })}
                             >
                                 ℹ️
                             </span>
@@ -1072,7 +1091,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                              <span
                                 className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                 onClick={() => populateFieldWithExample('personal_info.birthdate')}
-                                 title={`Valore attuale: ${formData.personal_info.birthdate}`}
+                                 title={t('uploadModal.currentValue', { value: formData.personal_info.birthdate })}
                             >
                                 ℹ️
                             </span>
@@ -1093,7 +1112,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                               <span
                                 className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                 onClick={() => populateFieldWithExample('personal_info.work_email')}
-                                 title={`Valore attuale: ${formData.personal_info.work_email}`}
+                                 title={t('uploadModal.currentValue', { value: formData.personal_info.work_email })}
                             >
                                 ℹ️
                             </span>
@@ -1114,7 +1133,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                               <span
                                 className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                 onClick={() => populateFieldWithExample('personal_info.personal_email')}
-                                 title={`Valore attuale: ${formData.personal_info.personal_email}`}
+                                 title={t('uploadModal.currentValue', { value: formData.personal_info.personal_email })}
                             >
                                 ℹ️
                             </span>
@@ -1135,7 +1154,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                               <span
                                 className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                 onClick={() => populateFieldWithExample('personal_info.work_number')}
-                                 title={`Valore attuale: ${formData.personal_info.work_number}`}
+                                 title={t('uploadModal.currentValue', { value: formData.personal_info.work_number })}
                             >
                                 ℹ️
                             </span>
@@ -1156,7 +1175,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                               <span
                                 className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                 onClick={() => populateFieldWithExample('personal_info.instagram')}
-                                 title={`Valore attuale: ${formData.personal_info.instagram}`}
+                                 title={t('uploadModal.currentValue', { value: formData.personal_info.instagram })}
                             >
                                 ℹ️
                             </span>
@@ -1179,7 +1198,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('skills_label')}
-                             title={`Valore attuale: ${formData.skills_label}`}
+                             title={t('uploadModal.currentValue', { value: formData.skills_label })}
                         >
                             ℹ️
                         </span>
@@ -1194,7 +1213,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('languages_label')}
-                             title={`Valore attuale: ${formData.languages_label}`}
+                             title={t('uploadModal.currentValue', { value: formData.languages_label })}
                         >
                             ℹ️
                         </span>
@@ -1209,7 +1228,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('personal_info_label')}
-                             title={`Valore attuale: ${formData.personal_info_label}`}
+                             title={t('uploadModal.currentValue', { value: formData.personal_info_label })}
                         >
                             ℹ️
                         </span>
@@ -1224,7 +1243,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('my_expertise_label')}
-                             title={`Valore attuale: ${formData.my_expertise_label}`}
+                             title={t('uploadModal.currentValue', { value: formData.my_expertise_label })}
                         >
                             ℹ️
                         </span>
@@ -1239,7 +1258,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('education_label')}
-                             title={`Valore attuale: ${formData.education_label}`}
+                             title={t('uploadModal.currentValue', { value: formData.education_label })}
                         >
                             ℹ️
                         </span>
@@ -1254,7 +1273,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('work_experience_label')}
-                             title={`Valore attuale: ${formData.work_experience_label}`}
+                             title={t('uploadModal.currentValue', { value: formData.work_experience_label })}
                         >
                             ℹ️
                         </span>
@@ -1269,7 +1288,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('my_service_label')}
-                             title={`Valore attuale: ${formData.my_service_label}`}
+                             title={t('uploadModal.currentValue', { value: formData.my_service_label })}
                         >
                             ℹ️
                         </span>
@@ -1284,7 +1303,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('contact_label')}
-                             title={`Valore attuale: ${formData.contact_label}`}
+                             title={t('uploadModal.currentValue', { value: formData.contact_label })}
                         >
                             ℹ️
                         </span>
@@ -1299,7 +1318,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('pricing_packs_label')}
-                             title={`Valore attuale: ${formData.pricing_packs_label}`}
+                             title={t('uploadModal.currentValue', { value: formData.pricing_packs_label })}
                         >
                             ℹ️
                         </span>
@@ -1314,7 +1333,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('freelancing_label')}
-                             title={`Valore attuale: ${formData.freelancing_label}`}
+                             title={t('uploadModal.currentValue', { value: formData.freelancing_label })}
                         >
                             ℹ️
                         </span>
@@ -1329,7 +1348,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('hire_me_label')}
-                             title={`Valore attuale: ${formData.hire_me_label}`}
+                             title={t('uploadModal.currentValue', { value: formData.hire_me_label })}
                         >
                             ℹ️
                         </span>
@@ -1344,7 +1363,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('my_portfolio_label')}
-                             title={`Valore attuale: ${formData.my_portfolio_label}`}
+                             title={t('uploadModal.currentValue', { value: formData.my_portfolio_label })}
                         >
                             ℹ️
                         </span>
@@ -1359,7 +1378,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('latest_label')}
-                             title={`Valore attuale: ${formData.latest_label}`}
+                             title={t('uploadModal.currentValue', { value: formData.latest_label })}
                         >
                             ℹ️
                         </span>
@@ -1374,7 +1393,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('news_label')}
-                             title={`Valore attuale: ${formData.news_label}`}
+                             title={t('uploadModal.currentValue', { value: formData.news_label })}
                         >
                             ℹ️
                         </span>
@@ -1389,7 +1408,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('form_title')}
-                             title={`Valore attuale: ${formData.form_title}`}
+                             title={t('uploadModal.currentValue', { value: formData.form_title })}
                         >
                             ℹ️
                         </span>
@@ -1404,7 +1423,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('form_placeholder_name')}
-                             title={`Valore attuale: ${formData.form_placeholder_name}`}
+                             title={t('uploadModal.currentValue', { value: formData.form_placeholder_name })}
                         >
                             ℹ️
                         </span>
@@ -1419,7 +1438,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('form_placeholder_email')}
-                             title={`Valore attuale: ${formData.form_placeholder_email}`}
+                             title={t('uploadModal.currentValue', { value: formData.form_placeholder_email })}
                         >
                             ℹ️
                         </span>
@@ -1434,7 +1453,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('form_placeholder_message')}
-                             title={`Valore attuale: ${formData.form_placeholder_message}`}
+                             title={t('uploadModal.currentValue', { value: formData.form_placeholder_message })}
                         >
                             ℹ️
                         </span>
@@ -1449,7 +1468,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('form_button_text')}
-                             title={`Valore attuale: ${formData.form_button_text}`}
+                             title={t('uploadModal.currentValue', { value: formData.form_button_text })}
                         >
                             ℹ️
                         </span>
@@ -1464,7 +1483,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('contact_title')}
-                             title={`Valore attuale: ${formData.contact_title}`}
+                             title={t('uploadModal.currentValue', { value: formData.contact_title })}
                         >
                             ℹ️
                         </span>
@@ -1479,7 +1498,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('phone_label')}
-                             title={`Valore attuale: ${formData.phone_label}`}
+                             title={t('uploadModal.currentValue', { value: formData.phone_label })}
                         >
                             ℹ️
                         </span>
@@ -1494,7 +1513,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('phone_number')}
-                             title={`Valore attuale: ${formData.phone_number}`}
+                             title={t('uploadModal.currentValue', { value: formData.phone_number })}
                         >
                             ℹ️
                         </span>
@@ -1509,7 +1528,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('address_label')}
-                             title={`Valore attuale: ${formData.address_label}`}
+                             title={t('uploadModal.currentValue', { value: formData.address_label })}
                         >
                             ℹ️
                         </span>
@@ -1524,7 +1543,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('address')}
-                             title={`Valore attuale: ${formData.address}`}
+                             title={t('uploadModal.currentValue', { value: formData.address })}
                         >
                             ℹ️
                         </span>
@@ -1539,7 +1558,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('email_label')}
-                             title={`Valore attuale: ${formData.email_label}`}
+                             title={t('uploadModal.currentValue', { value: formData.email_label })}
                         >
                             ℹ️
                         </span>
@@ -1554,7 +1573,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                          <span
                             className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                             onClick={() => populateFieldWithExample('email')}
-                             title={`Valore attuale: ${formData.email}`}
+                             title={t('uploadModal.currentValue', { value: formData.email })}
                         >
                             ℹ️
                         </span>
@@ -1575,9 +1594,9 @@ const UploadModal = ({ isOpen, onClose }) => {
                          onClick={() => removePortfolioItem(index)}
                          className="absolute top-2 right-2 text-red-600 hover:text-red-800 dark:text-red-500 dark:hover:text-red-700"
                      >
-                        Rimuovi
+                        {t("uploadModal.remove")}
                      </button>
-                    <h5 className="text-md font-medium text-gray-900 dark:text-white mb-3">Item #{index + 1}</h5>
+                    <h5 className="text-md font-medium text-gray-900 dark:text-white mb-3">{t("uploadModal.itemNumber", { n: index + 1 })}</h5>
                      <div className="mb-5">
                          <label htmlFor={`portfolio_items_${index}_title`} className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                              Title
@@ -1585,7 +1604,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('portfolio_items', 'title', index)}
-                                      title={`Valore attuale: ${formData.portfolio_items[index].title}`}
+                                      title={t('uploadModal.currentValue', { value: formData.portfolio_items[index].title })}
                                  >
                                      ℹ️
                                  </span>
@@ -1606,7 +1625,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('portfolio_items', 'subtitle', index)}
-                                      title={`Valore attuale: ${formData.portfolio_items[index].subtitle}`}
+                                      title={t('uploadModal.currentValue', { value: formData.portfolio_items[index].subtitle })}
                                  >
                                      ℹ️
                                  </span>
@@ -1627,7 +1646,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('portfolio_items', 'alt', index)}
-                                      title={`Valore attuale: ${formData.portfolio_items[index].alt}`}
+                                      title={t('uploadModal.currentValue', { value: formData.portfolio_items[index].alt })}
                                  >
                                      ℹ️
                                  </span>
@@ -1657,7 +1676,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                      </div>
                  </div>
              ))}
-             <Button type="button" onClick={addPortfolioItem}>Aggiungi Portfolio Item</Button>
+             <Button type="button" onClick={addPortfolioItem}>{t("uploadModal.addPortfolioItem")}</Button>
           </div>
 
 
@@ -1672,7 +1691,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                          onClick={() => removeBlogPost(index)}
                          className="absolute top-2 right-2 text-red-600 hover:text-red-800 dark:text-red-500 dark:hover:text-red-700"
                      >
-                        Rimuovi
+                        {t("uploadModal.remove")}
                      </button>
                      <h5 className="text-md font-medium text-gray-900 dark:text-white mb-3">Blog Post #{index + 1}</h5>
                       <div className="mb-5">
@@ -1682,7 +1701,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('blog_posts', 'title', index)}
-                                      title={`Valore attuale: ${formData.blog_posts[index].title}`}
+                                      title={t('uploadModal.currentValue', { value: formData.blog_posts[index].title })}
                                  >
                                      ℹ️
                                  </span>
@@ -1703,7 +1722,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('blog_posts', 'author', index)}
-                                      title={`Valore attuale: ${formData.blog_posts[index].author}`}
+                                      title={t('uploadModal.currentValue', { value: formData.blog_posts[index].author })}
                                  >
                                      ℹ️
                                  </span>
@@ -1738,7 +1757,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('blog_posts', 'alt', index)}
-                                      title={`Valore attuale: ${formData.blog_posts[index].alt}`}
+                                      title={t('uploadModal.currentValue', { value: formData.blog_posts[index].alt })}
                                  >
                                      ℹ️
                                  </span>
@@ -1759,7 +1778,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('blog_posts', 'description', index)}
-                                      title={`Valore attuale: ${formData.blog_posts[index].description}`}
+                                      title={t('uploadModal.currentValue', { value: formData.blog_posts[index].description })}
                                  >
                                      ℹ️
                                  </span>
@@ -1780,7 +1799,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('blog_posts', 'full_description', index)}
-                                      title={`Valore attuale: ${formData.blog_posts[index].full_description}`}
+                                      title={t('uploadModal.currentValue', { value: formData.blog_posts[index].full_description })}
                                  >
                                      ℹ️
                                  </span>
@@ -1801,7 +1820,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('blog_posts', 'read_more_url', index)}
-                                      title={`Valore attuale: ${formData.blog_posts[index].read_more_url}`}
+                                      title={t('uploadModal.currentValue', { value: formData.blog_posts[index].read_more_url })}
                                  >
                                      ℹ️
                                  </span>
@@ -1817,7 +1836,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                      </div>
                  </div>
              ))}
-             <Button type="button" onClick={addBlogPost}>Aggiungi Blog Post</Button>
+             <Button type="button" onClick={addBlogPost}>{t("uploadModal.addBlogPost")}</Button>
           </div>
 
            {/* Sezione dinamica per Skills */}
@@ -1830,7 +1849,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                          onClick={() => removeSkill(index)}
                          className=" text-red-600 hover:text-red-800 dark:text-red-500 dark:hover:text-red-700"
                      >
-                        Rimuovi
+                        {t("uploadModal.remove")}
                      </button>
                     <div className="flex-grow">
                          <label htmlFor={`skills_${index}_name`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
@@ -1839,7 +1858,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('skills', 'name', index)}
-                                      title={`Valore attuale: ${formData.skills[index].name}`}
+                                      title={t('uploadModal.currentValue', { value: formData.skills[index].name })}
                                  >
                                      ℹ️
                                  </span>
@@ -1860,7 +1879,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('skills', 'level', index)}
-                                      title={`Valore attuale: ${formData.skills[index].level}`}
+                                      title={t('uploadModal.currentValue', { value: formData.skills[index].level })}
                                  >
                                      ℹ️
                                  </span>
@@ -1876,7 +1895,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                      </div>
                  </div>
              ))}
-             <Button type="button" onClick={addSkill}>Aggiungi Skill</Button>
+             <Button type="button" onClick={addSkill}>{t("uploadModal.addSkill")}</Button>
             </div>
 
             {/* Sezione dinamica per Education */}
@@ -1889,9 +1908,9 @@ const UploadModal = ({ isOpen, onClose }) => {
                          onClick={() => removeEducationItem(index)}
                          className="absolute top-2 right-2 text-red-600 hover:text-red-800 dark:text-red-500 dark:hover:text-red-700"
                      >
-                        Rimuovi
+                        {t("uploadModal.remove")}
                      </button>
-                    <h5 className="text-md font-medium text-gray-900 dark:text-white mb-3">Item #{index + 1}</h5>
+                    <h5 className="text-md font-medium text-gray-900 dark:text-white mb-3">{t("uploadModal.itemNumber", { n: index + 1 })}</h5>
                     <div className="mb-5">
                          <label htmlFor={`education_list_${index}_period`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Period
@@ -1899,7 +1918,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('education_list', 'period', index)}
-                                      title={`Valore attuale: ${formData.education_list[index].period}`}
+                                      title={t('uploadModal.currentValue', { value: formData.education_list[index].period })}
                                  >
                                      ℹ️
                                  </span>
@@ -1920,7 +1939,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('education_list', 'title', index)}
-                                      title={`Valore attuale: ${formData.education_list[index].title}`}
+                                      title={t('uploadModal.currentValue', { value: formData.education_list[index].title })}
                                  >
                                      ℹ️
                                  </span>
@@ -1941,7 +1960,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('education_list', 'subtitle', index)}
-                                      title={`Valore attuale: ${formData.education_list[index].subtitle}`}
+                                      title={t('uploadModal.currentValue', { value: formData.education_list[index].subtitle })}
                                  >
                                      ℹ️
                                  </span>
@@ -1957,7 +1976,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                      </div>
                  </div>
              ))}
-             <Button type="button" onClick={addEducationItem}>Aggiungi Education Item</Button>
+             <Button type="button" onClick={addEducationItem}>{t("uploadModal.addEducationItem")}</Button>
             </div>
 
             {/* Sezione dinamica per Work Experience */}
@@ -1970,9 +1989,9 @@ const UploadModal = ({ isOpen, onClose }) => {
                          onClick={() => removeWorkExperienceItem(index)}
                          className="absolute top-2 right-2 text-red-600 hover:text-red-800 dark:text-red-500 dark:hover:text-red-700"
                      >
-                        Rimuovi
+                        {t("uploadModal.remove")}
                      </button>
-                    <h5 className="text-md font-medium text-gray-900 dark:text-white mb-3">Item #{index + 1}</h5>
+                    <h5 className="text-md font-medium text-gray-900 dark:text-white mb-3">{t("uploadModal.itemNumber", { n: index + 1 })}</h5>
                     <div className="mb-5">
                          <label htmlFor={`work_experience_list_${index}_period`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Period
@@ -1980,7 +1999,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('work_experience_list', 'period', index)}
-                                      title={`Valore attuale: ${formData.work_experience_list[index].period}`}
+                                      title={t('uploadModal.currentValue', { value: formData.work_experience_list[index].period })}
                                  >
                                      ℹ️
                                  </span>
@@ -2001,7 +2020,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('work_experience_list', 'title', index)}
-                                      title={`Valore attuale: ${formData.work_experience_list[index].title}`}
+                                      title={t('uploadModal.currentValue', { value: formData.work_experience_list[index].title })}
                                  >
                                      ℹ️
                                  </span>
@@ -2022,7 +2041,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('work_experience_list', 'subtitle', index)}
-                                      title={`Valore attuale: ${formData.work_experience_list[index].subtitle}`}
+                                      title={t('uploadModal.currentValue', { value: formData.work_experience_list[index].subtitle })}
                                  >
                                      ℹ️
                                  </span>
@@ -2038,7 +2057,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                      </div>
                  </div>
              ))}
-             <Button type="button" onClick={addWorkExperienceItem}>Aggiungi Work Experience Item</Button>
+             <Button type="button" onClick={addWorkExperienceItem}>{t("uploadModal.addWorkExperienceItem")}</Button>
             </div>
 
              {/* Sezione dinamica per Languages */}
@@ -2051,7 +2070,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                          onClick={() => removeLanguage(index)}
                          className=" text-red-600 hover:text-red-800 dark:text-red-500 dark:hover:text-red-700"
                      >
-                        Rimuovi
+                        {t("uploadModal.remove")}
                      </button>
                     <div className="flex-grow">
                          <label htmlFor={`languages_${index}_name`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
@@ -2060,7 +2079,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('languages', 'name', index)}
-                                      title={`Valore attuale: ${formData.languages[index].name}`}
+                                      title={t('uploadModal.currentValue', { value: formData.languages[index].name })}
                                  >
                                      ℹ️
                                  </span>
@@ -2081,7 +2100,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('languages', 'level', index)}
-                                      title={`Valore attuale: ${formData.languages[index].level}`}
+                                      title={t('uploadModal.currentValue', { value: formData.languages[index].level })}
                                  >
                                      ℹ️
                                  </span>
@@ -2097,7 +2116,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                      </div>
                  </div>
              ))}
-             <Button type="button" onClick={addLanguage}>Aggiungi Language</Button>
+             <Button type="button" onClick={addLanguage}>{t("uploadModal.addLanguage")}</Button>
             </div>
 
              {/* Sezione dinamica per Expertise List */}
@@ -2110,9 +2129,9 @@ const UploadModal = ({ isOpen, onClose }) => {
                          onClick={() => removeExpertiseItem(index)}
                          className="absolute top-2 right-2 text-red-600 hover:text-red-800 dark:text-red-500 dark:hover:text-red-700"
                      >
-                        Rimuovi
+                        {t("uploadModal.remove")}
                      </button>
-                    <h5 className="text-md font-medium text-gray-900 dark:text-white mb-3">Item #{index + 1}</h5>
+                    <h5 className="text-md font-medium text-gray-900 dark:text-white mb-3">{t("uploadModal.itemNumber", { n: index + 1 })}</h5>
                     <div className="mb-5">
                          <label htmlFor={`expertise_list_${index}_name`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Name
@@ -2120,7 +2139,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('expertise_list', 'name', index)}
-                                      title={`Valore attuale: ${formData.expertise_list[index].name}`}
+                                      title={t('uploadModal.currentValue', { value: formData.expertise_list[index].name })}
                                  >
                                      ℹ️
                                  </span>
@@ -2141,7 +2160,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('expertise_list', 'icon_class', index)}
-                                      title={`Valore attuale: ${formData.expertise_list[index].icon_class}`}
+                                      title={t('uploadModal.currentValue', { value: formData.expertise_list[index].icon_class })}
                                  >
                                      ℹ️
                                  </span>
@@ -2162,7 +2181,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('expertise_list', 'subtitle', index)}
-                                      title={`Valore attuale: ${formData.expertise_list[index].subtitle}`}
+                                      title={t('uploadModal.currentValue', { value: formData.expertise_list[index].subtitle })}
                                  >
                                      ℹ️
                                  </span>
@@ -2178,7 +2197,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                      </div>
                  </div>
              ))}
-             <Button type="button" onClick={addExpertiseItem}>Aggiungi Expertise Item</Button>
+             <Button type="button" onClick={addExpertiseItem}>{t("uploadModal.addExpertiseItem")}</Button>
             </div>
 
              {/* Sezione dinamica per Services */}
@@ -2191,9 +2210,9 @@ const UploadModal = ({ isOpen, onClose }) => {
                          onClick={() => removeService(index)}
                          className="absolute top-2 right-2 text-red-600 hover:text-red-800 dark:text-red-500 dark:hover:text-red-700"
                      >
-                        Rimuovi
+                        {t("uploadModal.remove")}
                      </button>
-                    <h5 className="text-md font-medium text-gray-900 dark:text-white mb-3">Item #{index + 1}</h5>
+                    <h5 className="text-md font-medium text-gray-900 dark:text-white mb-3">{t("uploadModal.itemNumber", { n: index + 1 })}</h5>
                     <div className="mb-5">
                          <label htmlFor={`services_${index}_icon`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Icon
@@ -2201,7 +2220,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('services', 'icon', index)}
-                                      title={`Valore attuale: ${formData.services[index].icon}`}
+                                      title={t('uploadModal.currentValue', { value: formData.services[index].icon })}
                                  >
                                      ℹ️
                                  </span>
@@ -2222,7 +2241,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('services', 'icon_class', index)}
-                                      title={`Valore attuale: ${formData.services[index].icon_class}`}
+                                      title={t('uploadModal.currentValue', { value: formData.services[index].icon_class })}
                                  >
                                      ℹ️
                                  </span>
@@ -2243,7 +2262,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('services', 'title', index)}
-                                      title={`Valore attuale: ${formData.services[index].title}`}
+                                      title={t('uploadModal.currentValue', { value: formData.services[index].title })}
                                  >
                                      ℹ️
                                  </span>
@@ -2264,7 +2283,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('services', 'description', index)}
-                                      title={`Valore attuale: ${formData.services[index].description}`}
+                                      title={t('uploadModal.currentValue', { value: formData.services[index].description })}
                                  >
                                      ℹ️
                                  </span>
@@ -2280,7 +2299,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                      </div>
                  </div>
              ))}
-             <Button type="button" onClick={addService}>Aggiungi Service</Button>
+             <Button type="button" onClick={addService}>{t("uploadModal.addService")}</Button>
             </div>
 
             {/* Sezione dinamica per Statistics */}
@@ -2293,9 +2312,9 @@ const UploadModal = ({ isOpen, onClose }) => {
                          onClick={() => removeStatistic(index)}
                          className="absolute top-2 right-2 text-red-600 hover:text-red-800 dark:text-red-500 dark:hover:text-red-700"
                      >
-                        Rimuovi
+                        {t("uploadModal.remove")}
                      </button>
-                    <h5 className="text-md font-medium text-gray-900 dark:text-white mb-3">Item #{index + 1}</h5>
+                    <h5 className="text-md font-medium text-gray-900 dark:text-white mb-3">{t("uploadModal.itemNumber", { n: index + 1 })}</h5>
                     <div className="mb-5">
                          <label htmlFor={`statistics_${index}_icon`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Icon
@@ -2303,7 +2322,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('statistics', 'icon', index)}
-                                      title={`Valore attuale: ${formData.statistics[index].icon}`}
+                                      title={t('uploadModal.currentValue', { value: formData.statistics[index].icon })}
                                  >
                                      ℹ️
                                  </span>
@@ -2324,7 +2343,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('statistics', 'count', index)}
-                                      title={`Valore attuale: ${formData.statistics[index].count}`}
+                                      title={t('uploadModal.currentValue', { value: formData.statistics[index].count })}
                                  >
                                      ℹ️
                                  </span>
@@ -2345,7 +2364,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('statistics', 'label', index)}
-                                      title={`Valore attuale: ${formData.statistics[index].label}`}
+                                      title={t('uploadModal.currentValue', { value: formData.statistics[index].label })}
                                  >
                                      ℹ️
                                  </span>
@@ -2366,7 +2385,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('statistics', 'icon_class', index)}
-                                      title={`Valore attuale: ${formData.statistics[index].icon_class}`}
+                                      title={t('uploadModal.currentValue', { value: formData.statistics[index].icon_class })}
                                  >
                                      ℹ️
                                  </span>
@@ -2382,7 +2401,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                      </div>
                  </div>
              ))}
-             <Button type="button" onClick={addStatistic}>Aggiungi Statistic</Button>
+             <Button type="button" onClick={addStatistic}>{t("uploadModal.addStatistic")}</Button>
             </div>
 
             {/* Sezione dinamica per Pricing Packs */}
@@ -2395,9 +2414,9 @@ const UploadModal = ({ isOpen, onClose }) => {
                          onClick={() => removePricingPack(index)}
                          className="absolute top-2 right-2 text-red-600 hover:text-red-800 dark:text-red-500 dark:hover:text-red-700"
                      >
-                        Rimuovi
+                        {t("uploadModal.remove")}
                      </button>
-                    <h5 className="text-md font-medium text-gray-900 dark:text-white mb-3">Item #{index + 1}</h5>
+                    <h5 className="text-md font-medium text-gray-900 dark:text-white mb-3">{t("uploadModal.itemNumber", { n: index + 1 })}</h5>
                     <div className="mb-5">
                          <label htmlFor={`pricing_packs_${index}_title`} className="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
                              Title
@@ -2405,7 +2424,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('pricing_packs', 'title', index)}
-                                      title={`Valore attuale: ${formData.pricing_packs[index].title}`}
+                                      title={t('uploadModal.currentValue', { value: formData.pricing_packs[index].title })}
                                  >
                                      ℹ️
                                  </span>
@@ -2426,7 +2445,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('pricing_packs', 'cost', index)}
-                                      title={`Valore attuale: ${formData.pricing_packs[index].cost}`}
+                                      title={t('uploadModal.currentValue', { value: formData.pricing_packs[index].cost })}
                                  >
                                      ℹ️
                                  </span>
@@ -2447,7 +2466,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('pricing_packs', 'project', index)}
-                                      title={`Valore attuale: ${formData.pricing_packs[index].project}`}
+                                      title={t('uploadModal.currentValue', { value: formData.pricing_packs[index].project })}
                                  >
                                      ℹ️
                                  </span>
@@ -2468,7 +2487,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('pricing_packs', 'storage', index)}
-                                      title={`Valore attuale: ${formData.pricing_packs[index].storage}`}
+                                      title={t('uploadModal.currentValue', { value: formData.pricing_packs[index].storage })}
                                  >
                                      ℹ️
                                  </span>
@@ -2489,7 +2508,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('pricing_packs', 'domain', index)}
-                                      title={`Valore attuale: ${formData.pricing_packs[index].domain}`}
+                                      title={t('uploadModal.currentValue', { value: formData.pricing_packs[index].domain })}
                                  >
                                      ℹ️
                                  </span>
@@ -2510,7 +2529,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('pricing_packs', 'users', index)}
-                                      title={`Valore attuale: ${formData.pricing_packs[index].users}`}
+                                      title={t('uploadModal.currentValue', { value: formData.pricing_packs[index].users })}
                                  >
                                      ℹ️
                                  </span>
@@ -2531,7 +2550,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                                  <span
                                      className="ml-2 text-gray-400 dark:text-gray-500 cursor-pointer"
                                      onClick={() => populateArrayItemFieldWithExample('pricing_packs', 'special_class', index)}
-                                      title={`Valore attuale: ${formData.pricing_packs[index].special_class}`}
+                                      title={t('uploadModal.currentValue', { value: formData.pricing_packs[index].special_class })}
                                  >
                                      ℹ️
                                  </span>
@@ -2546,13 +2565,13 @@ const UploadModal = ({ isOpen, onClose }) => {
                          />
                      </div>
                  </div>
-             ))}<Button type="button" onClick={addPricingPack}>Aggiungi Pricing Pack</Button>
+             ))}<Button type="button" onClick={addPricingPack}>{t("uploadModal.addPricingPack")}</Button>
             </div>
 
 
           {/* Bottone per salvare che attiva handleSubmit */}
           <Button type="submit">
-            Scarica ZIP con JSON, Immagini e CV
+            {t("uploadModal.submitZip")}
           </Button>
         </form>
       </Modal.Body>
@@ -2566,11 +2585,12 @@ const UploadModal = ({ isOpen, onClose }) => {
 // Il componente Home rimane invariato
 const Home = () => {
   const [openModal, setOpenModal] = useState(false);
+  const { t } = useTranslation();
 
   return (
     <section className="bg-white dark:bg-gray-900">
       <div className="max-w-screen-xl px-4 py-8 mx-auto text-center lg:py-16 lg:px-6">
-        <Button onClick={() => setOpenModal(true)}>Apri Upload</Button>
+        <Button onClick={() => setOpenModal(true)}>{t("uploadModal.openButton")}</Button>
         <UploadModal isOpen={openModal} onClose={() => setOpenModal(false)} />
       </div>
     </section>

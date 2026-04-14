@@ -2,7 +2,9 @@
  * Custom hook per il caricamento e parsing di un CV.
  */
 import { useState, useCallback } from "react";
+import i18n from "../i18n";
 import { uploadAndParseCV } from "../api/cvApi";
+import { localizeBackendErrors } from "../utils/apiErrorI18n";
 import type { ParseCVResponse } from "../api/types";
 
 type UploadState = "idle" | "uploading" | "success" | "error";
@@ -33,14 +35,19 @@ export function useCVUpload(): UseCVUploadReturn {
   const upload = useCallback(async (file: File) => {
     // Validazione client-side
     if (!ALLOWED_TYPES.includes(file.type) && !file.name.match(/\.(pdf|docx?|txt)$/i)) {
-      setError("Tipo file non supportato. Usa PDF, DOCX o TXT.");
+      setError(i18n.t("errors.upload.invalidType"));
       setState("error");
       return;
     }
 
     const sizeMB = file.size / (1024 * 1024);
     if (sizeMB > MAX_SIZE_MB) {
-      setError(`File troppo grande (${sizeMB.toFixed(1)}MB). Limite: ${MAX_SIZE_MB}MB.`);
+      setError(
+        i18n.t("errors.upload.fileTooLarge", {
+          size: sizeMB.toFixed(1),
+          max: MAX_SIZE_MB,
+        }),
+      );
       setState("error");
       return;
     }
@@ -55,7 +62,7 @@ export function useCVUpload(): UseCVUploadReturn {
       setProgress(100);
 
       if (data.error) {
-        setError(data.error);
+        setError(localizeBackendErrors(String(data.error), i18n.t));
         setState("error");
       } else {
         setResult(data);
@@ -63,8 +70,8 @@ export function useCVUpload(): UseCVUploadReturn {
       }
     } catch (err: unknown) {
       const message =
-        err instanceof Error ? err.message : "Errore durante il caricamento.";
-      setError(message);
+        err instanceof Error ? err.message : i18n.t("errors.upload.generic");
+      setError(localizeBackendErrors(message, i18n.t));
       setState("error");
     } finally {
       setProgress(0);

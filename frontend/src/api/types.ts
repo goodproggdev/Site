@@ -3,13 +3,14 @@
  */
 
 export interface UserProfile {
-  id: number;
+  id: number | string;
   email: string;
-  first_name: string;
-  last_name: string;
-  plan: "free" | "pro" | "enterprise";
-  is_email_verified: boolean;
-  date_joined: string;
+  name?: string;
+  first_name?: string;
+  last_name?: string;
+  plan?: "free" | "pro" | "enterprise";
+  is_email_verified?: boolean;
+  date_joined?: string;
 }
 
 export interface CVData {
@@ -81,6 +82,14 @@ export interface AuthTokens {
 export interface LoginCredentials {
   email: string;
   password: string;
+}
+
+/** Corpo POST `/auth/registration/` (dj-rest-auth + allauth). */
+export interface RegisterPayload {
+  username: string;
+  email: string;
+  password1: string;
+  password2: string;
 }
 
 export interface ParseCVResponse extends CVParsedData {

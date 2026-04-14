@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const CookieConsent: React.FC = () => {
+    const { t } = useTranslation();
     const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
@@ -22,9 +24,8 @@ const CookieConsent: React.FC = () => {
             <div className="container mx-auto max-w-screen-xl flex flex-col md:flex-row items-center justify-between gap-4">
                 <div className="text-sm text-gray-600 dark:text-gray-400">
                     <p>
-                        Utilizziamo i cookie per migliorare la tua esperienza e per analizzare il traffico. 
-                        Continuando a navigare, accetti la nostra{' '}
-                        <a href="/privacy" className="text-indigo-600 hover:underline font-medium">Privacy Policy</a>.
+                        {t('components.cookieConsent.text')}{' '}
+                        <a href="/privacy" className="text-indigo-600 hover:underline font-medium">{t('components.cookieConsent.privacyLink')}</a>.
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -32,13 +33,13 @@ const CookieConsent: React.FC = () => {
                         onClick={() => setIsVisible(false)}
                         className="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 px-3 py-2"
                     >
-                        Rifiuta
+                        {t('components.cookieConsent.reject')}
                     </button>
                     <button 
                         onClick={handleAccept}
                         className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold px-6 py-2 rounded-lg transition-colors shadow-md shadow-indigo-200 dark:shadow-none"
                     >
-                        Accetta Tutto
+                        {t('components.cookieConsent.accept')}
                     </button>
                 </div>
             </div>

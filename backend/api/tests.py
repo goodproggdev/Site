@@ -23,7 +23,8 @@ User = get_user_model()
 # ==============================================================================
 
 def create_test_user(email="test@test.it", password="TestPass123!"):
-    return User.objects.create_user(email=email, password=password)
+    username = email.split("@")[0]
+    return User.objects.create_user(username=username, email=email, password=password)
 
 
 def get_auth_header(client: APIClient, email="test@test.it", password="TestPass123!"):
@@ -67,13 +68,13 @@ class AuthTest(APITestCase):
 
     def test_protected_endpoint_without_token(self):
         """Endpoint protetto senza token → 401."""
-        response = self.client.get('/api/items/')
+        response = self.client.get('/api/legacy/items/')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_protected_endpoint_with_token(self):
         """Endpoint protetto con token valido → 200."""
         headers = get_auth_header(self.client, 'test@test.it', 'TestPass123!')
-        response = self.client.get('/api/items/', **headers)
+        response = self.client.get('/api/legacy/items/', **headers)
         self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_404_NOT_FOUND])
 
     def test_token_refresh(self):
@@ -113,7 +114,7 @@ class CVDataAPITest(APITestCase):
 
     def test_list_cv_empty(self):
         """Lista CV vuota per nuovo utente."""
-        response = self.client.get('/api/cv/')
+        response = self.client.get('/api/v1/cv/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 0)
 
@@ -123,14 +124,14 @@ class CVDataAPITest(APITestCase):
         CVData.objects.create(user=other_user, raw_json={}, original_filename="other.pdf")
         CVData.objects.create(user=self.user, raw_json={}, original_filename="mine.pdf")
 
-        response = self.client.get('/api/cv/')
+        response = self.client.get('/api/v1/cv/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
 
     def test_delete_own_cv(self):
         """Elimina un proprio CV."""
         cv = CVData.objects.create(user=self.user, raw_json={})
-        response = self.client.delete(f'/api/cv/{cv.id}/delete/')
+        response = self.client.delete(f'/api/v1/cv/{cv.id}/delete/')
         self.assertIn(response.status_code, [status.HTTP_204_NO_CONTENT, status.HTTP_200_OK])
         self.assertFalse(CVData.objects.filter(id=cv.id).exists())
 
@@ -138,7 +139,7 @@ class CVDataAPITest(APITestCase):
         """Non è possibile eliminare CV di altri utenti."""
         other_user = create_test_user(email="other2@test.it")
         cv = CVData.objects.create(user=other_user, raw_json={})
-        response = self.client.delete(f'/api/cv/{cv.id}/delete/')
+        response = self.client.delete(f'/api/v1/cv/{cv.id}/delete/')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertTrue(CVData.objects.filter(id=cv.id).exists())
 
@@ -154,7 +155,7 @@ class CVUploadTest(APITestCase):
 
     def test_upload_without_file_returns_400(self):
         """Upload senza file → 400."""
-        response = self.client.post('/api/parse-cv-upload/', {}, format='multipart')
+        response = self.client.post('/api/v1/parse-cv-upload/', {}, format='multipart')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('error', response.data)
 
@@ -163,7 +164,7 @@ class CVUploadTest(APITestCase):
         file_content = b"fake file content"
         fake_file = io.BytesIO(file_content)
         fake_file.name = "malware.exe"
-        response = self.client.post('/api/parse-cv-upload/', {
+        response = self.client.post('/api/v1/parse-cv-upload/', {
             'cv_file': fake_file
         }, format='multipart')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -176,7 +177,7 @@ class CVUploadTest(APITestCase):
         file_content = b"%PDF-1.4 mock content"
         fake_file = io.BytesIO(file_content)
         fake_file.name = "cv_test.pdf"
-        response = self.client.post('/api/parse-cv-upload/', {
+        response = self.client.post('/api/v1/parse-cv-upload/', {
             'cv_file': fake_file
         }, format='multipart')
         self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_422_UNPROCESSABLE_ENTITY])
@@ -197,12 +198,12 @@ class JsonDataViewTest(APITestCase):
         mock_open.return_value.__exit__ = MagicMock(return_value=False)
         mock_open.return_value.read = MagicMock(return_value='{"key": "value"}')
 
-        response = self.client.get('/api/data/')
+        response = self.client.get('/api/legacy/data/')
         self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_404_NOT_FOUND])
 
     def test_contact_view_missing_fields(self):
         """form contatti con campi mancanti → 400."""
-        response = self.client.post('/api/contact/', {
+        response = self.client.post('/api/v1/contact/', {
             'email': 'test@test.it'
         }, content_type='application/json')
         self.assertIn(response.status_code, [
@@ -265,14 +266,22 @@ class ModelTest(TestCase):
 
     def test_create_user_with_email(self):
         """Creazione utente con email."""
-        user = User.objects.create_user(email="model@test.it", password="Pass123!")
+        user = User.objects.create_user(
+            username="model",
+            email="model@test.it",
+            password="Pass123!",
+        )
         self.assertEqual(user.email, "model@test.it")
         self.assertTrue(user.check_password("Pass123!"))
         self.assertFalse(user.is_staff)
 
     def test_cv_data_slug_auto_generated(self):
         """Slug CVData generato automaticamente."""
-        user = User.objects.create_user(email="slug@test.it", password="Pass123!")
+        user = User.objects.create_user(
+            username="slug",
+            email="slug@test.it",
+            password="Pass123!",
+        )
         cv = CVData.objects.create(user=user, raw_json={})
         self.assertIsNotNone(cv.slug)
         self.assertIn('slug', cv.slug)

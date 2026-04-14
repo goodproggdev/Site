@@ -1,0 +1,716 @@
+{
+  "pricingPage": {
+    "checkoutStartError": "Could not start checkout: {{detail}}",
+    "checkoutRetry": "Please try again later.",
+    "checkoutNetwork": "Could not connect to the server."
+  },
+  "marketing": {
+    "home": {
+      "title": "Your digital CV in 2 minutes",
+      "subtitle": "Create a professional web page that impresses recruiters and showcases your true value",
+      "cta": {
+        "primary": "Create your CV for free",
+        "secondary": "See how it works"
+      },
+      "features": {
+        "title": "Why professionals choose us",
+        "items": [
+          {
+            "title": "Stunning design",
+            "description": "Elegant, responsive templates that elevate your profile on every device"
+          },
+          {
+            "title": "Always current",
+            "description": "Edit in real-time: one link, always ready to share with recruiters and clients"
+          },
+          {
+            "title": "Guaranteed visibility",
+            "description": "CV indexed on Google to be found by recruiters worldwide"
+          }
+        ]
+      }
+    },
+    "pricing": {
+      "title": "Choose your plan",
+      "subtitle": "Invest in your professional future without monthly commitments",
+      "plans": {
+        "onetime": {
+          "name": "Create your CV",
+          "price": "€9.99",
+          "period": "one-time",
+          "periodNote": "valid for 1 year",
+          "badge": "Recommended",
+          "description": "Pay once and your online CV is yours for a full year. Renewable anytime.",
+          "features": [
+            "Digital CV on professional domain",
+            "Premium hosting and SSL included",
+            "Responsive and elegant design",
+            "Easy sharing via link",
+            "Unlimited edits for 1 year"
+          ],
+          "cta": "Create now for €9.99"
+        },
+        "monthly": {
+          "name": "Monthly Plan",
+          "price": "€2",
+          "period": "/month",
+          "badge": "Flexible",
+          "description": "Perfect if you prefer to pay a little at a time. Cancel anytime.",
+          "features": [
+            "Everything in the one-time plan",
+            "Low monthly payment",
+            "No commitment required",
+            "Instant cancellation"
+          ],
+          "cta": "Subscribe for €2/month"
+        }
+      }
+    }
+  },
+  "contact": {
+    "title": "Tell us about your goals",
+    "subtitle": "Have questions or need a custom plan? We're here to help you grow professionally.",
+    "form": {
+      "email": "Your email",
+      "emailPlaceholder": "name@company.com",
+      "plan": "Interested in",
+      "planPlaceholder": "Ex: Premium Plan",
+      "subject": "Subject",
+      "subjectPlaceholder": "How can we help you?",
+      "message": "Message",
+      "messagePlaceholder": "Tell us about your project or questions...",
+      "submit": "Send message",
+      "sending": "Sending...",
+      "success": "Message sent! We'll reply within 24 hours.",
+      "error": "Error sending message. Please try again later.",
+      "httpError": "Server error {{status}}."
+    }
+  },
+  "builder": {
+    "title": "Create Your CV",
+    "steps": {
+      "upload": "Upload CV",
+      "edit": "Customize",
+      "preview": "Preview",
+      "publish": "Publish"
+    },
+    "upload": {
+      "title": "Upload Your Existing CV",
+      "description": "We support PDF, DOCX, and TXT. We automatically extract information.",
+      "dropzone": "Drag your file here or click to select",
+      "formats": "Supported formats: PDF, DOCX, TXT (max 10MB)"
+    },
+    "form": {
+      "personalInfo": "Personal Information",
+      "experience": "Work Experience",
+      "education": "Education",
+      "skills": "Skills",
+      "add": "Add",
+      "remove": "Remove",
+      "save": "Save",
+      "continue": "Continue",
+      "labels": {
+        "firstName": "First Name",
+        "lastName": "Last Name",
+        "email": "Email",
+        "phone": "Phone",
+        "summary": "Professional Profile"
+      },
+      "placeholders": {
+        "firstName": "John",
+        "lastName": "Doe",
+        "email": "john.doe@example.com",
+        "phone": "+1 234 567 890",
+        "summary": "Brief description of your skills and professional goals..."
+      }
+    },
+    "preview": {
+      "sections": {
+        "profile": "Profile",
+        "experience": "Work Experience",
+        "education": "Education",
+        "skills": "Skills"
+      },
+      "empty": {
+        "experience": "No experience added yet",
+        "education": "No education added yet",
+        "skills": "No skills added yet"
+      }
+    },
+    "publish": {
+      "title": "Publish",
+      "success": "CV Published!",
+      "successMessage": "Your CV is now online and ready to be shared.",
+      "linkLabel": "Your CV Link",
+      "copy": "Copy",
+      "view": "View CV",
+      "share": "Share",
+      "visibility": {
+        "label": "Public Visibility",
+        "hint": "Make your CV accessible to anyone with the link"
+      },
+      "expiry": "Link Expiry",
+      "customUrl": "Custom URL (optional)",
+      "publishing": "Publishing...",
+      "publishButton": "Publish CV"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome back, {{name}}",
+    "stats": {
+      "cvCreated": "CVs Created",
+      "totalViews": "Total Views",
+      "currentPlan": "Current Plan"
+    },
+    "cvList": {
+      "title": "Your CVs",
+      "createNew": "Create New CV",
+      "published": "Published",
+      "draft": "Draft",
+      "views": "views",
+      "noCvs": "You don't have any CVs yet. Create your first digital CV from the home page.",
+      "startNow": "Get started →"
+    },
+    "jobs": {
+      "title": "Opportunities for You",
+      "subtitle": "Selected job offers based on your profile",
+      "matchScore": "Match {{score}}%",
+      "apply": "Apply",
+      "save": "Save",
+      "noJobs": "No offers available at the moment. Update your CV to receive more matches."
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "privacy": {
+      "title": "Privacy & CV Link",
+      "visibility": {
+        "label": "CV Link Visibility",
+        "publicWithExpiry": "Public with expiry",
+        "privateTokenized": "Private with token"
+      },
+      "expiry": {
+        "label": "Link expiry",
+        "months": "months"
+      },
+      "token": {
+        "label": "Access token",
+        "regenerate": "Regenerate token",
+        "copyLink": "Copy link"
+      },
+      "revoke": {
+        "button": "Revoke access",
+        "confirm": "Are you sure? The current link will stop working."
+      }
+    },
+    "billing": {
+      "title": "Subscription & Payments",
+      "currentPlan": "Current plan",
+      "planFree": "Free",
+      "planPro": "Pro",
+      "activeFeatures": "Active features",
+      "expiresOn": "Expires on",
+      "noActive": "No active plan",
+      "upgrade": "Activate Pro plan",
+      "features": {
+        "cv_publish": "CV Publishing",
+        "premium_template": "Premium templates",
+        "job_search": "AI Job Search"
+      }
+    },
+    "language": {
+      "title": "Language",
+      "select": "Select your preferred language"
+    }
+  },
+  "auth": {
+    "rateLimited": "Too many attempts. Please wait a minute and try again.",
+    "networkError": "Connection failed. Check your network and try again.",
+    "login": {
+      "title": "Sign In",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Sign In",
+      "forgot": "Forgot password?",
+      "noAccount": "Don't have an account?",
+      "signup": "Sign Up",
+      "genericError": "Check your credentials, or confirm your email if you have just registered.",
+      "emailInvalid": "The email format is not valid.",
+      "passwordRequired": "Please enter your password."
+    },
+    "signup": {
+      "title": "Sign Up",
+      "name": "Full name",
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm password",
+      "submit": "Create account",
+      "hasAccount": "Already have an account?",
+      "login": "Sign In",
+      "pendingVerification": "Check your email and confirm your address before signing in. You cannot register again with the same email while confirmation is pending.",
+      "passwordRules": "Your password must be at least 8 characters and include uppercase, lowercase, a number, and a symbol.",
+      "emailInvalid": "The email format is not valid.",
+      "passwordMismatch": "The passwords do not match."
+    },
+    "verify": {
+      "noToken": "No verification token in the URL. Enter the email you used at signup to resend the confirmation link.",
+      "success": "Your email has been verified.",
+      "error": "This link is invalid or has expired.",
+      "emailSent": "We have sent you another confirmation email.",
+      "resendError": "Could not resend the email. Check the address or try again later.",
+      "resendNeedEmail": "Enter the email you registered with.",
+      "verifying": "Verifying",
+      "pleaseWait": "Please wait…",
+      "successTitle": "Email confirmed",
+      "goToDashboard": "Go to dashboard",
+      "errorTitle": "Verification failed",
+      "resendEmail": "Resend confirmation email",
+      "backToLogin": "Back to login",
+      "resendTitle": "Confirm email",
+      "resendDescription": "Enter your email to receive the confirmation link again."
+    },
+    "forgot": {
+      "title": "Forgot password",
+      "subtitle": "Enter your account email. If it exists, you will receive a link to set a new password.",
+      "submit": "Send reset link",
+      "sent": "If an account exists for this email, we have sent password reset instructions.",
+      "error": "We could not complete the request. Please try again later.",
+      "needEmail": "Please enter a valid email address.",
+      "back": "Back to home"
+    },
+    "reset": {
+      "title": "New password",
+      "subtitle": "Choose a strong password (at least 8 characters with upper, lower, number and symbol).",
+      "submit": "Save password",
+      "mismatch": "The two passwords do not match.",
+      "policy": "The password does not meet the security requirements.",
+      "error": "Invalid or expired link, or password was rejected.",
+      "invalidLink": "The reset link is invalid or incomplete.",
+      "done": "Your password has been updated. You can sign in with the new password.",
+      "goHome": "Go to home to sign in"
+    },
+    "apiErrors": {
+      "usernameTaken": "A user with that username already exists.",
+      "emailTaken": "An account with this email address already exists.",
+      "passwordMismatch": "The two passwords do not match.",
+      "invalidLogin": "Invalid credentials.",
+      "emailNotVerified": "Please verify your email address before signing in.",
+      "invalidEmail": "Invalid email address.",
+      "verificationSent": "Verification email sent."
+    }
+  },
+  "errors": {
+    "generic": "An error occurred. Please try again later.",
+    "notFound": "Page not found",
+    "unauthorized": "Unauthorized",
+    "validation": "Please check your input",
+    "upload": {
+      "tooLarge": "File is too large (max 10MB)",
+      "invalidFormat": "Unsupported format. Use PDF, DOCX, or TXT.",
+      "invalidType": "Unsupported file type. Use PDF, DOCX, or TXT.",
+      "generic": "Something went wrong while uploading.",
+      "fileTooLarge": "File is too large ({{size}}MB). Limit: {{max}}MB."
+    },
+    "payment": {
+      "failed": "Payment failed",
+      "pending": "Payment pending confirmation"
+    },
+    "boundaryTitle": "Something went wrong",
+    "boundaryUnknown": "Unknown error",
+    "boundaryRetry": "Try again"
+  },
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "finish": "Finish",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "view": "View",
+    "share": "Share",
+    "download": "Download",
+    "print": "Print",
+    "trustNote": "Secure payment with Stripe. No hidden fees. Cancel anytime.",
+    "italian": "Italiano",
+    "english": "English"
+  },
+  "layout": {
+    "navbar": {
+      "brand": "NORDEVIT",
+      "menu": {
+        "home": "Home",
+        "about": "About",
+        "services": "Services",
+        "pricing": "Pricing",
+        "contact": "Contact"
+      },
+      "auth": {
+        "login": "Login",
+        "signup": "Sign up",
+        "logout": "Logout",
+        "dashboard": "Dashboard"
+      }
+    },
+    "footer": {
+      "brand": "NORDEVIT",
+      "platform": "Platform",
+      "legal": "Legal",
+      "links": {
+        "home": "Home",
+        "pricing": "Pricing",
+        "contact": "Contact",
+        "privacy": "Privacy Policy",
+        "terms": "Terms of service"
+      },
+      "rightsReserved": "All rights reserved."
+    }
+  },
+  "cvBuilder": {
+    "steps": {
+      "upload": "Upload",
+      "edit": "Edit",
+      "preview": "Preview",
+      "publish": "Publish"
+    },
+    "upload": {
+      "title": "Upload your CV",
+      "dropzone": {
+        "click": "Click to upload",
+        "drag": "or drag a file",
+        "hint": "Supports PDF, DOCX, TXT (max 10MB)"
+      },
+      "button": "Analyze"
+    },
+    "form": {
+      "placeholders": {
+        "firstName": "John",
+        "lastName": "Doe",
+        "email": "john.doe@example.com",
+        "phone": "+1 234 567 890",
+        "bio": "Brief description of your skills and professional goals...",
+        "slug": "john-doe"
+      },
+      "labels": {
+        "firstName": "First Name",
+        "lastName": "Last Name",
+        "email": "Email",
+        "phone": "Phone",
+        "bio": "Professional Bio"
+      }
+    },
+    "preview": {
+      "sections": {
+        "profile": "Profile",
+        "experience": "Work Experience",
+        "education": "Education",
+        "skills": "Skills",
+        "empty": {
+          "experience": "No experience added yet",
+          "education": "No education added yet",
+          "skills": "No skills added yet"
+        }
+      }
+    },
+    "publish": {
+      "title": "Publish your CV",
+      "visibility": {
+        "label": "Visibility",
+        "public": "Public",
+        "private": "Private",
+        "hint": "Make your CV accessible to anyone with the link"
+      },
+      "slug": {
+        "label": "Custom URL",
+        "prefix": "Your CV will be available at:"
+      }
+    }
+  },
+  "about": {
+    "title": "Capture the attention of ",
+    "highlight": "Recruiters",
+    "subtitle": "Transform your resume into a professional web page that showcases your journey"
+  },
+  "homeStatistics": {
+    "items": [
+      {
+        "value": "One link",
+        "label": "A single URL for your digital CV — share it on LinkedIn, email, and applications"
+      },
+      {
+        "value": "HTTPS",
+        "label": "Encrypted browsing and hosting for your public profile page"
+      },
+      {
+        "value": "Live",
+        "label": "Update your content anytime; your page stays in sync with what you publish"
+      }
+    ]
+  },
+  "hero": {
+    "badge": "LinkedIn-ready digital CV",
+    "titleBefore": "Your ",
+    "titleHighlight": "Digital Identity",
+    "titleAfter": ", in a single link.",
+    "description": "Don't settle for a static PDF. Transform your career with a modern, interactive digital CV optimized for your LinkedIn profile. Premium hosting included.",
+    "analyzing": "Analyzing your CV... {{progress}}%",
+    "dropTitle": "Drop your CV here (PDF, DOCX)",
+    "dropSubtitle": "Start building your professional link in seconds",
+    "selectFile": "Select file",
+    "viewPlans": "View all plans",
+    "logoAlt": "Nordevit logo"
+  },
+  "stripeCheckout": {
+    "title": "Product catalog",
+    "subtitle": "Tools for content and advertising strategies to grow leads and sales.",
+    "demoVersion": "Demo version",
+    "buyNow": "Buy now",
+    "products": {
+      "1": {
+        "name": "Keep your site online",
+        "price": "€50",
+        "duration": "Per year",
+        "description": "Keep your CV page online and updated with the latest market insights",
+        "features": [
+          "Marketing plan",
+          "SEO reporting tool",
+          "Keywords explorer",
+          "Competitive analysis",
+          "Custom domain"
+        ]
+      },
+      "2": {
+        "name": "Generate your CV",
+        "price": "€150",
+        "duration": "One-time",
+        "description": "We build your CV to a high standard and publish it on a live page",
+        "features": [
+          "Marketing plan",
+          "SEO reporting tool",
+          "Keywords explorer",
+          "Competitive analysis",
+          "Your Site projects"
+        ]
+      },
+      "3": {
+        "name": "Multilingual",
+        "price": "€100",
+        "duration": "One-time",
+        "description": "Reach other countries: for a small investment, get your CV and page in English too",
+        "features": [
+          "Marketing plan",
+          "SEO reporting tool",
+          "Keywords explorer",
+          "Competitive analysis",
+          "Boost your projects"
+        ]
+      }
+    }
+  },
+  "welcome": {
+    "badge": "Setup in 2 minutes · No credit card required",
+    "title": "Your professional ",
+    "highlight": "digital CV",
+    "subtitle": "ready in 2 minutes.",
+    "description": "Upload your CV and get a professional link to share on LinkedIn, in applications, and via email. One-time payment, no monthly subscription.",
+    "cta": {
+      "primary": "Start now",
+      "secondary": "Upload existing CV"
+    },
+    "trustIndicators": {
+      "setup": "Setup in 2 minutes",
+      "noCard": "No credit card required"
+    }
+  },
+  "howItWorks": {
+    "title": "How it works",
+    "subtitle": "Three steps to get your CV online",
+    "steps": [
+      {
+        "title": "Upload your CV",
+        "description": "Upload PDF, DOCX or TXT. We parse it automatically."
+      },
+      {
+        "title": "Get your link",
+        "description": "Receive a professional URL like nordevit.com/u/yourname."
+      },
+      {
+        "title": "Share and get interviews",
+        "description": "Paste the link on LinkedIn, in applications, and emails."
+      }
+    ]
+  },
+  "payment": {
+    "success": {
+      "title": "Payment confirmed!",
+      "description": "Your plan is now active. You can upload your CV and get your professional link.",
+      "cta": "Go to dashboard",
+      "autoRedirect": "You will be redirected automatically in a few seconds..."
+    }
+  },
+  "components": {
+    "cookieConsent": {
+      "text": "We use essential cookies for site functionality. Please see our",
+      "privacyLink": "Privacy Policy",
+      "accept": "Accept All",
+      "reject": "Reject"
+    },
+    "uploadButton": {
+      "text": "Click to upload",
+      "title": "Upload your CV",
+      "dropzone": {
+        "click": "Click to upload",
+        "drag": "or drag",
+        "hint": "PDF, DOCX or TXT (max 10MB)",
+        "change": "Click to change file"
+      },
+      "buttons": {
+        "cancel": "Cancel",
+        "analyze": "Analyze",
+        "uploading": "Uploading..."
+      },
+      "alerts": {
+        "unsupportedFormat": "Unsupported format! Please upload PDF, DOCX or TXT only.",
+        "selectFile": "Please select a file before analyzing.",
+        "success": "File uploaded successfully!",
+        "error": "Error uploading file."
+      }
+    },
+    "modalUpload": {
+      "title": "Upload a file",
+      "unsupportedFormat": "Unsupported format! Please upload PDF, DOC or TXT only.",
+      "selectFile": "Please select a file before analyzing.",
+      "uploadError": "Error while uploading the file.",
+      "dropBold": "Click to upload",
+      "dropRest": "or drag and drop",
+      "dropHint": "PDF, DOC or TXT",
+      "selectedFile": "Selected file: {{name}}",
+      "close": "Close",
+      "analyze": "Analyze"
+    },
+    "marketing": {
+      "title": "Generate your CV",
+      "headline": "Add Value to Your Persona",
+      "subtitle": "Create a digital resume that sets you apart from the crowd",
+      "demoAlt": "Product preview"
+    },
+    "preview": {
+      "badge": "Interactive Experience",
+      "title": "Your CV, ",
+      "highlight": "always online",
+      "subtitle": ".",
+      "quote": "I added my digital CV link to LinkedIn and received 40% more profile views.",
+      "quoteAuthor": "Mark G., Senior Developer",
+      "descriptionPublic": "Explore {{name}}'s professional profile in a modern, fast web format.",
+      "descriptionPrivate": "No more sending heavy PDFs. Nordevit transforms your resume into a ",
+      "descriptionHighlight": "Single Page Application",
+      "descriptionHighlightSuffix": "that's lightning fast.",
+      "cta": "Discover Plans",
+      "defaultName": "Your Name",
+      "defaultTitle": "Your Profession",
+      "defaultSummary": "Forget sending old PDF files. With our platform, your professional profile is a modern Single Page Application on your domain."
+    },
+    "features": {
+      "badge": "Features",
+      "title": "Create your CV in ",
+      "highlight": "a few clicks",
+      "subtitle": "Generate a professional, readable and attractive CV to showcase your skills immediately.",
+      "items": {
+        "fast": {
+          "title": "CV Ready in 5 minutes",
+          "description": "Fill in your data and generate a professional CV immediately, without wasting time."
+        },
+        "design": {
+          "title": "Modern Design",
+          "description": "CVs optimized for recruiters, with a clear layout readable on any device."
+        },
+        "subdomain": {
+          "title": "Personal Subdomain",
+          "description": "Each generated CV has a unique subdomain, easily accessible online."
+        }
+      }
+    },
+    "testimonials": {
+      "quote": "Nordevit has changed the way I present myself to recruiters. Having a professional link on my LinkedIn profile allowed me to receive much more targeted and high-level offers."
+    }
+  },
+  "legal": {
+    "terms": {
+      "lastUpdated": "Last updated: March 9, 2026",
+      "section1Title": "1. Subject",
+      "section1Body": "Nordevit provides a platform for hosting and managing professional digital CVs.",
+      "section2Title": "2. User account",
+      "section2Body": "You are responsible for safeguarding your credentials and for the accuracy of the information in your CV.",
+      "section3Title": "3. Subscriptions and payments",
+      "section3Body": "Premium services require monthly payment via Stripe. Non-payment may result in suspension of CV hosting.",
+      "section4Title": "4. Limitation of liability",
+      "section4Body": "Nordevit is not liable for data loss or misuse of the platform by users."
+    },
+    "privacy": {
+      "lastUpdated": "Last updated: March 9, 2026",
+      "section1Title": "1. General information",
+      "section1Body": "This document describes how personal data is processed for users of the Nordevit platform (\"the Platform\").",
+      "section2Title": "2. Data processed",
+      "section2Item1": "Browsing data (IP address, browser type, etc.)",
+      "section2Item2": "Data voluntarily provided by users (email, CV files uploaded for parsing)",
+      "section2Item3": "Payment data (processed securely via Stripe)",
+      "section3Title": "3. Purposes of processing",
+      "section3Body": "Data is collected to provide the CV generation service, manage payments, and anonymous analytics.",
+      "section4Title": "4. Data subject rights",
+      "section4Body": "Under the GDPR, you may access, rectify, or delete your personal data at any time by emailing privacy@nordevit.it."
+    }
+  },
+  "publicCV": {
+    "notFound": "CV not found",
+    "backHome": "Back to Home"
+  },
+  "uploadModal": {
+    "openButton": "Open upload",
+    "modalTitle": "Fill in data and download ZIP",
+    "resetForm": "Clear form",
+    "resetFormHint": "Reset all fields to empty defaults and clear saved data.",
+    "cvLabel": "Upload CV (auto-fill from CV)",
+    "parsing": "Parsing…",
+    "cvUploadedHint": "File '{{fileName}}' loaded. Edit extracted fields if needed.",
+    "cvHelp": "Upload your CV to auto-fill the form (parsed data merges with current data; non-empty CV fields take priority).",
+    "categoryLabel": "Select category (apply defaults to untouched fields):",
+    "jobCategoriesLegend": "Job categories",
+    "categoryHint": "Pick a category to fill empty or untouched fields.",
+    "currentValue": "Current value: {{value}}",
+    "backendError": "Backend error: {{status}} — {{detail}}",
+    "parseError": "Parsing error: {{message}}",
+    "zipCreateError": "An error occurred while creating the ZIP file.",
+    "remove": "Remove",
+    "itemNumber": "Item #{{n}}",
+    "addPortfolioItem": "Add portfolio item",
+    "addBlogPost": "Add blog post",
+    "addSkill": "Add skill",
+    "addEducationItem": "Add education item",
+    "addWorkExperienceItem": "Add work experience item",
+    "addLanguage": "Add language",
+    "addExpertiseItem": "Add expertise item",
+    "addService": "Add service",
+    "addStatistic": "Add statistic",
+    "addPricingPack": "Add pricing pack",
+    "submitZip": "Download ZIP with JSON, images, and CV",
+    "categories": {
+      "digitaleIt": "Digital & IT professionals",
+      "ingegneriTecnici": "Engineers and technical specialists",
+      "sanitari": "Healthcare and care professionals",
+      "commerciale": "Sales and commercial experts",
+      "amministrative": "Administrative and finance roles with specific expertise",
+      "logistica": "Logistics specialists"
+    }
+  },
+  "pages": {
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service"
+  }
+}

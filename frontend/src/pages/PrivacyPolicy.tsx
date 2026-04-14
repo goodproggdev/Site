@@ -1,40 +1,43 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 const PrivacyPolicy: React.FC = () => {
-    return (
-        <div className="bg-white dark:bg-gray-900 min-h-screen py-24">
-            <div className="container mx-auto px-4 max-w-screen-md">
-                <h1 className="text-4xl font-extrabold mb-8 text-gray-900 dark:text-white">Privacy Policy</h1>
-                <div className="prose dark:prose-invert max-w-none text-gray-600 dark:text-gray-400 space-y-6">
-                    <p>Ultimo aggiornamento: 9 Marzo 2026</p>
-                    
-                    <section>
-                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">1. Informazioni Generali</h2>
-                        <p>Il presente documento descrive le modalità di trattamento dei dati personali degli utenti che consultano la piattaforma Nordevit (di seguito, "la Piattaforma").</p>
-                    </section>
+	const { t } = useTranslation();
 
-                    <section>
-                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">2. Dati Trattati</h2>
-                        <ul className="list-disc pl-5 space-y-2">
-                            <li>Dati di navigazione (indirizzo IP, tipo di browser, ecc.)</li>
-                            <li>Dati forniti volontariamente dall'utente (email, file CV caricati per il parsing)</li>
-                            <li>Dati di pagamento (gestiti in modo sicuro tramite Stripe)</li>
-                        </ul>
-                    </section>
+	return (
+		<div className="min-h-screen bg-white py-24 dark:bg-gray-900">
+			<div className="container mx-auto max-w-screen-md px-4">
+				<h1 className="mb-8 text-4xl font-extrabold text-gray-900 dark:text-white">{t('pages.privacyPolicy')}</h1>
+				<div className="prose prose-gray max-w-none space-y-6 text-gray-600 dark:prose-invert dark:text-gray-400">
+					<p>{t('legal.privacy.lastUpdated')}</p>
 
-                    <section>
-                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">3. Finalità del Trattamento</h2>
-                        <p>I dati vengono raccolti per fornire il servizio di generazione CV, gestire i pagamenti e analytics anonime.</p>
-                    </section>
+					<section>
+						<h2 className="mb-4 mt-8 text-2xl font-bold text-gray-900 dark:text-white">{t('legal.privacy.section1Title')}</h2>
+						<p>{t('legal.privacy.section1Body')}</p>
+					</section>
 
-                    <section>
-                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">4. Diritti dell'interessato</h2>
-                        <p>Ai sensi del GDPR, ogni utente ha il diritto di accedere, rettificare o cancellare i propri dati personali in qualsiasi momento inviando una mail a privacy@nordevit.it.</p>
-                    </section>
-                </div>
-            </div>
-        </div>
-    );
+					<section>
+						<h2 className="mb-4 mt-8 text-2xl font-bold text-gray-900 dark:text-white">{t('legal.privacy.section2Title')}</h2>
+						<ul className="list-disc space-y-2 pl-5">
+							<li>{t('legal.privacy.section2Item1')}</li>
+							<li>{t('legal.privacy.section2Item2')}</li>
+							<li>{t('legal.privacy.section2Item3')}</li>
+						</ul>
+					</section>
+
+					<section>
+						<h2 className="mb-4 mt-8 text-2xl font-bold text-gray-900 dark:text-white">{t('legal.privacy.section3Title')}</h2>
+						<p>{t('legal.privacy.section3Body')}</p>
+					</section>
+
+					<section>
+						<h2 className="mb-4 mt-8 text-2xl font-bold text-gray-900 dark:text-white">{t('legal.privacy.section4Title')}</h2>
+						<p>{t('legal.privacy.section4Body')}</p>
+					</section>
+				</div>
+			</div>
+		</div>
+	);
 };
 
 export default PrivacyPolicy;

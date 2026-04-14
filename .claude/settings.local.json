@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l C:/Users/FedericoToldo/Site-main/.planning/codebase/*.md)",
+      "Bash(grep -E '\\(sk-[a-zA-Z0-9]{20,}|sk_live_[a-zA-Z0-9]+|sk_test_[a-zA-Z0-9]+|ghp_[a-zA-Z0-9]{36}|AKIA[A-Z0-9]{16}|xox[baprs]-[a-zA-Z0-9-]+|-----BEGIN.*PRIVATE KEY|eyJ[a-zA-Z0-9_-]+\\\\.eyJ\\)' C:/Users/FedericoToldo/Site-main/.planning/codebase/*.md)",
+      "Bash(node __TRACKED_VAR__/.claude/get-shit-done/bin/gsd-tools.cjs commit 'docs: map existing codebase' --files '.planning/codebase/*.md')",
+      "Bash(grep -r \"text-gradient-subtle\\\\|bg-gradient\\\\|from-indigo\\\\|from-purple\" /c/Users/FedericoToldo/Site-main/frontend/src/pages/*.tsx)"
+    ]
+  }
+}

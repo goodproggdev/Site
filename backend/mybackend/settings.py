@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 from decouple import config, Csv
 from datetime import timedelta
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -42,7 +43,17 @@ INSTALLED_APPS = [
     'api',
 ]
 
+if config('USE_S3_STORAGE', default=False, cast=bool):
+    INSTALLED_APPS.append('storages')
+
 SITE_ID = 1
+# django.contrib.sites: usato da allauth nelle email (nome/dominio). Sincronizzato in api.apps.
+SITE_NAME = config('SITE_NAME', default='Nordevit')
+SITE_DOMAIN = config('SITE_DOMAIN', default='localhost:8000')
+
+# URL del frontend (Vite): email reset/conferme e link assoluti verso la SPA
+FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:5173')
+FRONTEND_DEFAULT_LANG = config('FRONTEND_DEFAULT_LANG', default='it')
 
 # ==============================================================================
 # JWT & REST FRAMEWORK
@@ -84,6 +95,7 @@ REST_AUTH = {
     'JWT_AUTH_HTTPONLY': True,
     'JWT_AUTH_SAMESITE': 'Lax',
     'SESSION_LOGIN': False,
+    'PASSWORD_RESET_SERIALIZER': 'api.auth_serializers.SpaPasswordResetSerializer',
 }
 
 # ==============================================================================
@@ -92,8 +104,9 @@ REST_AUTH = {
 ACCOUNT_LOGIN_METHODS = {"email"}
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
-ACCOUNT_EMAIL_VERIFICATION = "mandatory"
-ACCOUNT_AUTHENTICATION_METHOD = 'email'
+# Default: verifica obbligatoria anche in DEBUG (stesso flusso della produzione: niente JWT finché non confermi).
+# Per saltare la verifica in locale: ACCOUNT_EMAIL_VERIFICATION=none nel .env
+ACCOUNT_EMAIL_VERIFICATION = config('ACCOUNT_EMAIL_VERIFICATION', default='mandatory')
 ACCOUNT_UNIQUE_EMAIL = True
 
 # ==============================================================================
@@ -114,7 +127,11 @@ MIDDLEWARE = [
 # ==============================================================================
 # CORS
 # ==============================================================================
-CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', cast=Csv())
+CORS_ALLOWED_ORIGINS = config(
+    'CORS_ALLOWED_ORIGINS',
+    default='http://localhost:5173,http://127.0.0.1:5173',
+    cast=Csv(),
+)
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = [
     'accept',
@@ -128,7 +145,15 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
-CSRF_TRUSTED_ORIGINS = config('CORS_ALLOWED_ORIGINS', cast=Csv())
+CSRF_TRUSTED_ORIGINS = config(
+    'CSRF_TRUSTED_ORIGINS',
+    default='http://localhost:5173,http://127.0.0.1:5173',
+    cast=Csv(),
+)
+
+# URL del frontend (link conferma email da backend → React)
+FRONTEND_BASE_URL = config('FRONTEND_BASE_URL', default='http://localhost:5173')
+
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SECURE = not DEBUG
@@ -142,7 +167,7 @@ ROOT_URLCONF = 'mybackend.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'mybackend' / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -161,10 +186,11 @@ WSGI_APPLICATION = 'mybackend.wsgi.application'
 # DATABASE
 # ==============================================================================
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
 }
 
 # ==============================================================================
@@ -180,14 +206,17 @@ AUTH_PASSWORD_VALIDATORS = [
 # ==============================================================================
 # EMAIL
 # ==============================================================================
-EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
+# In locale (DEBUG=True), le email vengono stampate nella console del server.
+# Per vedere l'email di conferma: guarda il terminale dove gira 'python manage.py runserver'
+# In produzione: configura SMTP reale tramite variabili d'ambiente
+EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend' if DEBUG else 'django.core.mail.backends.smtp.EmailBackend')
 EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
 EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
 EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
 EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
-DEFAULT_FROM_EMAIL = config('EMAIL_HOST_USER', default='noreply@cvsite.it')
-EMAIL_RECIPIENT = config('EMAIL_RECIPIENT', default='sitiegestionali@gmail.com')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@example.com')
+EMAIL_RECIPIENT = config('EMAIL_RECIPIENT', default='admin@example.com')
 
 # ==============================================================================
 # STRIPE
@@ -203,6 +232,16 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+if config('USE_S3_STORAGE', default=False, cast=bool):
+    AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID', default='')
+    AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', default='')
+    AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME', default='')
+    AWS_S3_REGION_NAME = config('AWS_S3_REGION_NAME', default='')
+    AWS_S3_ENDPOINT_URL = config('AWS_S3_ENDPOINT_URL', default='')
+    AWS_DEFAULT_ACL = None
+    AWS_QUERYSTRING_AUTH = False
+    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
 # ==============================================================================
 # INTERNAZIONALIZZAZIONE

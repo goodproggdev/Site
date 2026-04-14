@@ -1,9 +1,27 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { splitVendorChunkPlugin } from "vite";
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), splitVendorChunkPlugin()],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Vendor chunks
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-ui': ['flowbite-react'],
+          'vendor-i18n': ['react-i18next', 'i18next', 'i18next-browser-languagedetector'],
+          // Feature-based chunks
+          'cv-builder': ['./src/pages/Upload.tsx'],
+          'dashboard': ['./src/pages/Dashboard.tsx'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 500,
+    sourcemap: true,
+  },
   test: {
     globals: true,
     environment: "jsdom",

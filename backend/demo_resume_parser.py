@@ -1,11 +1,15 @@
 import os
 import sys
 import json
+import logging
+
+logger = logging.getLogger(__name__)
+
 try:
     import spacy
 except ImportError:
     spacy = None
-    print("AVVISO: spaCy non installato.")
+    logger.info("spaCy non installato: parsing avanzato IT disabilitato (opzionale).")
 
 import re
 import copy
@@ -17,7 +21,7 @@ except ImportError:
         from PyPDF2 import PdfReader
     except ImportError:
         PdfReader = None
-        print("AVVISO: pypdf/PyPDF2 non installato.")
+        logger.info("pypdf/PyPDF2 non installato: alcuni PDF potrebbero non essere leggibili.")
 
 # from docx import Document # Se vuoi supportare .docx, assicurati di avere python-docx e decommenta
 
@@ -27,7 +31,7 @@ try:
 except ImportError:
     Flask = None
     CORS = None
-    print("AVVISO: Flask o Flask-CORS non installati.")
+    logger.debug("Flask/Flask-CORS non installati (non necessari per Django).")
 
 import tempfile # Per gestire file temporanei
 
@@ -35,12 +39,12 @@ import tempfile # Per gestire file temporanei
 try:
     from resume_parser import ResumeParser
     RESUME_PARSER_AVAILABLE = True
-    print("Libreria 'resume-parser' caricata con successo.")
+    logger.info("Libreria 'resume-parser' caricata.")
 except ImportError:
-    print("AVVISO: Libreria 'resume-parser' non trovata. L'estrazione con modello inglese potrebbe non funzionare.")
+    logger.info("Libreria 'resume-parser' non installata: parser EN opzionale disabilitato.")
     RESUME_PARSER_AVAILABLE = False
 except Exception as e:
-    print(f"AVVISO: Errore durante l'importazione di 'resume-parser': {e}. L'estrazione con modello inglese potrebbe non funzionare.")
+    logger.warning("Errore import 'resume-parser': %s", e)
     RESUME_PARSER_AVAILABLE = False
 
 # --- Carica i modelli linguistici di spaCy ---
@@ -49,28 +53,28 @@ except Exception as e:
 nlp_en = None
 nlp_it = None
 
-try:
-    # Modello inglese (usato internamente da resume-parser o esplicitamente)
-    nlp_en = spacy.load("en_core_web_sm")
-    print("Modello spaCy inglese 'en_core_web_sm' caricato con successo.")
-except OSError:
-    print("AVVISO: Modello spaCy inglese 'en_core_web_sm' non trovato.")
-    print("Per favore, esegui: python -m spacy download en_core_web_sm")
-    print("L'estrazione con resume-parser (inglese) potrebbe non funzionare.")
-except Exception as e:
-    print(f"AVVISO: Errore imprevisto durante il caricamento di 'en_core_web_sm': {e}")
+if spacy is not None:
+    try:
+        nlp_en = spacy.load("en_core_web_sm")
+        logger.info("Modello spaCy 'en_core_web_sm' caricato.")
+    except OSError:
+        logger.info(
+            "Modello 'en_core_web_sm' non trovato. Opzionale: python -m spacy download en_core_web_sm"
+        )
+    except Exception as e:
+        logger.warning("Caricamento 'en_core_web_sm': %s", e)
 
-
-try:
-    # Modello italiano
-    nlp_it = spacy.load("it_core_news_sm")
-    print("Modello spaCy italiano 'it_core_news_sm' caricato con successo.")
-except OSError:
-    print("AVVISO: Modello spaCy italiano 'it_core_news_sm' non trovato.")
-    print("Per favore, esegui: python -m spacy download it_core_news_sm") # Corretto il nome del modello nel messaggio
-    print("L'estrazione con spaCy (italiano) potrebbe non funzionare.")
-except Exception as e:
-    print(f"AVVISO: Errore imprevisto durante il caricamento di 'it_core_news_sm': {e}")
+    try:
+        nlp_it = spacy.load("it_core_news_sm")
+        logger.info("Modello spaCy 'it_core_news_sm' caricato.")
+    except OSError:
+        logger.info(
+            "Modello 'it_core_news_sm' non trovato. Opzionale: python -m spacy download it_core_news_sm"
+        )
+    except Exception as e:
+        logger.warning("Caricamento 'it_core_news_sm': %s", e)
+else:
+    logger.debug("Caricamento modelli spaCy saltato (spaCy non installato).")
 
 
 # --- Funzione per leggere testo da file (PDF e potenzialmente altri) ---
@@ -556,9 +560,25 @@ def map_extracted_data_to_template(extracted_data_en, extracted_data_it, templat
     return populated_data
 
 
-# --- Configurazione Flask ---
-app = Flask(__name__)
-CORS(app) # Abilita CORS per permettere richieste dal frontend React
+# --- Configurazione Flask (opzionale: import come libreria da Django senza Flask installato) ---
+if Flask is not None:
+    app = Flask(__name__)
+    CORS(app)
+else:
+
+    class _FlaskShim:
+        """Permette di definire @app.route senza Flask; il server standalone non è disponibile."""
+
+        def route(self, *_args, **_kwargs):
+            def decorator(fn):
+                return fn
+
+            return decorator
+
+        def run(self, *_args, **_kwargs):
+            raise RuntimeError("Flask non installato: avvia il parsing solo via Django API.")
+
+    app = _FlaskShim()
 
 # Definizione della struttura JSON template (puoi caricarla da file qui o mantenerla come costante)
 # Per semplicità, la manteniamo come costante come nel frontend, ma in un'applicazione reale

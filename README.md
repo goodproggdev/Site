@@ -1,63 +1,97 @@
-# CV Portfolio Website Generator
+# CV Platform Monorepo
 
-This project provides a flexible and modern CV/portfolio website generator designed to cater to freelancers, professionals, and creatives. The generator includes features for dynamic content management, localization, SEO optimization, and seamless integration of AI-generated profile visuals.
+Stack principale:
+- `frontend/`: React + Vite + TypeScript.
+- `backend/`: Django + DRF + JWT + Stripe + parsing CV.
 
-## Features
+## Struttura progetto
 
-- **Localization**: Support for multiple languages with dynamic language switching.
-- **SEO Optimization**: Improved Google indexing with meta tags, sitemaps, and optimized page structures.
-- **Customizable Forms**: JSON-based configuration for icons, bars, and dynamic layouts.
-- **AI Profile Images**: Generate and sell AI-created profile pictures directly through the platform.
-- **Sales and Hobby Cards**: Showcase hobbies and interests with customizable sales cards.
-- **Dynamic Links**: Efficient management of internal and external links.
-- **Test Profiles**: Easy creation of test profiles for portfolio demonstrations.
-- **Interactive Contact Forms**: Preconfigured forms with Gmail integration for user inquiries.
-- **Events and Courses**: Dedicated section for listing events and training programs.
+- `frontend/`: applicazione web client.
+- `backend/api/`: API business (CV, dashboard, stripe, parsing).
+- `backend/mybackend/`: configurazione Django.
+- `.github/workflows/ci.yml`: pipeline CI.
 
-## Getting Started
+## API design
 
-### Prerequisites
+- Endpoint applicativi versionati: `/api/v1/...`
+- Endpoint legacy deprecati: `/api/legacy/...`
+- Auth: `/auth/...` (JWT + dj-rest-auth)
 
-To run this project locally, ensure you have the following installed:
+## Prerequisiti
 
-- **Python**
-- **Git**
+- Python 3.12+ (3.14 supportato con requirements aggiornati)
+- Node.js 20+
+- npm 10+
 
-### Installation
+## Avvio locale
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/your-repo/portfolio-generator.git
-   ```
+### 1) Backend
 
-2. Navigate to the project directory:
-   ```bash
-   cd Site/main
-   ```
+```bash
+python -m venv .venv
+.venv\Scripts\python -m pip install --upgrade pip
+.venv\Scripts\python -m pip install -r backend/requirements.txt
+copy backend/.env.example backend/.env
+.venv\Scripts\python backend/manage.py migrate
+.venv\Scripts\python backend/manage.py runserver
+```
 
-## Project Structure
+Backend in locale: `http://localhost:8000`
 
-- **/src**: Contains the main application code.
-- **/public**: Static assets and HTML templates.
-- **/assets**: Images, styles, and icons.
+### 2) Frontend
 
-## Development Workflow
+```bash
+cd frontend
+npm install
+copy .env.example .env.local
+npm run dev
+```
 
-1. Create a new issue on GitHub for any new feature or bug.
-2. Create a branch associated with the issue:
-   ```bash
-   git checkout -b feature/branch-name
-   ```
-3. Commit changes with a descriptive message referencing the issue:
-   ```bash
-   git commit -m "[Issue #issue-number] Description of changes"
-   ```
-4. Push changes to the remote branch:
-   ```bash
-   git push origin feature/branch-name
-   ```
-5. Submit a pull request for review and merging.
+Frontend in locale: `http://localhost:5173`
 
-## License
+## Variabili ambiente
 
-## Contact
+### Backend (`backend/.env`)
+
+- `SECRET_KEY`
+- `DEBUG`
+- `ALLOWED_HOSTS`
+- `CORS_ALLOWED_ORIGINS`
+- `CSRF_TRUSTED_ORIGINS`
+- `DATABASE_URL` (default sqlite locale)
+- `STRIPE_SECRET_KEY`
+- `STRIPE_PUBLISHABLE_KEY`
+- `STRIPE_WEBHOOK_SECRET`
+- `JWT_ACCESS_TOKEN_LIFETIME_MINUTES`
+- `JWT_REFRESH_TOKEN_LIFETIME_DAYS`
+
+Storage object per produzione (S3 compatibile):
+- `USE_S3_STORAGE`
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `AWS_STORAGE_BUCKET_NAME`
+- `AWS_S3_REGION_NAME`
+- `AWS_S3_ENDPOINT_URL`
+
+### Frontend (`frontend/.env.local`)
+
+- `VITE_API_BASE_URL` (consigliato)
+- `VITE_API_URL` (compatibilità con codice legacy)
+- `VITE_STRIPE_PUBLISHABLE_KEY`
+
+## Deploy consigliato (efficiente)
+
+- Frontend statico su CDN/edge hosting.
+- Backend Django su runtime managed.
+- PostgreSQL gestito via `DATABASE_URL`.
+- Upload su object storage (`django-storages` + S3 compatibile).
+
+## Note NLP / spaCy
+
+`spaCy` non è obbligatorio per far girare la piattaforma principale. Serve solo per script demo:
+
+```bash
+pip install "spacy>=3.8.7"
+python -m spacy download en_core_web_sm
+python -m spacy download it_core_news_sm
+```

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface PreviewProps {
   initialData?: any;
@@ -6,9 +7,11 @@ interface PreviewProps {
 }
 
 const Preview: React.FC<PreviewProps> = ({ initialData, isPublicView }) => {
+  const { t } = useTranslation();
+
   const data = initialData || {
-    personal_info: { name: "Il Tuo Nome", title: "La Tua Professione" },
-    summary: "Dimentica l'invio di vecchi file PDF. Con la nostra piattaforma, il tuo profilo professionale è una Single Page Application moderna sul tuo dominio."
+    personal_info: { name: t('components.preview.defaultName', 'Il Tuo Nome'), title: t('components.preview.defaultTitle', 'La Tua Professione') },
+    summary: t('components.preview.defaultSummary', 'Dimentica l\'invio di vecchi file PDF. Con la nostra piattaforma, il tuo profilo professionale è una Single Page Application moderna sul tuo dominio.')
   };
 
   return (
@@ -44,23 +47,24 @@ const Preview: React.FC<PreviewProps> = ({ initialData, isPublicView }) => {
         </div>
         <div className="mt-8 lg:mt-0 order-1 lg:order-2">
           <div className="inline-block px-3 py-1 mb-4 text-[10px] lg:text-xs font-semibold tracking-wider text-indigo-600 uppercase bg-indigo-100 rounded-full dark:bg-indigo-900/30 dark:text-indigo-400">
-            Interactive Experience
+            {t('components.preview.badge')}
           </div>
           <h2 className="mb-6 text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white lg:text-5xl leading-tight">
-            Il tuo CV, <span className="text-gradient">sempre online</span>.
+            {t('components.preview.title')}<span className="text-gradient">{t('components.preview.highlight')}</span>{t('components.preview.subtitle')}
           </h2>
           {!isPublicView && (
             <div className="mb-6 lg:mb-8 p-4 border-l-4 border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 rounded-r-lg">
               <p className="font-medium text-gray-700 dark:text-gray-300 italic text-base lg:text-lg leading-relaxed">
-                "Ho inserito il link del mio CV digitale su LinkedIn e ho ricevuto il 40% di visite in più."
+                "{t('components.preview.quote')}"
               </p>
-              <footer className="mt-2 text-xs lg:text-sm text-indigo-600 dark:text-indigo-400 font-bold">— Marco G., Senior Developer</footer>
+              <footer className="mt-2 text-xs lg:text-sm text-indigo-600 dark:text-indigo-400 font-bold">— {t('components.preview.quoteAuthor')}</footer>
             </div>
           )}
           <p className="mb-8 text-base lg:text-lg text-gray-600 dark:text-gray-400 leading-relaxed">
-            {isPublicView 
-              ? `Esplora il profilo professionale di ${data.personal_info?.name} in un formato web moderno e veloce.`
-              : "Basta inviare PDF pesanti. Nordevit trasforma il tuo curriculum in una **Single Page Application** velocissima."}
+            {isPublicView
+              ? t('components.preview.descriptionPublic', { name: data.personal_info?.name })
+              : <>{t('components.preview.descriptionPrivate')}<strong className="text-gray-900 dark:text-white">{t('components.preview.descriptionHighlight')}</strong>{" "}{t('components.preview.descriptionHighlightSuffix', 'velocissima.')}</>
+            }
           </p>
           {!isPublicView && (
             <div className="flex flex-wrap gap-4">
@@ -68,7 +72,7 @@ const Preview: React.FC<PreviewProps> = ({ initialData, isPublicView }) => {
                 href="#price"
                 className="inline-flex items-center px-5 py-2.5 lg:px-6 lg:py-3 text-sm lg:text-base font-bold text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 dark:shadow-none"
               >
-                Scopri i Piani
+                {t('components.preview.cta')}
                 <svg className="ml-2 w-4 h-4 lg:w-5 lg:h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd"></path></svg>
               </a>
             </div>

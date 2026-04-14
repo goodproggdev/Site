@@ -23,15 +23,19 @@ urlpatterns = [
 
     # dj-rest-auth (login, logout, password reset, registration)
     path('auth/', include('dj_rest_auth.urls')),
-    path('auth/registration/', include('dj_rest_auth.registration.urls')),
+    path('auth/registration/', include('mybackend.registration_urls')),
 
-    # Upload & analyze CV
-    path('upload/', upload_file, name='upload_file'),
-    path('api/analyze-cv/', analyze_cv, name='analyze-cv'),
-    path('api/contact/', contact_view, name='contact'),
+    # API v1
+    path('api/v1/upload/', upload_file, name='upload_file_v1'),
+    path('api/v1/analyze-cv/', analyze_cv, name='analyze-cv-v1'),
+    path('api/v1/contact/', contact_view, name='contact-v1'),
+    path('api/v1/', include('api.urls')),
 
-    # API principale
-    path('api/', include('api.urls')),
+    # Legacy API (deprecate and remove once clients are migrated)
+    path('api/legacy/', include('api.legacy_urls')),
+    path('upload/', upload_file, name='upload_file_legacy'),
+    path('api/analyze-cv/', analyze_cv, name='analyze-cv-legacy'),
+    path('api/contact/', contact_view, name='contact-legacy'),
 ]
 
 if settings.DEBUG:

@@ -1,41 +1,44 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const Footer = () => {
+    const { t } = useTranslation();
+
     return (
         <footer className="bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800">
             <div className="mx-auto w-full max-w-screen-xl p-4 py-6 lg:py-8">
                 <div className="md:flex md:justify-between">
                     <div className="mb-6 md:mb-0">
                         <a href="https://nordevit.it/" className="flex items-center">
-                            <span className="self-center text-2xl font-bold whitespace-nowrap dark:text-white text-indigo-600">NORDEVIT</span>
+                            <span className="self-center text-2xl font-bold whitespace-nowrap dark:text-white text-indigo-600">{t('layout.footer.brand')}</span>
                         </a>
                         <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 max-w-xs">
-                            Soluzioni digitali per professionisti che vogliono scalare la propria carriera su LinkedIn.
+                            {t('marketing.home.subtitle')}
                         </p>
                     </div>
                     <div className="grid grid-cols-2 gap-8 sm:gap-6 sm:grid-cols-2">
                         <div>
-                            <h2 className="mb-6 text-sm font-semibold text-gray-900 uppercase dark:text-white">Piattaforma</h2>
+                            <h2 className="mb-6 text-sm font-semibold text-gray-900 uppercase dark:text-white">{t('layout.footer.platform')}</h2>
                             <ul className="text-gray-500 dark:text-gray-400 font-medium">
                                 <li className="mb-4">
-                                    <a href="/" className="hover:underline">Home</a>
+                                    <a href="/" className="hover:underline">{t('layout.footer.links.home')}</a>
                                 </li>
                                 <li>
-                                <a href="#price" className="hover:underline">Pricing</a>
+                                <a href="#price" className="hover:underline">{t('layout.footer.links.pricing')}</a>
                             </li>
                             <li className="mt-4">
-                                <a href="#contact" className="hover:underline">Contatti</a>
+                                <a href="#contact" className="hover:underline">{t('layout.footer.links.contact')}</a>
                             </li>
                             </ul>
                         </div>
                         <div>
-                            <h2 className="mb-6 text-sm font-semibold text-gray-900 uppercase dark:text-white">Legal</h2>
+                            <h2 className="mb-6 text-sm font-semibold text-gray-900 uppercase dark:text-white">{t('layout.footer.legal')}</h2>
                             <ul className="text-gray-500 dark:text-gray-400 font-medium">
                                 <li className="mb-4">
-                                    <Link to="/privacy" className="hover:underline">Privacy Policy</Link>
+                                    <Link to="/privacy" className="hover:underline">{t('layout.footer.links.privacy')}</Link>
                                 </li>
                                 <li>
-                                    <Link to="/terms" className="hover:underline">Terms &amp; Conditions</Link>
+                                    <Link to="/terms" className="hover:underline">{t('layout.footer.links.terms')}</Link>
                                 </li>
                             </ul>
                         </div>
@@ -43,7 +46,10 @@ const Footer = () => {
                 </div>
                 <hr className="my-6 border-gray-200 sm:mx-auto dark:border-gray-700 lg:my-8" />
                 <div className="sm:flex sm:items-center sm:justify-between">
-                    <span className="text-sm text-gray-500 sm:text-center dark:text-gray-400">© 2024 <a href="https://nordevit.it/" className="hover:underline font-bold">Nordevit™</a>. All Rights Reserved.
+                    <span className="text-sm text-gray-500 sm:text-center dark:text-gray-400">
+                        © 2024{' '}
+                        <a href="https://nordevit.it/" className="font-bold hover:underline">Nordevit™</a>
+                        {'. '}{t('layout.footer.rightsReserved')}
                     </span>
                     <div className="flex mt-4 sm:justify-center sm:mt-0">
                         <a href="https://linkedin.com/" className="text-gray-500 hover:text-indigo-600 transition-colors">
