@@ -41,6 +41,29 @@ class ItemListCreate(generics.ListCreateAPIView):
 
 
 # ==============================================================================
+# API ROOT VIEW
+# ==============================================================================
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def api_v1_root(request):
+    """Root view for API v1 — fornisce informazioni di base sugli endpoint."""
+    return Response({
+        "status": "active",
+        "version": "1.0.0",
+        "message": "Benvenuto nella Nordevit CV Platform API v1",
+        "endpoints": {
+            "authentication": "/auth/token/",
+            "cv_management": "/api/v1/cv/",
+            "cv_parsing": "/api/v1/parse-cv-upload/",
+            "job_matching": "/api/v1/jobs/matches/",
+            "payments": "/api/v1/stripe/create-checkout/",
+            "dashboard": "/api/v1/dashboard/",
+        }
+    }, status=200)
+
+
+# ==============================================================================
 # JSON DATA VIEW (pubblica — solo lettura)
 # ==============================================================================
 

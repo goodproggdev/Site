@@ -19,9 +19,13 @@ from .views import (
     get_job_matches,
     refresh_job_matches,
     update_job_match_status,
+    api_v1_root,
 )
 
 urlpatterns = [
+    # API v1 Root
+    path('', api_v1_root, name='api_v1_root'),
+
     # CV
     path('cv/', my_cv_list, name='my_cv_list'),
     path('cv/<int:cv_id>/delete/', delete_cv, name='delete_cv'),
