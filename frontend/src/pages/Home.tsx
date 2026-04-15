@@ -1,13 +1,15 @@
 import React, { useLayoutEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Navigate, useLocation, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useHasSessionToken } from '../hooks/useHasSessionToken';
 import Welcome from './Welcome';
 import Preview from './Preview';
-import About from './About';
-import Feature from './Feature';
+import TrustStrip from './TrustStrip';
+import Differentiators from './Differentiators';
 import Statistics from './Statistics';
 import Testimonials from './Testimonials';
 import Pricing from './Pricing';
+import LandingMobileCta from './LandingMobileCta';
 
 function HowItWorks() {
   const { t } = useTranslation();
@@ -46,14 +48,17 @@ function HowItWorks() {
 }
 
 interface HomeProps {
-  initialData?: any;
+  initialData?: Record<string, unknown>;
   isPublicView?: boolean;
 }
 
 const Home: React.FC<HomeProps> = ({ initialData, isPublicView = false }) => {
   const location = useLocation();
+  const { lang = 'it' } = useParams<{ lang?: string }>();
+  const isLoggedIn = useHasSessionToken();
 
   useLayoutEffect(() => {
+    if (isPublicView || isLoggedIn) return;
     const raw = location.hash.replace(/^#/, '');
     if (!raw) return;
     const id = raw === 'Home' ? 'home' : decodeURIComponent(raw);
@@ -61,24 +66,31 @@ const Home: React.FC<HomeProps> = ({ initialData, isPublicView = false }) => {
       const el = document.getElementById(id);
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
-  }, [location.pathname, location.hash]);
+  }, [location.pathname, location.hash, isPublicView, isLoggedIn]);
+
+  if (!isPublicView && isLoggedIn) {
+    return <Navigate to={`/${lang}/dashboard`} replace />;
+  }
 
   return (
     <>
-      <Welcome />
-      {/* Se è una public view, passiamo initialData a Preview per mostrare il CV specifico */}
-      <Preview initialData={initialData} isPublicView={isPublicView} />
-      {!isPublicView && (
-        <>
-          <HowItWorks />
-          <About />
-          <Feature />
-          <Statistics />
-          <Testimonials />
-          <Pricing />
-          {/* ContactForm è già incluso dentro Pricing.tsx */}
-        </>
-      )}
+      <div className={isPublicView ? undefined : 'pb-28 md:pb-0'}>
+        <Welcome />
+        {!isPublicView ? <TrustStrip /> : null}
+        {/* Se è una public view, passiamo initialData a Preview per mostrare il CV specifico */}
+        <Preview initialData={initialData} isPublicView={isPublicView} />
+        {!isPublicView && (
+          <>
+            <HowItWorks />
+            <Differentiators />
+            <Testimonials />
+            <Statistics />
+            <Pricing />
+            {/* ContactForm è già incluso dentro Pricing.tsx */}
+          </>
+        )}
+      </div>
+      {!isPublicView ? <LandingMobileCta /> : null}
     </>
   );
 };

@@ -23,7 +23,11 @@ except ImportError:
         PdfReader = None
         logger.info("pypdf/PyPDF2 non installato: alcuni PDF potrebbero non essere leggibili.")
 
-# from docx import Document # Se vuoi supportare .docx, assicurati di avere python-docx e decommenta
+try:
+    from docx import Document
+except ImportError:
+    Document = None
+    logger.info("python-docx non installato: estrazione testo DOCX disabilitata.")
 
 try:
     from flask import Flask, request, jsonify
@@ -35,17 +39,25 @@ except ImportError:
 
 import tempfile # Per gestire file temporanei
 
-# Importa la libreria resume-parser
+# Importa resume-parser (PyPI: layout vari tra versioni; proviamo più entrypoint).
+ResumeParser = None
 try:
-    from resume_parser import ResumeParser
-    RESUME_PARSER_AVAILABLE = True
-    logger.info("Libreria 'resume-parser' caricata.")
+    from resume_parser import ResumeParser as _ResumeParser
+
+    ResumeParser = _ResumeParser
 except ImportError:
-    logger.info("Libreria 'resume-parser' non installata: parser EN opzionale disabilitato.")
-    RESUME_PARSER_AVAILABLE = False
+    try:
+        from resume_parser.resume_parser import ResumeParser as _ResumeParser2
+
+        ResumeParser = _ResumeParser2
+    except ImportError:
+        logger.info("Libreria 'resume-parser' non installata: parser EN rule-based disabilitato.")
 except Exception as e:
     logger.warning("Errore import 'resume-parser': %s", e)
-    RESUME_PARSER_AVAILABLE = False
+
+RESUME_PARSER_AVAILABLE = ResumeParser is not None
+if RESUME_PARSER_AVAILABLE:
+    logger.info("Libreria 'resume-parser' caricata (ResumeParser).")
 
 # --- Carica i modelli linguistici di spaCy ---
 # Carica i modelli all'avvio dell'applicazione Flask
@@ -96,28 +108,47 @@ def extract_text_from_file(file_path):
         except Exception as e:
             print(f"Errore nella lettura del file PDF {file_path}: {e}")
             return None
-    # Aggiungi qui il supporto per altri formati, es. .docx
-    # elif extension == ".docx":
-    #     try:
-    #         doc = Document(file_path)
-    #         for paragraph in doc.paragraphs:
-    #             text += paragraph.text + "\n"
-    #         return text
-    #     except Exception as e:
-    #          print(f"Errore nella lettura del file DOCX {file_path}: {e}")
-    #          return None
-    # Aggiungi supporto per .txt
-    elif extension == ".txt":
+    elif extension == ".docx":
+        if Document is None:
+            print("AVVISO: python-docx non disponibile, impossibile leggere DOCX.")
+            return None
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                text = f.read()
+            doc = Document(file_path)
+            for paragraph in doc.paragraphs:
+                if paragraph.text and paragraph.text.strip():
+                    text += paragraph.text.strip() + "\n"
+            for table in doc.tables:
+                for row in table.rows:
+                    cells = [c.text.strip() for c in row.cells if c.text and c.text.strip()]
+                    if cells:
+                        text += " ".join(cells) + "\n"
             if not text.strip():
-                 print(f"AVVISO: File TXT vuoto {file_path}.")
-                 return None
+                print(f"AVVISO: Nessun testo estratto dal DOCX {file_path}.")
+                return None
             return text
         except Exception as e:
-             print(f"Errore nella lettura del file TXT {file_path}: {e}")
-             return None
+            print(f"Errore nella lettura del file DOCX {file_path}: {e}")
+            return None
+    # Aggiungi supporto per .txt
+    elif extension == ".txt":
+        raw_bytes = None
+        try:
+            with open(file_path, "rb") as bf:
+                raw_bytes = bf.read()
+        except Exception as e:
+            print(f"Errore nella lettura binaria del file TXT {file_path}: {e}")
+            return None
+        for enc in ("utf-8", "utf-8-sig", "cp1252", "latin-1"):
+            try:
+                text = raw_bytes.decode(enc)
+                if text.strip():
+                    return text
+                print(f"AVVISO: File TXT vuoto {file_path}.")
+                return None
+            except UnicodeDecodeError:
+                continue
+        print(f"AVVISO: Impossibile decodificare TXT {file_path} con encoding noti.")
+        return None
     # Potresti voler aggiungere .rtf ma richiede una libreria specifica
     # elif extension == ".rtf":
     #     print("Supporto RTF non implementato.")
@@ -493,13 +524,17 @@ def map_extracted_data_to_template(extracted_data_en, extracted_data_it, templat
     if github_to_map and populated_data.get("social_links"):
          populated_data["social_links"]["github"] = github_to_map
 
-    # Sommario / About (preferenza italiano)
+    # Sommario / About (preferenza italiano, poi EN/OpenAI)
     summary_it = extracted_data_it.get("sommario")
     if summary_it and populated_data.get("about"):
          sentences = re.split(r'(?<=[.!?])\s+', summary_it, 1)
          populated_data["about"]["who"] = sentences[0].strip() if sentences else summary_it.strip()
          populated_data["about"]["details"] = sentences[1].strip() if len(sentences) > 1 else ""
-    # Non mappiamo il sommario inglese automaticamente qui per evitare sovrascritture indesiderate se l'italiano ha trovato qualcosa
+    elif "error" not in extracted_data_en and extracted_data_en.get("summary") and populated_data.get("about"):
+         summary_ai = extracted_data_en.get("summary") or ""
+         sentences = re.split(r'(?<=[.!?])\s+', summary_ai, 1)
+         populated_data["about"]["who"] = sentences[0].strip() if sentences else summary_ai.strip()
+         populated_data["about"]["details"] = sentences[1].strip() if len(sentences) > 1 else ""
 
 
     # Skills (preferenza italiano, altrimenti inglese)
@@ -507,22 +542,38 @@ def map_extracted_data_to_template(extracted_data_en, extracted_data_it, templat
     skills_en = extracted_data_en.get("skills")
     skills_to_map = skills_it if skills_it else ([] if "error" in extracted_data_it else None) # Usa italiano se disponibile, altrimenti None se errore, altrimenti cerca inglese
     if skills_to_map is None:
-         skills_to_map = [{"name": str(skill).strip(), "level": "N/A"} for skill in skills_en if str(skill).strip()] if skills_en else [] # Mappa skill inglesi se disponibili
+         if skills_en:
+             skills_to_map = []
+             for skill in skills_en:
+                 if isinstance(skill, dict) and skill.get("name"):
+                     skills_to_map.append(
+                         {"name": str(skill["name"]).strip(), "level": str(skill.get("level", "N/A") or "N/A")}
+                     )
+                 elif str(skill).strip():
+                     skills_to_map.append({"name": str(skill).strip(), "level": "N/A"})
+         else:
+             skills_to_map = []
 
     if skills_to_map is not None: # Aggiorna solo se abbiamo trovato skill da qualche parte
          populated_data["skills"] = [s for s in skills_to_map if s.get("name")] # Filtra skill senza nome
 
 
-    # Lingue (preferenza italiano)
+    # Lingue (preferenza italiano, poi EN/OpenAI)
     languages_it = extracted_data_it.get("lingue_list_raw")
     if languages_it:
          populated_data["languages"] = [l for l in languages_it if l.get("name")]
+    elif "error" not in extracted_data_en and extracted_data_en.get("languages_llm"):
+         populated_data["languages"] = [l for l in extracted_data_en["languages_llm"] if l.get("name")]
 
 
-    # Istruzione (preferenza italiano)
+    # Istruzione (preferenza italiano, poi EN/OpenAI)
     education_it = extracted_data_it.get("istruzione_list_structured")
     if education_it:
          populated_data["education_list"] = [e for e in education_it if e.get("title") or e.get("period") or e.get("subtitle")]
+    elif "error" not in extracted_data_en and extracted_data_en.get("education_en"):
+         populated_data["education_list"] = [
+             e for e in extracted_data_en["education_en"] if e.get("title") or e.get("period") or e.get("subtitle")
+         ]
 
 
     # Esperienza Lavorativa (preferenza italiano)

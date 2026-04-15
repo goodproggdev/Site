@@ -2,15 +2,17 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button, Card, Spinner, TextInput } from 'flowbite-react';
+import axios from 'axios';
 import { verifyEmail, sendVerificationEmail } from '../api/cvApi';
 import { isValidEmail } from '../utils/email';
+import { authErrorMessageFromAxios, formatAndLocalizeDrfErrors } from '../utils/apiErrorI18n';
 
 export default function VerifyEmail() {
   const { t } = useTranslation();
   const { lang = 'it' } = useParams<{ lang?: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const token = searchParams.get('token');
+  const token = searchParams.get('token') ?? searchParams.get('key');
 
   const [status, setStatus] = useState<'verifying' | 'success' | 'error' | 'resend'>('verifying');
   const [message, setMessage] = useState('');
@@ -27,18 +29,17 @@ export default function VerifyEmail() {
   }, [token]);
 
   const verifyToken = async () => {
-    try {
-      const response = await verifyEmail(token!);
-      if (response.verified) {
-        setStatus('success');
-        setMessage(t('auth.verify.success'));
-      } else {
-        setStatus('error');
-        setMessage(response.error || t('auth.verify.error'));
-      }
-    } catch (error) {
-      setStatus('error');
-      setMessage(t('auth.verify.error'));
+    const response = await verifyEmail(token!);
+    if (response.verified) {
+      setStatus('success');
+      setMessage(t('auth.verify.success'));
+      return;
+    }
+    setStatus('error');
+    if (response.drfData != null && typeof response.drfData === 'object') {
+      setMessage(formatAndLocalizeDrfErrors(response.drfData, t));
+    } else {
+      setMessage(t('auth.verify.errorNetwork'));
     }
   };
 
@@ -56,8 +57,12 @@ export default function VerifyEmail() {
     try {
       await sendVerificationEmail(email);
       setMessage(t('auth.verify.emailSent'));
-    } catch {
-      setMessage(t('auth.verify.resendError'));
+    } catch (e) {
+      if (axios.isAxiosError(e)) {
+        setMessage(authErrorMessageFromAxios(e, t));
+      } else {
+        setMessage(t('auth.verify.resendError'));
+      }
     } finally {
       setResendLoading(false);
     }

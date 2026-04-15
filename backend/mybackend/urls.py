@@ -2,7 +2,7 @@
 URL configuration — aggiunto JWT auth endpoints e rimosso routing duplicato.
 """
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
 from django.conf import settings
 from django.conf.urls.static import static
 from rest_framework_simplejwt.views import (
@@ -11,6 +11,7 @@ from rest_framework_simplejwt.views import (
     TokenVerifyView,
 )
 from .views import analyze_cv, contact_view, upload_file
+from api.cv_public_html_views import cv_public_shell_view
 
 urlpatterns = [
     # Admin
@@ -24,6 +25,9 @@ urlpatterns = [
     # dj-rest-auth (login, logout, password reset, registration)
     path('auth/', include('dj_rest_auth.urls')),
     path('auth/registration/', include('mybackend.registration_urls')),
+
+    # CV pubblico: HTML con meta nel primo response (crawler senza JS). La SPA si monta su #root se gli asset esistono.
+    re_path(r'^u/(?P<slug>[^/]+)/?$', cv_public_shell_view, name='cv-public-shell'),
 
     # API v1
     path('api/v1/upload/', upload_file, name='upload_file_v1'),

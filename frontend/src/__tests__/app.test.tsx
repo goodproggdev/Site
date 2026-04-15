@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import React from "react";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
+import i18n from "../i18n";
 
 // ─── Mock delle API ────────────────────────────────────────────────────────
 vi.mock("../api/cvApi", () => ({
@@ -17,27 +19,45 @@ describe("useCVUpload hook", () => {
     vi.clearAllMocks();
   });
 
-  it("should start in idle state", async () => {
-    const { useCVUpload } = await import("../hooks/useCVUpload");
-    // Test che il hook esiste e ha i campi corretti
-    expect(typeof useCVUpload).toBe("function");
-  });
+  it(
+    "should start in idle state",
+    async () => {
+      const { useCVUpload } = await import("../hooks/useCVUpload");
+      expect(typeof useCVUpload).toBe("function");
+    },
+    15_000,
+  );
 });
 
 // ─── Test Welcome Component ─────────────────────────────────────────────
 describe("Welcome page", () => {
-  it("renders heading", async () => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("it");
+  });
+
+  async function renderWelcome() {
     const { default: Welcome } = await import("../pages/Welcome");
-    render(React.createElement(Welcome));
-    const heading = screen.getByRole("heading", { level: 1 });
+    return render(
+      <MemoryRouter initialEntries={["/it"]}>
+        <Routes>
+          <Route path="/:lang" element={<Welcome />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+  }
+
+  it("renders heading", async () => {
+    await renderWelcome();
+    const heading = await screen.findByRole("heading", { level: 1 });
     expect(heading).toBeInTheDocument();
   });
 
-  it("renders CTA button", async () => {
-    const { default: Welcome } = await import("../pages/Welcome");
-    render(React.createElement(Welcome));
-    const button = screen.getByText(/inizia ora/i);
-    expect(button).toBeInTheDocument();
+  it("renders primary create CTA and preview link", async () => {
+    await renderWelcome();
+    const uploadCta = await screen.findByRole("button", { name: /carica cv/i });
+    expect(uploadCta).toBeInTheDocument();
+    const previewLink = screen.getByRole("link", { name: /esempio interattivo/i });
+    expect(previewLink).toHaveAttribute("href", "/it#preview");
   });
 });
 

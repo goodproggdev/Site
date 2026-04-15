@@ -4,7 +4,7 @@ const Testimonial = () => {
   const { t } = useTranslation();
 
   return (
-    <section className="section-y bg-white dark:bg-gray-900">
+    <section id="testimonials" className="section-y scroll-mt-24 bg-white dark:bg-gray-900">
       <div className="mx-auto max-w-screen-xl container-padding">
         <div className="max-w-3xl mx-auto text-center">
           {/* Quote Icon */}

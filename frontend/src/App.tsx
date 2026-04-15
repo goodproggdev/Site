@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from "rea
 import { useTranslation } from 'react-i18next';
 import ErrorBoundary from "./components/ErrorBoundary";
 import CookieConsent from "./components/CookieConsent";
+import GaRouteListener from "./components/GaRouteListener";
 import { Navbar, Footer } from "./layout";
 import { supportedLanguages, type Language } from './i18n';
 import './i18n';
@@ -18,6 +19,8 @@ const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'));
+const BuilderPage = lazy(() => import('./pages/BuilderPage'));
+const CvSiteEditor = lazy(() => import('./pages/CvSiteEditor'));
 
 function LoadingSpinner() {
   return (
@@ -80,6 +83,8 @@ function LocalizedRoutes() {
     <Routes>
       <Route path="" element={<Home />} />
       <Route path="dashboard" element={<Dashboard />} />
+      <Route path="builder" element={<BuilderPage />} />
+      <Route path="cv/:cvId/edit" element={<CvSiteEditor />} />
       <Route path="settings" element={<Settings />} />
       <Route path="forgot-password" element={<ForgotPassword />} />
       <Route path="reset-password" element={<ResetPassword />} />
@@ -96,6 +101,7 @@ function LocalizedRoutes() {
 function App() {
   return (
     <Router>
+      <GaRouteListener />
       <ErrorBoundary>
         <div className="flex flex-col min-h-screen bg-white dark:bg-gray-900">
           <Navbar />

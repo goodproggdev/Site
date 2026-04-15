@@ -1,11 +1,20 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { trackEvent } from '../analytics/ga4';
 
 export default function PaymentSuccess() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { lang } = useParams<{ lang: string }>();
+  const purchaseTracked = useRef(false);
+
+  useEffect(() => {
+    if (!purchaseTracked.current) {
+      purchaseTracked.current = true;
+      trackEvent('purchase', { source: 'stripe_checkout' });
+    }
+  }, []);
 
   useEffect(() => {
     // Auto-redirect to dashboard after 5s

@@ -1,10 +1,18 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
 import ContactForm from './ContactForm';
 import { createCheckoutSession, isAuthenticated } from '../api/cvApi';
 
 const Pricing = () => {
     const { t } = useTranslation();
+    const [searchParams] = useSearchParams();
+    const checkoutCvId = (() => {
+        const raw = searchParams.get('cv_id');
+        if (!raw) return undefined;
+        const n = Number.parseInt(raw, 10);
+        return Number.isFinite(n) ? n : undefined;
+    })();
     const [selectedPlan, setSelectedPlan] = useState<string>('');
     const [checkoutError, setCheckoutError] = useState<string | null>(null);
     const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
@@ -17,7 +25,10 @@ const Pricing = () => {
         setCheckoutError(null);
         setLoadingPlan(planKey);
         try {
-            const data = await createCheckoutSession(priceId);
+            const data = await createCheckoutSession(priceId, {
+                feature: 'cv_publish',
+                ...(checkoutCvId != null ? { cv_id: checkoutCvId } : {}),
+            });
             window.location.href = data.url;
         } catch (error: unknown) {
             const msg =
@@ -41,20 +52,35 @@ const Pricing = () => {
         },
     ] as const;
 
+    const faqRaw = t('marketing.pricing.faq', { returnObjects: true });
+    const firstFaq = Array.isArray(faqRaw) ? faqRaw[0] : null;
+    const faqItems =
+        Array.isArray(faqRaw) &&
+        faqRaw.length > 0 &&
+        firstFaq &&
+        typeof firstFaq === 'object' &&
+        'q' in firstFaq &&
+        'a' in firstFaq
+            ? (faqRaw as { q: string; a: string }[])
+            : [];
+
     return (
         <>
             <section id="price" className="scroll-mt-24 section-y bg-white dark:bg-gray-900">
                 <div className="mx-auto max-w-screen-xl container-padding">
                     {/* Header */}
                     <div className="mx-auto text-center mb-16 max-w-2xl">
-                        <span className="inline-block mb-4 text-sm font-semibold text-indigo-600 uppercase tracking-wide">
-                            Pricing
+                        <span className="mb-4 inline-block text-sm font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-400">
+                            {t('marketing.pricing.eyebrow')}
                         </span>
                         <h2 className="heading-lg mb-4 dark:text-white">
                             {t('marketing.pricing.title')}
                         </h2>
-                        <p className="text-body text-lg">
+                        <p className="text-body mb-4 text-lg">
                             {t('marketing.pricing.subtitle')}
+                        </p>
+                        <p className="mx-auto max-w-2xl text-center text-sm text-gray-600 dark:text-gray-400">
+                            {t('marketing.pricing.publishFraming')}
                         </p>
                     </div>
 
@@ -153,6 +179,38 @@ const Pricing = () => {
                             {t('common.trustNote')}
                         </p>
                     </div>
+
+                    {faqItems.length > 0 ? (
+                        <div className="mx-auto mt-16 max-w-3xl">
+                            <h3 className="heading-sm mb-8 text-center dark:text-white">{t('marketing.pricing.faqTitle')}</h3>
+                            <div className="space-y-3">
+                                {faqItems.map((item, i) => (
+                                    <details
+                                        key={i}
+                                        className="group rounded-xl border border-gray-200 bg-gray-50/80 px-4 py-3 dark:border-gray-700 dark:bg-gray-800/50"
+                                    >
+                                        <summary className="cursor-pointer list-none font-medium text-gray-900 outline-none ring-indigo-500 focus-visible:ring-2 dark:text-white [&::-webkit-details-marker]:hidden">
+                                            <span className="flex items-center justify-between gap-2">
+                                                {item.q}
+                                                <svg
+                                                    className="h-5 w-5 shrink-0 text-gray-500 transition-transform group-open:rotate-180"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                    aria-hidden
+                                                >
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </span>
+                                        </summary>
+                                        <p className="mt-3 border-t border-gray-200 pt-3 text-sm leading-relaxed text-gray-600 dark:border-gray-600 dark:text-gray-300">
+                                            {item.a}
+                                        </p>
+                                    </details>
+                                ))}
+                            </div>
+                        </div>
+                    ) : null}
                 </div>
             </section>
             <ContactForm planName={selectedPlan} onFormSubmit={() => setSelectedPlan('')} />

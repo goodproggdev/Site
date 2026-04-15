@@ -6,6 +6,7 @@
    PREMIUM MINIMAL DESIGN SYSTEM
    ============================================ */
 
+/* Semantic palette: use Tailwind `brand-primary`, `foreground-muted`, etc. (see tailwind.config.js). */
 @layer base {
   :root {
     /* Brand Colors - Premium Indigo/Purple */
@@ -66,18 +67,43 @@
   }
 
   body {
-    @apply bg-white text-gray-900 antialiased;
+    @apply bg-white text-gray-900 antialiased font-sans dark:bg-gray-900 dark:text-gray-100;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
   
   /* Smooth scrolling */
   html {
     scroll-behavior: smooth;
+    scroll-padding-top: 5rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
   }
   
   /* Selection styling */
   ::selection {
     @apply bg-indigo-100 text-indigo-900;
+  }
+
+  /* Focus visibile (modali, navbar, footer, dashboard) */
+  a:focus-visible,
+  button:focus-visible,
+  summary:focus-visible,
+  [role="button"]:focus-visible,
+  [role="tab"]:focus-visible {
+    outline: 2px solid rgb(79 70 229);
+    outline-offset: 2px;
+  }
+
+  .dark a:focus-visible,
+  .dark button:focus-visible,
+  .dark summary:focus-visible,
+  .dark [role="button"]:focus-visible,
+  .dark [role="tab"]:focus-visible {
+    outline-color: rgb(165 180 252);
   }
 }
 
@@ -88,12 +114,12 @@
 @layer components {
   /* Primary Button - Main CTA */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2;
+    @apply inline-flex items-center justify-center gap-2 cursor-pointer;
     @apply px-6 py-3;
     @apply bg-indigo-600 text-white;
     @apply font-medium text-sm;
     @apply rounded-lg;
-    @apply transition-all duration-200;
+    @apply transition-colors duration-200;
     @apply shadow-sm;
     @apply hover:bg-indigo-700 hover:shadow-md;
     @apply active:bg-indigo-800;
@@ -102,7 +128,7 @@
   
   /* Secondary Button - Outline */
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2;
+    @apply inline-flex items-center justify-center gap-2 cursor-pointer;
     @apply px-6 py-3;
     @apply bg-white text-gray-700;
     @apply font-medium text-sm;
@@ -116,7 +142,7 @@
   
   /* Ghost Button - Subtle */
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2;
+    @apply inline-flex items-center justify-center gap-2 cursor-pointer;
     @apply px-4 py-2;
     @apply text-gray-600;
     @apply font-medium text-sm;
@@ -129,7 +155,7 @@
   
   /* Link Button - Text only */
   .btn-link {
-    @apply inline-flex items-center justify-center gap-1;
+    @apply inline-flex items-center justify-center gap-1 cursor-pointer;
     @apply text-indigo-600;
     @apply font-medium text-sm;
     @apply transition-colors duration-200;
@@ -150,12 +176,17 @@
   
   /* Icon Button - Square with icon */
   .btn-icon {
-    @apply inline-flex items-center justify-center;
+    @apply inline-flex items-center justify-center cursor-pointer;
     @apply w-10 h-10 p-0;
     @apply rounded-lg;
     @apply transition-all duration-200;
     @apply hover:bg-gray-100;
     @apply active:bg-gray-200;
+    @apply focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600;
+  }
+
+  .dark .btn-icon:focus-visible {
+    @apply outline-indigo-300;
   }
 }
 
@@ -390,7 +421,8 @@
 }
 
 .btn-primary-gradient {
-  @apply bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-3 px-8 rounded-2xl shadow-lg shadow-indigo-200 dark:shadow-none transition-all duration-300 transform hover:scale-105 active:scale-95;
+  @apply cursor-pointer bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold py-3 px-8 rounded-2xl shadow-lg shadow-indigo-200 transition-colors duration-200;
+  @apply hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl dark:shadow-none active:brightness-95;
 }
 
 @keyframes float {
@@ -401,6 +433,12 @@
 
 .animate-float {
   animation: float 6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-float {
+    animation: none;
+  }
 }
 
 .section-padding {

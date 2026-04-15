@@ -9,6 +9,7 @@ from .views import (
     CVDashboardView,
     CVPublicView,
     CVUpdateView,
+    CVDetailView,
     # Entitlement & Link Policy
     check_entitlement,
     list_entitlements,
@@ -19,13 +20,9 @@ from .views import (
     get_job_matches,
     refresh_job_matches,
     update_job_match_status,
-    api_v1_root,
 )
 
 urlpatterns = [
-    # API v1 Root
-    path('', api_v1_root, name='api_v1_root'),
-
     # CV
     path('cv/', my_cv_list, name='my_cv_list'),
     path('cv/<int:cv_id>/delete/', delete_cv, name='delete_cv'),
@@ -53,6 +50,7 @@ urlpatterns = [
     path('dashboard/', CVDashboardView.as_view(), name='cv-dashboard'),
     path('cv/public/<slug:slug>/', CVPublicView.as_view(), name='cv-public'),
     path('cv/update/<int:cv_id>/', CVUpdateView.as_view(), name='cv-update'),
+    path('cv/<int:cv_id>/', CVDetailView.as_view(), name='cv-detail'),
 
     # Resume Matching
     path('match-resume/', match_resume, name='match_resume'),

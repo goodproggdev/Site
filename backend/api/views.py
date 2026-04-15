@@ -22,7 +22,9 @@ from .models import (
     Item, CVData, Entitlement, CVLinkPolicy, JobProfile, JobMatch, UserProfile
 )
 from .serializers import ItemSerializer, CVDataSerializer
+from .request_identity import get_cv_owner_profile
 from .services.cv_service import parse_cv_from_file, validate_cv_file
+from .services.cv_public_access import resolve_public_cv
 from .services.job_adapters import JobSearchService
 from .services.job_matching import JobMatcher
 
@@ -38,29 +40,6 @@ class ItemListCreate(generics.ListCreateAPIView):
     queryset = Item.objects.all()
     serializer_class = ItemSerializer
     permission_classes = [IsAuthenticated]
-
-
-# ==============================================================================
-# API ROOT VIEW
-# ==============================================================================
-
-@api_view(['GET'])
-@permission_classes([AllowAny])
-def api_v1_root(request):
-    """Root view for API v1 — fornisce informazioni di base sugli endpoint."""
-    return Response({
-        "status": "active",
-        "version": "1.0.0",
-        "message": "Benvenuto nella Nordevit CV Platform API v1",
-        "endpoints": {
-            "authentication": "/auth/token/",
-            "cv_management": "/api/v1/cv/",
-            "cv_parsing": "/api/v1/parse-cv-upload/",
-            "job_matching": "/api/v1/jobs/matches/",
-            "payments": "/api/v1/stripe/create-checkout/",
-            "dashboard": "/api/v1/dashboard/",
-        }
-    }, status=200)
 
 
 # ==============================================================================
@@ -95,19 +74,7 @@ def parse_cv_upload_view(request):
     POST /api/parse-cv-upload/
     Body: multipart/form-data con campo 'cv_file'
     """
-    # Check entitlement
-    has_entitlement = Entitlement.objects.filter(
-        user=request.user,
-        feature='cv_publish',
-        is_active=True
-    ).exists()
-
-    if not has_entitlement:
-        return Response(
-            {"error": "Feature non disponibile. Effettua il pagamento per pubblicare un CV."},
-            status=403
-        )
-
+    # Upload + parsing: consentito a ogni utente autenticato (il paywall resta su pubblicazione / piani).
     if 'cv_file' not in request.FILES:
         return Response({"error": "Nessun file CV caricato. Usa il campo 'cv_file'."}, status=400)
 
@@ -127,8 +94,11 @@ def parse_cv_upload_view(request):
 
     # Salva il risultato nel DB
     try:
+        profile = get_cv_owner_profile(request)
+        if not profile:
+            return Response({"error": "Profilo utente non disponibile."}, status=401)
         cv = CVData.objects.create(
-            user=request.user,
+            user=profile,
             raw_json=result,
             original_filename=cv_file.name,
             structured_profile=result.get('structured', {}),
@@ -160,8 +130,11 @@ def parse_cv_upload_view(request):
 @permission_classes([IsAuthenticated])
 def check_entitlement(request, feature):
     """Check if user has entitlement for a specific feature."""
+    profile = get_cv_owner_profile(request)
+    if not profile:
+        return Response({"error": "Profilo utente non disponibile."}, status=401)
     entitlement = Entitlement.objects.filter(
-        user=request.user,
+        user=profile,
         feature=feature,
         is_active=True
     ).first()
@@ -183,8 +156,11 @@ def check_entitlement(request, feature):
 @permission_classes([IsAuthenticated])
 def list_entitlements(request):
     """List all active entitlements for the user."""
+    profile = get_cv_owner_profile(request)
+    if not profile:
+        return Response([])
     entitlements = Entitlement.objects.filter(
-        user=request.user,
+        user=profile,
         is_active=True
     )
 
@@ -197,7 +173,7 @@ def list_entitlements(request):
             "is_valid": e.is_valid(),
         })
 
-    return Response({"entitlements": data})
+    return Response(data)
 
 
 # ==============================================================================
@@ -209,7 +185,10 @@ def list_entitlements(request):
 def cv_link_policy(request, cv_id):
     """Get or update CV link policy."""
     try:
-        cv = CVData.objects.get(id=cv_id, user=request.user)
+        profile = get_cv_owner_profile(request)
+        if not profile:
+            return Response({"error": "Profilo utente non disponibile."}, status=401)
+        cv = CVData.objects.get(id=cv_id, user=profile)
         policy, _ = CVLinkPolicy.objects.get_or_create(
             cv=cv,
             defaults={
@@ -245,6 +224,10 @@ def cv_link_policy(request, cv_id):
 
                 policy.save()
 
+            # Il frontend pubblico (`/u/:slug`) richiede `is_published` su CVData.
+            cv.is_published = True
+            cv.save(update_fields=['is_published', 'updated_at'])
+
             return Response({
                 "message": "Policy aggiornata con successo",
                 "visibility": policy.visibility,
@@ -260,7 +243,10 @@ def cv_link_policy(request, cv_id):
 def regenerate_cv_token(request, cv_id):
     """Regenerate access token for private CV link."""
     try:
-        cv = CVData.objects.get(id=cv_id, user=request.user)
+        profile = get_cv_owner_profile(request)
+        if not profile:
+            return Response({"error": "Profilo utente non disponibile."}, status=401)
+        cv = CVData.objects.get(id=cv_id, user=profile)
         policy = cv.link_policy
 
         if policy.visibility != 'private_tokenized':
@@ -282,9 +268,15 @@ def regenerate_cv_token(request, cv_id):
 def revoke_cv_access(request, cv_id):
     """Revoke access to a CV link."""
     try:
-        cv = CVData.objects.get(id=cv_id, user=request.user)
+        profile = get_cv_owner_profile(request)
+        if not profile:
+            return Response({"error": "Profilo utente non disponibile."}, status=401)
+        cv = CVData.objects.get(id=cv_id, user=profile)
         policy = cv.link_policy
         policy.revoke()
+
+        cv.is_published = False
+        cv.save(update_fields=['is_published', 'updated_at'])
 
         return Response({"message": "Accesso revocato con successo"})
 
@@ -300,9 +292,12 @@ def revoke_cv_access(request, cv_id):
 @permission_classes([IsAuthenticated])
 def get_job_matches(request):
     """Get job matches for the user's profile."""
+    profile = get_cv_owner_profile(request)
+    if not profile:
+        return Response({"error": "Profilo utente non disponibile."}, status=401)
     # Get or create job profile
     job_profile, _ = JobProfile.objects.get_or_create(
-        user=request.user,
+        user=profile,
         defaults={'skills': [], 'locations': []}
     )
 
@@ -336,9 +331,12 @@ def get_job_matches(request):
 @permission_classes([IsAuthenticated])
 def refresh_job_matches(request):
     """Search for new job matches and update the database."""
+    profile = get_cv_owner_profile(request)
+    if not profile:
+        return Response({"error": "Profilo utente non disponibile."}, status=401)
     # Get user's job profile
     job_profile, _ = JobProfile.objects.get_or_create(
-        user=request.user,
+        user=profile,
         defaults={'skills': [], 'locations': []}
     )
 
@@ -403,9 +401,12 @@ def refresh_job_matches(request):
 def update_job_match_status(request, match_id):
     """Update status of a job match (viewed, saved, applied, dismissed)."""
     try:
+        profile = get_cv_owner_profile(request)
+        if not profile:
+            return Response({"error": "Profilo utente non disponibile."}, status=401)
         match = JobMatch.objects.get(
             id=match_id,
-            job_profile__user=request.user
+            job_profile__user=profile
         )
 
         new_status = request.data.get('status')
@@ -461,7 +462,8 @@ def match_resume(request):
 @permission_classes([IsAuthenticated])
 def my_cv_list(request):
     """Lista i CV dell'utente autenticato."""
-    cv_list = CVData.objects.filter(user=request.user)
+    profile = get_cv_owner_profile(request)
+    cv_list = CVData.objects.filter(user=profile) if profile else CVData.objects.none()
     serializer = CVDataSerializer(cv_list, many=True)
     return Response(serializer.data)
 
@@ -471,7 +473,10 @@ def my_cv_list(request):
 def delete_cv(request, cv_id):
     """Elimina un CV dell'utente autenticato."""
     try:
-        cv = CVData.objects.get(id=cv_id, user=request.user)
+        profile = get_cv_owner_profile(request)
+        if not profile:
+            return Response({"error": "Profilo utente non disponibile."}, status=401)
+        cv = CVData.objects.get(id=cv_id, user=profile)
         cv.delete()
         return Response({"message": "CV eliminato."}, status=204)
     except CVData.DoesNotExist:
@@ -499,10 +504,14 @@ def create_stripe_checkout_view(request):
     success_url = f"{_frontend}/{_lang}/payment/success"
     cancel_url = f"{_frontend}/{_lang}/pricing"
 
-    # Passiamo user_id e cv_id (se presente) nei metadati per il webhook
+    profile = get_cv_owner_profile(request)
+    if not profile:
+        return Response({"error": "Profilo utente non trovato."}, status=400)
+
+    # Passiamo user_id (UserProfile.id) e cv_id nei metadati per il webhook Stripe
     cv_id = request.data.get("cv_id")
     metadata = {
-        "user_id": request.user.id,
+        "user_id": str(profile.id),
         "cv_id": cv_id,
         "plan_type": request.data.get("plan_type", "premium"),
         "feature": request.data.get("feature", "cv_publish"),
@@ -512,7 +521,7 @@ def create_stripe_checkout_view(request):
         price_id=price_id,
         success_url=success_url,
         cancel_url=cancel_url,
-        customer_email=request.user.email,
+        customer_email=profile.email,
         metadata=metadata
     )
 
@@ -588,6 +597,18 @@ def stripe_webhook_view(request):
 
                 logger.info(f"Entitlement {feature} created for {user.email}")
 
+                # Pubblica il CV collegato al checkout (metadata `cv_id`), se presente.
+                if feature == 'cv_publish' and metadata.get('cv_id'):
+                    try:
+                        cv_pk = int(metadata['cv_id'])
+                        cv_pub = CVData.objects.filter(id=cv_pk, user=user).first()
+                        if cv_pub:
+                            cv_pub.is_published = True
+                            cv_pub.save(update_fields=['is_published', 'updated_at'])
+                            logger.info("CV id=%s impostato is_published da webhook Stripe.", cv_pk)
+                    except (TypeError, ValueError) as e:
+                        logger.warning("cv_id metadata non valido nel webhook Stripe: %s", e)
+
         except Exception as e:
             logger.error(f"Errore nel webhook Stripe: {e}")
 
@@ -603,7 +624,10 @@ class CVDashboardView(APIView):
 
     def get(self, request):
         """Ritorna la lista dei CV dell'utente con statistiche."""
-        cvs = CVData.objects.filter(user=request.user)
+        profile = get_cv_owner_profile(request)
+        if not profile:
+            return Response({"cvs": [], "stats": {"total_cvs": 0, "total_visits": 0, "plan": "free"}}, status=status.HTTP_200_OK)
+        cvs = CVData.objects.filter(user=profile)
         data = []
         for cv in cvs:
             # Get link policy if exists
@@ -631,7 +655,7 @@ class CVDashboardView(APIView):
         user_stats = {
             "total_cvs": cvs.count(),
             "total_visits": sum(cv.visits_count for cv in cvs),
-            "plan": request.user.plan,
+            "plan": profile.plan,
         }
 
         return Response({"cvs": data, "stats": user_stats}, status=status.HTTP_200_OK)
@@ -642,28 +666,32 @@ class CVPublicView(APIView):
 
     def get(self, request, slug):
         """Visualizza un CV tramite slug e incrementa le visite."""
-        # Check for token-based access
-        token = request.query_params.get('token')
-
-        try:
-            cv = CVData.objects.get(slug=slug, is_published=True)
-
-            # Check link policy
-            policy = getattr(cv, 'link_policy', None)
-            if policy:
-                if not policy.is_accessible():
-                    return Response({"error": "CV non accessibile o link scaduto."}, status=403)
-
-                if policy.visibility == 'private_tokenized':
-                    if not token or token != policy.access_token:
-                        return Response({"error": "Token di accesso non valido."}, status=403)
-
-            cv.visits_count += 1
-            cv.save(update_fields=['visits_count'])
-            return Response(cv.raw_json, status=status.HTTP_200_OK)
-
-        except CVData.DoesNotExist:
+        token = request.query_params.get("token")
+        cv, err = resolve_public_cv(slug, token)
+        if err == 404:
             return Response({"error": "CV non trovato o non pubblicato."}, status=404)
+        if err == 403:
+            return Response({"error": "CV non accessibile o link scaduto."}, status=403)
+
+        cv.visits_count += 1
+        cv.save(update_fields=["visits_count"])
+        return Response(cv.raw_json, status=status.HTTP_200_OK)
+
+
+class CVDetailView(APIView):
+    """Dettaglio CV (incluso raw_json) per il proprietario autenticato."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, cv_id):
+        try:
+            profile = get_cv_owner_profile(request)
+            if not profile:
+                return Response({"error": "Profilo utente non disponibile."}, status=401)
+            cv = CVData.objects.get(id=cv_id, user=profile)
+            return Response(CVDataSerializer(cv).data)
+        except CVData.DoesNotExist:
+            return Response({"error": "CV non trovato."}, status=404)
 
 
 class CVUpdateView(APIView):
@@ -672,7 +700,10 @@ class CVUpdateView(APIView):
     def post(self, request, cv_id):
         """Modifica i dati di un CV esistente."""
         try:
-            cv = CVData.objects.get(id=cv_id, user=request.user)
+            profile = get_cv_owner_profile(request)
+            if not profile:
+                return Response({"error": "Profilo utente non disponibile."}, status=401)
+            cv = CVData.objects.get(id=cv_id, user=profile)
             new_data = request.data.get('cv_data')
             if new_data:
                 cv.raw_json = new_data
@@ -694,7 +725,9 @@ def send_verification_email_view(request):
     from .services.email_service import send_verification_email
     from django.conf import settings
 
-    user = request.user
+    user = get_cv_owner_profile(request)
+    if not user:
+        return Response({"error": "Profilo utente non disponibile."}, status=401)
 
     if user.is_email_verified:
         return Response({"error": "Email is already verified"}, status=400)
@@ -755,7 +788,9 @@ def verify_email_view(request):
 @permission_classes([IsAuthenticated])
 def email_verification_status_view(request):
     """Get current user's email verification status."""
-    user = request.user
+    user = get_cv_owner_profile(request)
+    if not user:
+        return Response({"error": "Profilo utente non disponibile."}, status=401)
     return Response({
         "email": user.email,
         "is_verified": user.is_email_verified,

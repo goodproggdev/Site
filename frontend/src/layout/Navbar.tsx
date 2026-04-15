@@ -1,22 +1,31 @@
 import { useState, useRef, useEffect, MouseEvent } from 'react';
 import { Modal, TextInput, Button, DarkThemeToggle } from 'flowbite-react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import LanguageSelector from '../components/LanguageSelector';
 import { login as apiLogin, logout as apiLogout, register as apiRegister } from '../api/cvApi';
 import { isValidPassword } from '../utils/password';
 import { isValidEmail } from '../utils/email';
-import { formatAndLocalizeDrfErrors } from '../utils/apiErrorI18n';
+import { authErrorMessageFromAxios, formatAndLocalizeDrfErrors } from '../utils/apiErrorI18n';
+import { useHasSessionToken } from '../hooks/useHasSessionToken';
 import axios from 'axios';
+import { trackEvent } from '../analytics/ga4';
 
 const Navbar: React.FC = () => {
 	const { t } = useTranslation();
 	const { lang = 'it' } = useParams<{ lang?: string }>();
+	const navigate = useNavigate();
+	const { pathname } = useLocation();
+	const isLandingHome = /^\/(it|en)\/?$/.test(pathname);
+
+	const openLandingUpload = () => {
+		window.dispatchEvent(new CustomEvent('open-landing-upload'));
+	};
 	
 	const [isLoginOpen, setIsLoginOpen] = useState(false);
 	const [isSignupOpen, setIsSignupOpen] = useState(false);
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-	const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem('access_token'));
+	const isLoggedIn = useHasSessionToken();
 	
 	// Form states
 	const [loginEmail, setLoginEmail] = useState('');
@@ -145,14 +154,13 @@ const Navbar: React.FC = () => {
 		setLoginSubmitting(true);
 		try {
 			await apiLogin({ email: emailTrim, password: loginPassword }, { signal: ac.signal });
-			setIsLoggedIn(true);
+			trackEvent('login', { method: 'email' });
 			closeLoginModal();
+			navigate(`/${lang}/dashboard`, { replace: true });
 		} catch (e) {
 			if (axios.isCancel(e)) return;
-			if (axios.isAxiosError(e) && e.response?.data) {
-				setLoginError(formatAndLocalizeDrfErrors(e.response.data, t));
-			} else if (axios.isAxiosError(e) && !e.response) {
-				setLoginError(t('auth.networkError'));
+			if (axios.isAxiosError(e)) {
+				setLoginError(authErrorMessageFromAxios(e, t));
 			} else {
 				setLoginError(t('auth.login.genericError'));
 			}
@@ -206,15 +214,16 @@ const Navbar: React.FC = () => {
 				return;
 			}
 			if (result.authenticated) {
-				setIsLoggedIn(true);
+				trackEvent('sign_up', { method: 'email' });
 				closeSignupModal();
+				navigate(`/${lang}/dashboard`, { replace: true });
 				return;
 			}
 			setSignupInfo(t('auth.signup.pendingVerification'));
 		} catch (e) {
 			if (axios.isCancel(e)) return;
-			if (axios.isAxiosError(e) && !e.response) {
-				setSignupError(t('auth.networkError'));
+			if (axios.isAxiosError(e)) {
+				setSignupError(authErrorMessageFromAxios(e, t));
 			} else {
 				setSignupError(t('errors.generic'));
 			}
@@ -227,8 +236,8 @@ const Navbar: React.FC = () => {
 	const logout = async () => {
 		try {
 			await apiLogout();
-		} finally {
-			setIsLoggedIn(false);
+		} catch {
+			/* ignore */
 		}
 	};
 
@@ -242,17 +251,6 @@ const Navbar: React.FC = () => {
 		document.addEventListener('click', handleClickOutside);
 		return () => document.removeEventListener('click', handleClickOutside);
 	}, [mobileMenuOpen]);
-
-	// Stato login allineato tra tab (logout / login in un’altra finestra)
-	useEffect(() => {
-		const onStorage = (e: StorageEvent) => {
-			if (e.key === 'access_token' || e.key === 'refresh_token') {
-				setIsLoggedIn(!!localStorage.getItem('access_token'));
-			}
-		};
-		window.addEventListener('storage', onStorage);
-		return () => window.removeEventListener('storage', onStorage);
-	}, []);
 
 	useEffect(() => {
 		return () => {
@@ -269,7 +267,14 @@ const Navbar: React.FC = () => {
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
-	const navLinks = [
+	useEffect(() => {
+		const handler = () => openLoginModal();
+		window.addEventListener('open-login', handler);
+		return () => window.removeEventListener('open-login', handler);
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
+
+	const marketingNavLinks = [
 		{ href: `/${lang}#home`, label: t('layout.navbar.menu.home') },
 		{ href: `/${lang}#about`, label: t('layout.navbar.menu.about') },
 		{ href: `/${lang}#services`, label: t('layout.navbar.menu.services') },
@@ -277,40 +282,59 @@ const Navbar: React.FC = () => {
 		{ href: `/${lang}#contact`, label: t('layout.navbar.menu.contact') },
 	];
 
+	const navItemClass =
+		'text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors duration-200 cursor-pointer';
+
 	return (
 		<>
 			<nav className="bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-800 sticky top-0 z-50">
 				<div className="mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-8">
 					<div className="flex items-center justify-between h-16">
 						{/* Logo */}
-						<Link to={`/${lang}`} className="flex items-center gap-2">
+						<Link to={isLoggedIn ? `/${lang}/dashboard` : `/${lang}`} className="flex items-center gap-2">
 							<img src="/logo-nordev.png" className="h-8 w-8" alt={t('layout.navbar.brand')} />
 							<span className="text-xl font-bold text-indigo-600 dark:text-indigo-400">{t('layout.navbar.brand')}</span>
 						</Link>
 
 						{/* Desktop Navigation */}
-						<div className="hidden md:flex items-center gap-8">
-							{navLinks.map((link) => (
-								<a
-									key={link.href}
-									href={link.href}
-									className="text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
+						<div className="hidden md:flex items-center gap-6 lg:gap-8">
+							{isLandingHome ? (
+								<button
+									type="button"
+									onClick={openLandingUpload}
+									className="btn-primary shrink-0 px-4 py-2 text-sm"
 								>
-									{link.label}
-								</a>
-							))}
-						{isLoggedIn && (
-							<>
-								<Link to={`/${lang}/dashboard`} className="text-sm font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
-									{t('layout.navbar.auth.dashboard')}
-								</Link>
-								<button type="button" onClick={logout} className="btn-ghost text-sm">
-									{t('layout.navbar.auth.logout')}
+									{t('layout.navbar.ctaUpload')}
 								</button>
-							</>
-						)}
-							{!isLoggedIn && (
+							) : null}
+							{isLoggedIn ? (
 								<>
+									<Link
+										to={`/${lang}/dashboard`}
+										className="text-sm font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 cursor-pointer"
+									>
+										{t('layout.navbar.auth.dashboard')}
+									</Link>
+									<Link to={`/${lang}/settings`} className={navItemClass}>
+										{t('layout.navbar.app.settings')}
+									</Link>
+									<Link to={`/${lang}/settings?tab=billing`} className={navItemClass}>
+										{t('layout.navbar.app.pricing')}
+									</Link>
+									<Link to={`/${lang}/builder`} className={navItemClass}>
+										{t('layout.navbar.app.site')}
+									</Link>
+									<button type="button" onClick={logout} className="btn-ghost text-sm">
+										{t('layout.navbar.auth.logout')}
+									</button>
+								</>
+							) : (
+								<>
+									{marketingNavLinks.map((link) => (
+										<a key={link.href} href={link.href} className={navItemClass}>
+											{link.label}
+										</a>
+									))}
 									<button
 										type="button"
 										onClick={(e) => openLoginModal(e)}
@@ -351,50 +375,88 @@ const Navbar: React.FC = () => {
 					{mobileMenuOpen && (
 						<div ref={mobileMenuRef} className="md:hidden py-4 border-t border-gray-200 dark:border-gray-800">
 							<div className="flex flex-col gap-2">
-								{navLinks.map((link) => (
-									<a
-										key={link.href}
-										href={link.href}
-										onClick={() => setMobileMenuOpen(false)}
-										className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-800"
+								{isLandingHome ? (
+									<button
+										type="button"
+										onClick={() => {
+											openLandingUpload();
+											setMobileMenuOpen(false);
+										}}
+										className="btn-primary w-full justify-center py-3 text-sm"
 									>
-										{link.label}
-									</a>
-								))}
+										{t('layout.navbar.ctaUpload')}
+									</button>
+								) : null}
 								{isLoggedIn ? (
 									<>
-										<Link 
-											to={`/${lang}/dashboard`} 
+										<Link
+											to={`/${lang}/dashboard`}
 											onClick={() => setMobileMenuOpen(false)}
-											className="px-3 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-50 rounded-lg dark:text-indigo-400 dark:hover:bg-indigo-900/20"
+											className="px-3 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-50 rounded-lg dark:text-indigo-400 dark:hover:bg-indigo-900/20 cursor-pointer"
 										>
-													{t('layout.navbar.auth.dashboard')}
-												</Link>
-												<button
-													type="button"
-													onClick={() => { logout(); setMobileMenuOpen(false); }}
-													className="px-3 py-2 text-sm font-medium text-left text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg dark:text-gray-400 dark:hover:text-white"
-												>
-													{t('layout.navbar.auth.logout')}
-												</button>
+											{t('layout.navbar.auth.dashboard')}
+										</Link>
+										<Link
+											to={`/${lang}/settings`}
+											onClick={() => setMobileMenuOpen(false)}
+											className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-800 cursor-pointer"
+										>
+											{t('layout.navbar.app.settings')}
+										</Link>
+										<Link
+											to={`/${lang}/settings?tab=billing`}
+											onClick={() => setMobileMenuOpen(false)}
+											className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-800 cursor-pointer"
+										>
+											{t('layout.navbar.app.pricing')}
+										</Link>
+										<Link
+											to={`/${lang}/builder`}
+											onClick={() => setMobileMenuOpen(false)}
+											className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-800 cursor-pointer"
+										>
+											{t('layout.navbar.app.site')}
+										</Link>
+										<button
+											type="button"
+											onClick={() => {
+												void logout();
+												setMobileMenuOpen(false);
+											}}
+											className="px-3 py-2 text-sm font-medium text-left text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg dark:text-gray-400 dark:hover:text-white"
+										>
+											{t('layout.navbar.auth.logout')}
+										</button>
 									</>
 								) : (
-									<div className="flex flex-col gap-2 pt-2 border-t border-gray-200 dark:border-gray-800">
-										<button
-											type="button"
-											onClick={(e) => openLoginModal(e)}
-											className="btn-secondary w-full justify-center dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:border-gray-500 dark:hover:bg-gray-700"
-										>
-											{t('auth.login.title')}
-										</button>
-										<button
-											type="button"
-											onClick={(e) => openSignupModal(e)}
-											className="btn-primary w-full justify-center"
-										>
-											{t('auth.signup.title')}
-										</button>
-									</div>
+									<>
+										{marketingNavLinks.map((link) => (
+											<a
+												key={link.href}
+												href={link.href}
+												onClick={() => setMobileMenuOpen(false)}
+												className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-800 cursor-pointer"
+											>
+												{link.label}
+											</a>
+										))}
+										<div className="flex flex-col gap-2 pt-2 border-t border-gray-200 dark:border-gray-800">
+											<button
+												type="button"
+												onClick={(e) => openLoginModal(e)}
+												className="btn-secondary w-full justify-center dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:border-gray-500 dark:hover:bg-gray-700"
+											>
+												{t('auth.login.title')}
+											</button>
+											<button
+												type="button"
+												onClick={(e) => openSignupModal(e)}
+												className="btn-primary w-full justify-center"
+											>
+												{t('auth.signup.title')}
+											</button>
+										</div>
+									</>
 								)}
 							</div>
 						</div>

@@ -49,8 +49,13 @@ export function useAuth(): UseAuthReturn {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setIsLoggedIn(isAuthenticated());
-    setUser(getUserFromToken());
+    const sync = () => {
+      setIsLoggedIn(isAuthenticated());
+      setUser(getUserFromToken());
+    };
+    sync();
+    window.addEventListener("auth-token-changed", sync);
+    return () => window.removeEventListener("auth-token-changed", sync);
   }, []);
 
   const login = useCallback(async (credentials: LoginCredentials): Promise<boolean> => {

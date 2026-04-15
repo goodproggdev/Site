@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { getRouteLangFromBrowser } from '../utils/localizedPath';
+import { ensureGa4ScriptForAcceptedUser, trackPageView } from '../analytics/ga4';
 
 const CookieConsent: React.FC = () => {
     const { t } = useTranslation();
@@ -15,6 +17,16 @@ const CookieConsent: React.FC = () => {
     const handleAccept = () => {
         localStorage.setItem('cookie-consent', 'accepted');
         setIsVisible(false);
+        void ensureGa4ScriptForAcceptedUser().then((ok) => {
+            if (ok) {
+                trackPageView(window.location.pathname + window.location.search);
+            }
+        });
+    };
+
+    const handleReject = () => {
+        localStorage.setItem('cookie-consent', 'rejected');
+        setIsVisible(false);
     };
 
     if (!isVisible) return null;
@@ -25,19 +37,21 @@ const CookieConsent: React.FC = () => {
                 <div className="text-sm text-gray-600 dark:text-gray-400">
                     <p>
                         {t('components.cookieConsent.text')}{' '}
-                        <a href="/privacy" className="text-indigo-600 hover:underline font-medium">{t('components.cookieConsent.privacyLink')}</a>.
+                        <a href={`/${getRouteLangFromBrowser()}/privacy`} className="text-indigo-600 hover:underline font-medium cursor-pointer">{t('components.cookieConsent.privacyLink')}</a>.
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
                     <button 
-                        onClick={() => setIsVisible(false)}
-                        className="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 px-3 py-2"
+                        type="button"
+                        onClick={handleReject}
+                        className="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 px-3 py-2 cursor-pointer"
                     >
                         {t('components.cookieConsent.reject')}
                     </button>
                     <button 
+                        type="button"
                         onClick={handleAccept}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold px-6 py-2 rounded-lg transition-colors shadow-md shadow-indigo-200 dark:shadow-none"
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold px-6 py-2 rounded-lg transition-colors duration-200 shadow-md shadow-indigo-200 dark:shadow-none cursor-pointer"
                     >
                         {t('components.cookieConsent.accept')}
                     </button>

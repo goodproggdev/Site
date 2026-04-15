@@ -54,6 +54,12 @@ SITE_DOMAIN = config('SITE_DOMAIN', default='localhost:8000')
 # URL del frontend (Vite): email reset/conferme e link assoluti verso la SPA
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:5173')
 FRONTEND_DEFAULT_LANG = config('FRONTEND_DEFAULT_LANG', default='it')
+# HTML server-side per /u/<slug>/ (snippet SEO senza JS). Path a frontend/dist/index.html dopo `npm run build`.
+FRONTEND_DIST_INDEX_HTML = config('FRONTEND_DIST_INDEX_HTML', default='')
+# Origine assoluta per /assets/... (vuoto = stesso host della richiesta, es. reverse proxy su un solo dominio).
+FRONTEND_ASSET_ORIGIN = config('FRONTEND_ASSET_ORIGIN', default='').rstrip('/')
+# Immagine Open Graph assoluta per i CV pubblici (opzionale; default: FRONTEND_URL + /logo-nordev.png lato view).
+PUBLIC_CV_OG_IMAGE = config('PUBLIC_CV_OG_IMAGE', default='')
 
 # ==============================================================================
 # JWT & REST FRAMEWORK
@@ -85,6 +91,7 @@ SIMPLE_JWT = {
     'ALGORITHM': 'HS256',
     'AUTH_HEADER_TYPES': ('Bearer',),
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_OBTAIN_SERIALIZER': 'mybackend.jwt_serializers.EmailTokenObtainPairSerializer',
 }
 
 REST_AUTH = {
@@ -242,6 +249,28 @@ if config('USE_S3_STORAGE', default=False, cast=bool):
     AWS_DEFAULT_ACL = None
     AWS_QUERYSTRING_AUTH = False
     DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+# ==============================================================================
+# PARSING CV (OpenAI opzionale — il pacchetto resume-parser su PyPI è rule-based + spaCy)
+# ==============================================================================
+CV_PARSE_USE_OPENAI = config('CV_PARSE_USE_OPENAI', default=False, cast=bool)
+OPENAI_API_KEY = config('OPENAI_API_KEY', default='')
+OPENAI_CV_MODEL = config('OPENAI_CV_MODEL', default='gpt-4o-mini')
+
+# Estrazione testo: soglia minima caratteri; sotto soglia si tenta LibreOffice (DOC/DOCX) e vision PDF
+CV_EXTRACT_MIN_CHARS = config('CV_EXTRACT_MIN_CHARS', default=80, cast=int)
+CV_LIBREOFFICE_BIN = config('CV_LIBREOFFICE_BIN', default='')
+CV_LIBREOFFICE_TIMEOUT = config('CV_LIBREOFFICE_TIMEOUT', default=90, cast=int)
+
+# PDF scannerizzato: parsing strutturato via modello vision (richiede pymupdf + OPENAI_API_KEY)
+CV_PARSE_USE_PDF_VISION = config('CV_PARSE_USE_PDF_VISION', default=False, cast=bool)
+OPENAI_CV_VISION_MODEL = config('OPENAI_CV_VISION_MODEL', default='gpt-4o-mini')
+CV_PDF_VISION_MAX_PAGES = config('CV_PDF_VISION_MAX_PAGES', default=3, cast=int)
+
+# PDF scannerizzato: fallback opzionale via Google Gemini (PDF inline; richiede google-generativeai)
+CV_PARSE_USE_GEMINI_PDF = config('CV_PARSE_USE_GEMINI_PDF', default=False, cast=bool)
+GEMINI_API_KEY = config('GEMINI_API_KEY', default='')
+GEMINI_CV_PDF_MODEL = config('GEMINI_CV_PDF_MODEL', default='gemini-1.5-flash')
 
 # ==============================================================================
 # INTERNAZIONALIZZAZIONE

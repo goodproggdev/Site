@@ -3,6 +3,7 @@ import { Button } from "flowbite-react";
 import { loadStripe } from "@stripe/stripe-js";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
+import { trackEvent } from "../analytics/ga4";
 
 const PricingSection: React.FC = () => {
 	const { t } = useTranslation();
@@ -32,6 +33,7 @@ const PricingSection: React.FC = () => {
 	);
 
 	const handleCheckout = async (priceId: string) => {
+		trackEvent("begin_checkout", { price_id: priceId });
 		try {
 			const stripe = await stripePromise;
 

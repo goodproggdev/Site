@@ -4,6 +4,18 @@
     "checkoutRetry": "Please try again later.",
     "checkoutNetwork": "Could not connect to the server."
   },
+  "landing": {
+    "trustStrip": {
+      "eyebrow": "Built for LinkedIn traffic",
+      "quote": "I put my digital CV link in my bio and applications—fewer heavy PDFs, faster replies.",
+      "author": "Tech professional, Nordevit user"
+    },
+    "differentiators": {
+      "aboutEyebrow": "Why it works",
+      "imageAlt": "Example of a professional digital CV"
+    },
+    "mobileCta": "Upload CV — see preview"
+  },
   "marketing": {
     "home": {
       "title": "Your digital CV in 2 minutes",
@@ -31,38 +43,55 @@
       }
     },
     "pricing": {
-      "title": "Choose your plan",
-      "subtitle": "Invest in your professional future without monthly commitments",
+      "eyebrow": "Publishing",
+      "title": "Pay when you publish online",
+      "subtitle": "Create and review your preview for free. Payment only turns on hosting, SSL, and your public link.",
+      "publishFraming": "After upload you can edit content and preview. Stripe handles checkout securely—nothing is charged until you pick a plan.",
+      "faqTitle": "Publishing questions",
+      "faq": [
+        {
+          "q": "Do I have to pay before I see my CV?",
+          "a": "No. Upload your file, review the preview, and refine your content. You only pay when you want the public link to go live."
+        },
+        {
+          "q": "What does the one-time plan include?",
+          "a": "Hosting for your digital CV, HTTPS, responsive layout, and a shareable link (e.g. on LinkedIn) for the term shown in the plan."
+        },
+        {
+          "q": "Can I use the monthly plan instead?",
+          "a": "Yes—same benefits with a smaller recurring payment. Cancel anytime from the Stripe customer portal."
+        }
+      ],
       "plans": {
         "onetime": {
-          "name": "Create your CV",
+          "name": "1-year publishing",
           "price": "€9.99",
           "period": "one-time",
           "periodNote": "valid for 1 year",
-          "badge": "Recommended",
-          "description": "Pay once and your online CV is yours for a full year. Renewable anytime.",
+          "badge": "Most popular",
+          "description": "Activate your public link and hosting for 12 months. Ideal if you arrive from LinkedIn ads and want a single decisive step.",
           "features": [
-            "Digital CV on professional domain",
-            "Premium hosting and SSL included",
-            "Responsive and elegant design",
-            "Easy sharing via link",
-            "Unlimited edits for 1 year"
+            "Professional public link + HTTPS",
+            "Hosting included for 1 year",
+            "Responsive layout recruiters can scan fast",
+            "Update your content whenever you want",
+            "Paste-ready for LinkedIn"
           ],
-          "cta": "Create now for €9.99"
+          "cta": "Unlock publishing — €9.99"
         },
         "monthly": {
-          "name": "Monthly Plan",
+          "name": "Monthly publishing",
           "price": "€2",
           "period": "/month",
           "badge": "Flexible",
-          "description": "Perfect if you prefer to pay a little at a time. Cancel anytime.",
+          "description": "Same product, lighter cash flow. Cancel on your own when you no longer need a live link.",
           "features": [
-            "Everything in the one-time plan",
-            "Low monthly payment",
-            "No commitment required",
-            "Instant cancellation"
+            "Same benefits as the annual option",
+            "Monthly billing via Stripe",
+            "No long-term lock-in",
+            "Instant cancellation in the portal"
           ],
-          "cta": "Subscribe for €2/month"
+          "cta": "Activate for €2/month"
         }
       }
     }
@@ -72,7 +101,7 @@
     "subtitle": "Have questions or need a custom plan? We're here to help you grow professionally.",
     "form": {
       "email": "Your email",
-      "emailPlaceholder": "name@company.com",
+      "emailPlaceholder": "you@example.com",
       "plan": "Interested in",
       "planPlaceholder": "Ex: Premium Plan",
       "subject": "Subject",
@@ -88,6 +117,13 @@
   },
   "builder": {
     "title": "Create Your CV",
+    "pageTitle": "Edit CV",
+    "backDashboard": "Back to dashboard",
+    "autosave": {
+      "saving": "Saving…",
+      "saved": "Saved",
+      "error": "Save failed — try again"
+    },
     "steps": {
       "upload": "Upload CV",
       "edit": "Customize",
@@ -96,9 +132,11 @@
     },
     "upload": {
       "title": "Upload Your Existing CV",
-      "description": "We support PDF, DOCX, and TXT. We automatically extract information.",
+      "description": "We support PDF, DOCX, DOC, and TXT. We automatically extract information.",
       "dropzone": "Drag your file here or click to select",
-      "formats": "Supported formats: PDF, DOCX, TXT (max 10MB)"
+      "formats": "Supported formats: PDF, DOCX, DOC, TXT (max 10MB)",
+      "extractionWarningPdfNoText": "This PDF looks like a scan without a selectable text layer, so automatic extraction may be incomplete.",
+      "extractionWarningPdfNoTextHint": "Upload a PDF with selectable text, or DOC/DOCX, or ask your administrator to enable advanced PDF parsing on the server."
     },
     "form": {
       "personalInfo": "Personal Information",
@@ -121,7 +159,22 @@
         "lastName": "Doe",
         "email": "john.doe@example.com",
         "phone": "+1 234 567 890",
-        "summary": "Brief description of your skills and professional goals..."
+        "summary": "Brief description of your skills and professional goals...",
+        "period": "e.g. 2022 – present",
+        "jobTitle": "e.g. Full-stack developer",
+        "companyNotes": "e.g. Acme Inc. — product team",
+        "degree": "e.g. M.Sc. Computer Science",
+        "school": "e.g. State University",
+        "skillName": "e.g. TypeScript"
+      },
+      "list": {
+        "emptyHint": "No entries yet. Use “Add” to create one.",
+        "period": "Period",
+        "jobTitle": "Role",
+        "companyNotes": "Company / context",
+        "degree": "Degree / program",
+        "school": "Institution",
+        "skillName": "Skill"
       }
     },
     "preview": {
@@ -139,8 +192,17 @@
     },
     "publish": {
       "title": "Publish",
+      "intro": "You already reviewed the preview: this step activates the public link and hosting. Jump to pricing if you need a quick recap.",
+      "introLink": "View pricing",
+      "linkedInLanding": "The link you paste on LinkedIn (or in email / applications) opens your public CV page (a URL like …/u/your-slug), not the marketing homepage.",
+      "publicPageNote": "The page slug is created automatically when the CV is saved; the page is reachable at that URL once you enable publishing and your plan. A dedicated, stable page can be indexed by search engines, so people searching your name or skills have another entry point beyond LinkedIn alone (indexing timing and ranking depend on the search engines).",
+      "linkedInEditHint": "To add the link on your profile: open LinkedIn (button below), go to Websites, pick “Other”, and paste the URL. If the page is not published yet, the link will work after you publish and activate your plan.",
+      "copyLinkedInSnippet": "Copy text for LinkedIn",
+      "openLinkedInProfile": "Open LinkedIn (profile websites)",
+      "shareTitle": "My digital CV",
+      "shareDone": "Share sheet opened",
       "success": "CV Published!",
-      "successMessage": "Your CV is now online and ready to be shared.",
+      "successMessage": "Your CV is live: share the link on LinkedIn — visitors land directly on your public page.",
       "linkLabel": "Your CV Link",
       "copy": "Copy",
       "view": "View CV",
@@ -153,6 +215,51 @@
       "customUrl": "Custom URL (optional)",
       "publishing": "Publishing...",
       "publishButton": "Publish CV"
+    }
+  },
+  "cvEditor": {
+    "title": "CV site editor",
+    "subtitle": "Preview and theme: changes autosave to your CV.",
+    "invalidId": "Invalid CV id.",
+    "notFound": "CV not found or not accessible.",
+    "loadError": "Could not load the CV.",
+    "saveError": "Save failed.",
+    "saved": "Saved",
+    "saving": "Saving…",
+    "saveNow": "Save now",
+    "backDashboard": "Dashboard",
+    "openPublic": "Open public site",
+    "openPublicUnavailable": "Slug unavailable",
+    "previewRegion": "CV preview",
+    "properties": "Properties",
+    "accent": "Color accent",
+    "accentIndigo": "Indigo",
+    "accentViolet": "Violet",
+    "accentTeal": "Teal",
+    "headline": "Headline name",
+    "tagline": "Title / role",
+    "summary": "Summary",
+    "persistNote": "Data is stored in raw_json. Public visibility depends on publish status and link policy (Settings). There is no separate draft: saved data is the profile data.",
+    "draftVsPublished": "Publishing: if the CV is a draft, the public link may be inactive until you publish from the publish flow.",
+    "sections": {
+      "workExperience": "Work experience",
+      "education": "Education",
+      "skills": "Skills",
+      "emptyWorkExperience": "No work experience added yet.",
+      "emptyEducation": "No education added yet.",
+      "emptySkills": "No skills added yet."
+    },
+    "lists": {
+      "editWorkExperience": "Work experience",
+      "editEducation": "Education",
+      "editSkills": "Skills",
+      "addRow": "Add entry",
+      "removeRow": "Remove",
+      "period": "Period",
+      "itemTitle": "Title",
+      "subtitle": "Subtitle / company or school",
+      "skillName": "Skill name",
+      "skillLevel": "Level (optional)"
     }
   },
   "dashboard": {
@@ -170,7 +277,17 @@
       "draft": "Draft",
       "views": "views",
       "noCvs": "You don't have any CVs yet. Create your first digital CV from the home page.",
-      "startNow": "Get started →"
+      "startNow": "Get started →",
+      "viewPublic": "View public site",
+      "publicUrl": "Public CV link",
+      "draftUrlHint": "This URL will be reachable by everyone after you publish and your plan is active.",
+      "copyPublicUrl": "Copy link",
+      "copyForLinkedIn": "Copy text for LinkedIn",
+      "copiedSnippet": "LinkedIn text copied",
+      "linkedInSnippet": "My online CV (public page):\n{{url}}\n\nOn LinkedIn: Profile → Contact info → Websites → Other, and paste the link.",
+      "editContent": "Edit content (wizard)",
+      "editSite": "Style and copy editor",
+      "cvSettings": "CV and link settings"
     },
     "jobs": {
       "title": "Opportunities for You",
@@ -179,10 +296,47 @@
       "apply": "Apply",
       "save": "Save",
       "noJobs": "No offers available at the moment. Update your CV to receive more matches."
+    },
+    "support": {
+      "title": "Support",
+      "subtitle": "Message our team—we reply by email.",
+      "email": "Your email",
+      "subject": "Subject",
+      "subjectPlaceholder": "E.g. publishing issue / billing",
+      "message": "Message",
+      "messagePlaceholder": "Describe your question or issue clearly.",
+      "submit": "Send request",
+      "success": "Message sent. We will get back to you shortly.",
+      "error": "Could not send your message. Please try again later.",
+      "again": "Send another message"
     }
   },
   "settings": {
     "title": "Settings",
+    "tabs": {
+      "account": "Profile & security",
+      "privacy": "CV privacy",
+      "billing": "Subscription",
+      "language": "Language"
+    },
+    "account": {
+      "profileTitle": "Profile details",
+      "email": "Email",
+      "emailHint": "To change your email, contact support.",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "saveProfile": "Save profile",
+      "profileSaved": "Profile updated.",
+      "saveError": "Could not save profile.",
+      "loadError": "Could not load account data.",
+      "passwordTitle": "Password",
+      "currentPassword": "Current password",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm new password",
+      "changePassword": "Update password",
+      "passwordChanged": "Password updated. You can keep working; use the new password on next sign-in.",
+      "passwordError": "Could not update password."
+    },
     "privacy": {
       "title": "Privacy & CV Link",
       "visibility": {
@@ -226,6 +380,7 @@
   },
   "auth": {
     "rateLimited": "Too many attempts. Please wait a minute and try again.",
+    "serverError": "The service is temporarily unavailable. Please try again shortly.",
     "networkError": "Connection failed. Check your network and try again.",
     "login": {
       "title": "Sign In",
@@ -259,6 +414,7 @@
       "error": "This link is invalid or has expired.",
       "emailSent": "We have sent you another confirmation email.",
       "resendError": "Could not resend the email. Check the address or try again later.",
+      "errorNetwork": "Connection failed during verification. Check your network and try again, or request a new link.",
       "resendNeedEmail": "Enter the email you registered with.",
       "verifying": "Verifying",
       "pleaseWait": "Please wait…",
@@ -297,7 +453,12 @@
       "invalidLogin": "Invalid credentials.",
       "emailNotVerified": "Please verify your email address before signing in.",
       "invalidEmail": "Invalid email address.",
-      "verificationSent": "Verification email sent."
+      "verificationSent": "Verification email sent.",
+      "invalidVerifyKey": "This confirmation link is invalid or has expired. Request a new email below.",
+      "verifyResendNotAllowed": "We cannot resend a confirmation to this address right now.",
+      "passwordTooShort": "This password is too short.",
+      "passwordTooCommon": "This password is too common.",
+      "passwordNumeric": "This password cannot be entirely numeric."
     }
   },
   "errors": {
@@ -335,16 +496,18 @@
     "filter": "Filter",
     "sort": "Sort",
     "view": "View",
+    "copiedToClipboard": "Copied to clipboard",
     "share": "Share",
     "download": "Download",
     "print": "Print",
-    "trustNote": "Secure payment with Stripe. No hidden fees. Cancel anytime.",
+    "trustNote": "Secure Stripe checkout when you publish. Preview and edit without a card. Cancel monthly plans anytime.",
     "italian": "Italiano",
     "english": "English"
   },
   "layout": {
     "navbar": {
       "brand": "NORDEVIT",
+      "ctaUpload": "Upload CV",
       "menu": {
         "home": "Home",
         "about": "About",
@@ -357,6 +520,11 @@
         "signup": "Sign up",
         "logout": "Logout",
         "dashboard": "Dashboard"
+      },
+      "app": {
+        "site": "New CV",
+        "pricing": "Plan & billing",
+        "settings": "Settings"
       }
     },
     "footer": {
@@ -365,12 +533,15 @@
       "legal": "Legal",
       "links": {
         "home": "Home",
+        "dashboard": "Dashboard",
+        "support": "Support",
         "pricing": "Pricing",
         "contact": "Contact",
         "privacy": "Privacy Policy",
         "terms": "Terms of service"
       },
-      "rightsReserved": "All rights reserved."
+      "rightsReserved": "All rights reserved.",
+      "linkedinAria": "Nordevit on LinkedIn (opens in a new tab)"
     }
   },
   "cvBuilder": {
@@ -442,7 +613,7 @@
     "items": [
       {
         "value": "One link",
-        "label": "A single URL for your digital CV — share it on LinkedIn, email, and applications"
+        "label": "A stable URL for your CV — from LinkedIn, clicks go to your public page; it can also show up in search engines once it is live"
       },
       {
         "value": "HTTPS",
@@ -459,7 +630,7 @@
     "titleBefore": "Your ",
     "titleHighlight": "Digital Identity",
     "titleAfter": ", in a single link.",
-    "description": "Don't settle for a static PDF. Transform your career with a modern, interactive digital CV optimized for your LinkedIn profile. Premium hosting included.",
+    "description": "Go beyond a static PDF: a dedicated web page with a stable link (perfect for LinkedIn) and content you can update. When it is public, it can be indexed by search engines and broaden your presence beyond social profiles. HTTPS hosting included.",
     "analyzing": "Analyzing your CV... {{progress}}%",
     "dropTitle": "Drop your CV here (PDF, DOCX)",
     "dropSubtitle": "Start building your professional link in seconds",
@@ -515,18 +686,26 @@
     }
   },
   "welcome": {
-    "badge": "Setup in 2 minutes · No credit card required",
-    "title": "Your professional ",
-    "highlight": "digital CV",
-    "subtitle": "ready in 2 minutes.",
-    "description": "Upload your CV and get a professional link to share on LinkedIn, in applications, and via email. One-time payment, no monthly subscription.",
+    "badge": "Free preview · Pay only to publish",
+    "title": "Your CV as a ",
+    "highlight": "professional link",
+    "subtitle": "ready for LinkedIn.",
+    "description": "Upload PDF or Word, review the preview, then get a link like …/u/your-slug for LinkedIn or applications: clicks open your CV page, not the generic marketing site. The public page is created when you publish; the slug is assigned automatically on save. No charge until you enable publishing and a plan.",
+    "imageAlt": "Preview of a digital CV optimized for recruiters",
+    "outcomes": [
+      "Guided flow: upload → edit → live preview",
+      "Recruiter-friendly story: one page, no bulky attachments",
+      "Dedicated public link: from LinkedIn, visitors land on your page; it can be indexed by search engines once live",
+      "Payment only at the “Publish” step"
+    ],
     "cta": {
-      "primary": "Start now",
-      "secondary": "Upload existing CV"
+      "primary": "Upload CV — start free",
+      "secondary": "See interactive example",
+      "pricing": "What does publishing cost?"
     },
     "trustIndicators": {
-      "setup": "Setup in 2 minutes",
-      "noCard": "No credit card required"
+      "setup": "First results in minutes",
+      "noCard": "No card required for the preview"
     }
   },
   "howItWorks": {
@@ -539,11 +718,11 @@
       },
       {
         "title": "Get your link",
-        "description": "Receive a professional URL like nordevit.com/u/yourname."
+        "description": "On save you get a unique slug (e.g. nordevit.com/u/jane-doe-a1b2c3): that is your CV subpage. Until you publish, it stays private; the link you add on LinkedIn will point there."
       },
       {
-        "title": "Share and get interviews",
-        "description": "Paste the link on LinkedIn, in applications, and emails."
+        "title": "Publish when you are ready",
+        "description": "After the preview you pick a plan: the link goes live with hosting and HTTPS included."
       }
     ]
   },
@@ -574,14 +753,25 @@
       "buttons": {
         "cancel": "Cancel",
         "analyze": "Analyze",
-        "uploading": "Uploading..."
+        "uploading": "Uploading...",
+        "scanningDemo": "Scanning…",
+        "tryAnother": "Choose another file"
       },
       "alerts": {
         "unsupportedFormat": "Unsupported format! Please upload PDF, DOCX or TXT only.",
         "selectFile": "Please select a file before analyzing.",
         "success": "File uploaded successfully!",
         "error": "Error uploading file."
-      }
+      },
+      "needLogin": "Sign in to save the CV to your account and continue with the wizard.",
+      "needLoginHint": "Sign in with your email: the file will be parsed and saved under your CVs (dashboard).",
+      "demoHint": "You can run a preview scan on your file. To actually extract data and save the CV you need an account.",
+      "demoScanning": "Scanning…",
+      "demoStep1": "Reading the document…",
+      "demoStep2": "Extracting sections…",
+      "demoStep3": "Preparing preview…",
+      "demoCompleteTitle": "Preview complete",
+      "demoCompleteBody": "To save your CV and continue with the wizard, sign in or create an account. After you sign in, you can upload the same file again."
     },
     "modalUpload": {
       "title": "Upload a file",
@@ -612,7 +802,7 @@
       "descriptionPrivate": "No more sending heavy PDFs. Nordevit transforms your resume into a ",
       "descriptionHighlight": "Single Page Application",
       "descriptionHighlightSuffix": "that's lightning fast.",
-      "cta": "Discover Plans",
+      "cta": "See publishing prices",
       "defaultName": "Your Name",
       "defaultTitle": "Your Profession",
       "defaultSummary": "Forget sending old PDF files. With our platform, your professional profile is a modern Single Page Application on your domain."
@@ -669,7 +859,9 @@
   },
   "publicCV": {
     "notFound": "CV not found",
-    "backHome": "Back to Home"
+    "backHome": "Back to Home",
+    "pageTitle": "{{name}} — Digital CV | Nordevit",
+    "metaDescriptionFallback": "Digital CV for {{name}} — Nordevit."
   },
   "uploadModal": {
     "openButton": "Open upload",

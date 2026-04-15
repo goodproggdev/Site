@@ -92,6 +92,18 @@ export interface RegisterPayload {
   password2: string;
 }
 
+/** Risposta tipica `GET/PATCH /auth/user/` (dj-rest-auth). */
+export interface RestAuthUserDetails {
+  pk: number;
+  username: string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+}
+
 export interface ParseCVResponse extends CVParsedData {
   error?: string;
+  cv_id?: number;
+  slug?: string;
+  parsed_data?: CVParsedData;
 }

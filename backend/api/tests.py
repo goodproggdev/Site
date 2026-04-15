@@ -13,7 +13,7 @@ from django.contrib.auth import get_user_model
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 
-from api.models import Item, CVData
+from api.models import Item, CVData, UserProfile
 
 User = get_user_model()
 
@@ -21,6 +21,16 @@ User = get_user_model()
 # ==============================================================================
 # HELPERS
 # ==============================================================================
+
+def profile_for_django_user(user):
+    """Allinea i test ai FK verso UserProfile su CVData."""
+    email = (user.email or "").strip().lower()
+    prof, _ = UserProfile.objects.get_or_create(
+        email=email,
+        defaults={"first_name": getattr(user, "first_name", "") or "", "last_name": getattr(user, "last_name", "") or ""},
+    )
+    return prof
+
 
 def create_test_user(email="test@test.it", password="TestPass123!"):
     username = email.split("@")[0]
@@ -121,8 +131,8 @@ class CVDataAPITest(APITestCase):
     def test_cv_list_returns_only_own_cvs(self):
         """L'utente vede solo i propri CV."""
         other_user = create_test_user(email="other@test.it")
-        CVData.objects.create(user=other_user, raw_json={}, original_filename="other.pdf")
-        CVData.objects.create(user=self.user, raw_json={}, original_filename="mine.pdf")
+        CVData.objects.create(user=profile_for_django_user(other_user), raw_json={}, original_filename="other.pdf")
+        CVData.objects.create(user=profile_for_django_user(self.user), raw_json={}, original_filename="mine.pdf")
 
         response = self.client.get('/api/v1/cv/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -130,7 +140,7 @@ class CVDataAPITest(APITestCase):
 
     def test_delete_own_cv(self):
         """Elimina un proprio CV."""
-        cv = CVData.objects.create(user=self.user, raw_json={})
+        cv = CVData.objects.create(user=profile_for_django_user(self.user), raw_json={})
         response = self.client.delete(f'/api/v1/cv/{cv.id}/delete/')
         self.assertIn(response.status_code, [status.HTTP_204_NO_CONTENT, status.HTTP_200_OK])
         self.assertFalse(CVData.objects.filter(id=cv.id).exists())
@@ -138,7 +148,7 @@ class CVDataAPITest(APITestCase):
     def test_delete_other_user_cv_forbidden(self):
         """Non è possibile eliminare CV di altri utenti."""
         other_user = create_test_user(email="other2@test.it")
-        cv = CVData.objects.create(user=other_user, raw_json={})
+        cv = CVData.objects.create(user=profile_for_django_user(other_user), raw_json={})
         response = self.client.delete(f'/api/v1/cv/{cv.id}/delete/')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertTrue(CVData.objects.filter(id=cv.id).exists())
@@ -152,6 +162,8 @@ class CVUploadTest(APITestCase):
 
     def setUp(self):
         self.client = APIClient()
+        self.user = create_test_user(email="cvupload_parse@test.it", password="TestPass123!")
+        self.client.force_authenticate(user=self.user)
 
     def test_upload_without_file_returns_400(self):
         """Upload senza file → 400."""
@@ -181,6 +193,193 @@ class CVUploadTest(APITestCase):
             'cv_file': fake_file
         }, format='multipart')
         self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_422_UNPROCESSABLE_ENTITY])
+
+
+# ==============================================================================
+# TEST PIPELINE parse_cv_from_file (mock, nessuna rete)
+# ==============================================================================
+
+class CVParsePipelineUnitTest(TestCase):
+    """Verifica nordevit_extraction e fallback vision con dipendenze mockate."""
+
+    def setUp(self):
+        self._patcher = patch("api.services.cv_service.PARSING_FUNCTIONS_LOADED", True)
+        self._patcher.start()
+
+    def tearDown(self):
+        self._patcher.stop()
+
+    @patch("api.services.cv_openai_parse.try_openai_extracted_en", return_value=None)
+    @patch("api.services.cv_text_extract.resolve_vision_pdf_path", return_value=None)
+    @patch("api.services.cv_service.map_extracted_data_to_template")
+    @patch("api.services.cv_service.extract_with_spacy_italian_improved")
+    @patch("api.services.cv_service.extract_with_resume_parser_en")
+    @patch("api.services.cv_text_extract.extract_plain_text_pipeline")
+    def test_nordevit_extraction_on_mapped_result(
+        self,
+        mock_extract,
+        mock_resume_en,
+        mock_spacy,
+        mock_map,
+        _mock_resolve,
+        _mock_oai,
+    ):
+        from api.services.cv_service import parse_cv_from_file
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        mock_extract.return_value = (
+            "x" * 100,
+            {
+                "plain_text": "x" * 100,
+                "plain_text_truncated": False,
+                "char_count": 100,
+                "source": "pdf_pypdf",
+                "warnings": [],
+                "used_vision": False,
+                "used_gemini_pdf": False,
+                "used_libreoffice": False,
+            },
+        )
+        mock_resume_en.return_value = {"name": "Jane"}
+        mock_spacy.return_value = {}
+        mock_map.return_value = {"name": "Jane"}
+
+        f = SimpleUploadedFile("cv.pdf", b"%PDF-1.4", content_type="application/pdf")
+        out = parse_cv_from_file(f)
+        self.assertIn("nordevit_extraction", out)
+        self.assertEqual(out["nordevit_extraction"]["char_count"], 100)
+        self.assertFalse(out["nordevit_extraction"]["used_vision"])
+        self.assertEqual(out["nordevit_extraction"].get("structured_en_source"), "resume_parser_en")
+
+    @patch("api.services.cv_openai_parse.try_openai_extracted_en", return_value=None)
+    @patch("api.services.cv_pdf_vision_parse.try_pdf_vision_extracted_en")
+    @patch("api.services.cv_text_extract.resolve_vision_pdf_path", return_value="/tmp/mock.pdf")
+    @patch("api.services.cv_service.map_extracted_data_to_template")
+    @patch("api.services.cv_service.extract_with_spacy_italian_improved")
+    @patch("api.services.cv_service.extract_with_resume_parser_en")
+    @patch("api.services.cv_text_extract.extract_plain_text_pipeline")
+    def test_pdf_vision_merges_when_weak_text(
+        self,
+        mock_extract,
+        mock_resume_en,
+        mock_spacy,
+        mock_map,
+        _mock_resolve,
+        mock_vision,
+        _mock_oai,
+    ):
+        from api.services.cv_service import parse_cv_from_file
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        mock_extract.return_value = (
+            "",
+            {
+                "plain_text": None,
+                "plain_text_truncated": False,
+                "char_count": 0,
+                "source": "pdf_pypdf",
+                "warnings": ["pdf_no_text_layer"],
+                "used_vision": False,
+                "used_gemini_pdf": False,
+                "used_libreoffice": False,
+            },
+        )
+        mock_resume_en.return_value = {"error": "weak"}
+        mock_spacy.return_value = {}
+        mock_vision.return_value = {"name": "Vision User", "email": "v@example.com"}
+        mock_map.return_value = {"name": "Vision User"}
+
+        f = SimpleUploadedFile("scan.pdf", b"%PDF-1.4", content_type="application/pdf")
+        out = parse_cv_from_file(f)
+        mock_vision.assert_called_once()
+        self.assertTrue(out["nordevit_extraction"]["used_vision"])
+        self.assertEqual(out["nordevit_extraction"].get("structured_en_source"), "vision_pdf")
+
+    @patch("api.services.cv_openai_parse.try_openai_extracted_en", return_value=None)
+    @patch("api.services.cv_pdf_gemini_parse.try_pdf_gemini_extracted_en")
+    @patch("api.services.cv_pdf_vision_parse.try_pdf_vision_extracted_en", return_value=None)
+    @patch("api.services.cv_text_extract.resolve_vision_pdf_path", return_value="/tmp/mock.pdf")
+    @patch("api.services.cv_service.map_extracted_data_to_template")
+    @patch("api.services.cv_service.extract_with_spacy_italian_improved")
+    @patch("api.services.cv_service.extract_with_resume_parser_en")
+    @patch("api.services.cv_text_extract.extract_plain_text_pipeline")
+    def test_pdf_gemini_fallback_when_vision_returns_nothing(
+        self,
+        mock_extract,
+        mock_resume_en,
+        mock_spacy,
+        mock_map,
+        _mock_resolve,
+        mock_vision,
+        mock_gemini,
+        _mock_oai,
+    ):
+        """OpenAI vision non restituisce dati → tentativo Gemini (mock, nessuna rete)."""
+        from api.services.cv_service import parse_cv_from_file
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        mock_extract.return_value = (
+            "",
+            {
+                "plain_text": None,
+                "plain_text_truncated": False,
+                "char_count": 0,
+                "source": "pdf_pypdf",
+                "warnings": ["pdf_no_text_layer"],
+                "used_vision": False,
+                "used_gemini_pdf": False,
+                "used_libreoffice": False,
+            },
+        )
+        mock_resume_en.return_value = {"error": "weak"}
+        mock_spacy.return_value = {}
+        mock_gemini.return_value = {"name": "Gemini User", "email": "g@example.com"}
+        mock_map.return_value = {"name": "Gemini User"}
+
+        f = SimpleUploadedFile("scan.pdf", b"%PDF-1.4", content_type="application/pdf")
+        out = parse_cv_from_file(f)
+        mock_vision.assert_called_once()
+        mock_gemini.assert_called_once()
+        self.assertTrue(out["nordevit_extraction"]["used_gemini_pdf"])
+        self.assertFalse(out["nordevit_extraction"]["used_vision"])
+        self.assertEqual(out["nordevit_extraction"].get("structured_en_source"), "gemini_pdf")
+
+
+# ==============================================================================
+# TEST estrazione DOCX (tabelle) — nessuna rete
+# ==============================================================================
+
+
+class DOCXTableExtractTest(TestCase):
+    """Il testo nelle sole tabelle DOCX deve comparire in extract_text_from_file."""
+
+    def test_table_cells_are_included_without_body_paragraphs(self):
+        try:
+            from docx import Document
+        except ImportError:
+            self.skipTest("python-docx non installato")
+
+        import os
+        import tempfile
+
+        from demo_resume_parser import extract_text_from_file
+
+        path = None
+        try:
+            doc = Document()
+            table = doc.add_table(rows=2, cols=2)
+            table.rows[0].cells[0].text = "NomeTabellaSegreto"
+            table.rows[1].cells[1].text = "Riga2Col2"
+            fd, path = tempfile.mkstemp(suffix=".docx")
+            os.close(fd)
+            doc.save(path)
+            text = extract_text_from_file(path)
+            self.assertIsNotNone(text)
+            self.assertIn("NomeTabellaSegreto", text)
+            self.assertIn("Riga2Col2", text)
+        finally:
+            if path and os.path.isfile(path):
+                os.remove(path)
 
 
 # ==============================================================================
@@ -282,7 +481,7 @@ class ModelTest(TestCase):
             email="slug@test.it",
             password="Pass123!",
         )
-        cv = CVData.objects.create(user=user, raw_json={})
+        cv = CVData.objects.create(user=profile_for_django_user(user), raw_json={})
         self.assertIsNotNone(cv.slug)
         self.assertIn('slug', cv.slug)
 
@@ -290,3 +489,12 @@ class ModelTest(TestCase):
         """__str__ di Item."""
         item = Item.objects.create(name="Test Item")
         self.assertEqual(str(item), "Test Item")
+
+
+class CVPublicShellHTMLTest(TestCase):
+    """HTML server-side per /u/<slug>/ (snippet senza JS)."""
+
+    def test_unknown_slug_returns_404(self):
+        client = Client()
+        response = client.get("/u/nonexistent-slug-zzzzzz/")
+        self.assertEqual(response.status_code, 404)

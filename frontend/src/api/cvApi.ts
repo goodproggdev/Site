@@ -10,6 +10,7 @@ import type {
   RegisterPayload,
   CVData,
   ParseCVResponse,
+  RestAuthUserDetails,
 } from "./types";
 
 const API_BASE =
@@ -17,6 +18,12 @@ const API_BASE =
   import.meta.env.VITE_API_URL ||
   "http://localhost:8000";
 const API_V1_PREFIX = "/api/v1";
+
+function notifyAuthTokensChanged() {
+	if (typeof window !== "undefined") {
+		window.dispatchEvent(new Event("auth-token-changed"));
+	}
+}
 
 // Istanza Axios con baseURL
 const api = axios.create({
@@ -50,11 +57,13 @@ api.interceptors.response.use(
           );
           localStorage.setItem("access_token", data.access);
           originalRequest.headers.Authorization = `Bearer ${data.access}`;
+          notifyAuthTokensChanged();
           return api(originalRequest);
         } catch {
           // Refresh scaduto → logout e home coerente con `/:lang` (nessuna route `/login`)
           localStorage.removeItem("access_token");
           localStorage.removeItem("refresh_token");
+          notifyAuthTokensChanged();
           redirectToLocalizedHome();
         }
       }
@@ -76,6 +85,7 @@ export async function login(
   });
   localStorage.setItem("access_token", data.access);
   localStorage.setItem("refresh_token", data.refresh);
+  notifyAuthTokensChanged();
   return data;
 }
 
@@ -100,6 +110,7 @@ export async function register(
       };
       localStorage.setItem("access_token", tokens.access);
       if (tokens.refresh) localStorage.setItem("refresh_token", tokens.refresh);
+      notifyAuthTokensChanged();
       return { ok: true, authenticated: true, tokens };
     }
     return { ok: true, authenticated: false };
@@ -117,26 +128,22 @@ export async function logout(): Promise<void> {
   } finally {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
+    notifyAuthTokensChanged();
   }
 }
 
 /** Conferma email (dj-rest-auth): POST body `{ key }` dal link ricevuto per email. */
-export async function verifyEmail(key: string): Promise<{ verified: boolean; error?: string }> {
+export async function verifyEmail(
+  key: string,
+): Promise<{ verified: true } | { verified: false; drfData: unknown | null }> {
   try {
     await api.post("/auth/registration/verify-email/", { key });
     return { verified: true };
   } catch (e) {
-    if (axios.isAxiosError(e) && e.response?.data) {
-      const d = e.response.data as Record<string, unknown>;
-      const msg =
-        typeof d.detail === "string"
-          ? d.detail
-          : Array.isArray(d.non_field_errors)
-            ? String(d.non_field_errors[0])
-            : "Verifica non riuscita.";
-      return { verified: false, error: msg };
+    if (axios.isAxiosError(e)) {
+      return { verified: false, drfData: e.response?.data ?? null };
     }
-    return { verified: false, error: "Verifica non riuscita." };
+    return { verified: false, drfData: null };
   }
 }
 
@@ -164,17 +171,70 @@ export function isAuthenticated(): boolean {
   return !!localStorage.getItem("access_token");
 }
 
+export async function getUserDetails(): Promise<RestAuthUserDetails> {
+  const { data } = await api.get<RestAuthUserDetails>("/auth/user/");
+  return data;
+}
+
+export async function patchUserDetails(
+  body: Partial<Pick<RestAuthUserDetails, "first_name" | "last_name">>,
+): Promise<RestAuthUserDetails> {
+  const { data } = await api.patch<RestAuthUserDetails>("/auth/user/", body);
+  return data;
+}
+
+export async function changePassword(payload: {
+  old_password: string;
+  new_password1: string;
+  new_password2: string;
+}): Promise<void> {
+  await api.post("/auth/password/change/", payload);
+}
+
 // ==============================================================================
 // CV API
 // ==============================================================================
 
-export async function uploadAndParseCV(file: File): Promise<ParseCVResponse> {
+export type UploadParseCvResult = ParseCVResponse & { cv_id?: number; slug?: string };
+
+/**
+ * Upload multipart: non impostare Content-Type manualmente (manca il boundary).
+ * L'istanza Axios ha default `application/json`: va rimosso per FormData così il browser aggiunge `multipart/form-data; boundary=...`.
+ */
+export async function uploadAndParseCV(file: File): Promise<UploadParseCvResult> {
   const formData = new FormData();
   formData.append("cv_file", file);
-  const { data } = await api.post<ParseCVResponse>(`${API_V1_PREFIX}/parse-cv-upload/`, formData, {
-    headers: { "Content-Type": "multipart/form-data" },
+  const { data } = await api.post<Record<string, unknown>>(`${API_V1_PREFIX}/parse-cv-upload/`, formData, {
+    transformRequest: [
+      (body, headers) => {
+        if (body instanceof FormData) {
+          const h = headers as unknown as Record<string, string | undefined>;
+          delete h["Content-Type"];
+          delete h["content-type"];
+        }
+        return body;
+      },
+    ],
   });
-  return data;
+
+  const parsed = data.parsed_data;
+  if (parsed != null && typeof parsed === "object" && !Array.isArray(parsed)) {
+    const inner = parsed as Record<string, unknown>;
+    const cvIdRaw = data.cv_id;
+    const cvId =
+      typeof cvIdRaw === "number"
+        ? cvIdRaw
+        : typeof cvIdRaw === "string"
+          ? Number.parseInt(cvIdRaw, 10)
+          : NaN;
+    return {
+      ...(inner as unknown as ParseCVResponse),
+      cv_id: Number.isFinite(cvId) ? cvId : undefined,
+      slug: typeof data.slug === "string" ? data.slug : undefined,
+    };
+  }
+
+  return data as unknown as UploadParseCvResult;
 }
 
 export async function getMyCVList(): Promise<CVData[]> {
@@ -184,6 +244,15 @@ export async function getMyCVList(): Promise<CVData[]> {
 
 export async function deleteCV(cvId: number): Promise<void> {
   await api.delete(`${API_V1_PREFIX}/cv/${cvId}/delete/`);
+}
+
+export async function getCvDetail(cvId: number): Promise<CVData> {
+  const { data } = await api.get<CVData>(`${API_V1_PREFIX}/cv/${cvId}/`);
+  return data;
+}
+
+export async function updateCvData(cvId: number, cv_data: Record<string, unknown>): Promise<void> {
+  await api.post(`${API_V1_PREFIX}/cv/update/${cvId}/`, { cv_data });
 }
 
 export async function getJsonData(): Promise<unknown> {
@@ -208,9 +277,15 @@ export async function sendContactForm(payload: {
 // STRIPE API
 // ==============================================================================
 
-export async function createCheckoutSession(priceId: string): Promise<{ url: string }> {
+export async function createCheckoutSession(
+  priceId: string,
+  options?: { cv_id?: number; feature?: string; plan_type?: string },
+): Promise<{ url: string }> {
   const { data } = await api.post<{ url: string }>(`${API_V1_PREFIX}/stripe/create-checkout/`, {
     price_id: priceId,
+    ...(options?.cv_id != null ? { cv_id: options.cv_id } : {}),
+    ...(options?.feature ? { feature: options.feature } : {}),
+    ...(options?.plan_type ? { plan_type: options.plan_type } : {}),
   });
   return data;
 }
