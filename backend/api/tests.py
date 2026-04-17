@@ -13,7 +13,10 @@ from django.contrib.auth import get_user_model
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 
-from api.models import Item, CVData, UserProfile
+from django.utils import timezone
+from datetime import timedelta
+
+from api.models import Item, CVData, UserProfile, CVLinkPolicy, Entitlement
 
 User = get_user_model()
 
@@ -153,6 +156,16 @@ class CVDataAPITest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertTrue(CVData.objects.filter(id=cv.id).exists())
 
+    def test_create_cv_draft_returns_201(self):
+        """POST /api/v1/cv/draft/ crea bozza vuota + link policy."""
+        response = self.client.post('/api/v1/cv/draft/', {}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIn('id', response.data)
+        self.assertIn('slug', response.data)
+        cv = CVData.objects.get(id=response.data['id'])
+        self.assertEqual(cv.raw_json, {})
+        self.assertTrue(CVLinkPolicy.objects.filter(cv=cv).exists())
+
 
 # ==============================================================================
 # TEST CV UPLOAD PARSING
@@ -249,7 +262,10 @@ class CVParsePipelineUnitTest(TestCase):
         self.assertIn("nordevit_extraction", out)
         self.assertEqual(out["nordevit_extraction"]["char_count"], 100)
         self.assertFalse(out["nordevit_extraction"]["used_vision"])
-        self.assertEqual(out["nordevit_extraction"].get("structured_en_source"), "resume_parser_en")
+        self.assertEqual(out["nordevit_extraction"].get("structured_en_source"), "pyresparser_en")
+        self.assertIn("stage_ms", out["nordevit_extraction"])
+        self.assertIn("quality", out["nordevit_extraction"])
+        self.assertEqual(out["nordevit_extraction"].get("path_taken"), ["local"])
 
     @patch("api.services.cv_openai_parse.try_openai_extracted_en", return_value=None)
     @patch("api.services.cv_pdf_vision_parse.try_pdf_vision_extracted_en")
@@ -294,38 +310,37 @@ class CVParsePipelineUnitTest(TestCase):
         mock_vision.assert_called_once()
         self.assertTrue(out["nordevit_extraction"]["used_vision"])
         self.assertEqual(out["nordevit_extraction"].get("structured_en_source"), "vision_pdf")
+        self.assertIn("vision_pdf", out["nordevit_extraction"].get("path_taken", []))
 
-    @patch("api.services.cv_openai_parse.try_openai_extracted_en", return_value=None)
-    @patch("api.services.cv_pdf_gemini_parse.try_pdf_gemini_extracted_en")
-    @patch("api.services.cv_pdf_vision_parse.try_pdf_vision_extracted_en", return_value=None)
-    @patch("api.services.cv_text_extract.resolve_vision_pdf_path", return_value="/tmp/mock.pdf")
+    @patch("api.services.cv_pdf_vision_parse.try_pdf_vision_extracted_en")
+    @patch("api.services.cv_openai_parse.try_openai_extracted_en")
+    @patch("api.services.cv_text_extract.resolve_vision_pdf_path", return_value=None)
     @patch("api.services.cv_service.map_extracted_data_to_template")
     @patch("api.services.cv_service.extract_with_spacy_italian_improved")
     @patch("api.services.cv_service.extract_with_resume_parser_en")
     @patch("api.services.cv_text_extract.extract_plain_text_pipeline")
-    def test_pdf_gemini_fallback_when_vision_returns_nothing(
+    def test_openai_text_path_when_local_score_low(
         self,
         mock_extract,
         mock_resume_en,
         mock_spacy,
         mock_map,
         _mock_resolve,
+        mock_oai,
         mock_vision,
-        mock_gemini,
-        _mock_oai,
     ):
-        """OpenAI vision non restituisce dati → tentativo Gemini (mock, nessuna rete)."""
+        """Score locale basso con testo sufficiente: usa OpenAI text (no Gemini)."""
         from api.services.cv_service import parse_cv_from_file
         from django.core.files.uploadedfile import SimpleUploadedFile
 
         mock_extract.return_value = (
-            "",
+            "John Doe john@example.com +39 333 1234567 Python Django",
             {
-                "plain_text": None,
+                "plain_text": "x" * 500,
                 "plain_text_truncated": False,
-                "char_count": 0,
+                "char_count": 500,
                 "source": "pdf_pypdf",
-                "warnings": ["pdf_no_text_layer"],
+                "warnings": [],
                 "used_vision": False,
                 "used_gemini_pdf": False,
                 "used_libreoffice": False,
@@ -333,16 +348,17 @@ class CVParsePipelineUnitTest(TestCase):
         )
         mock_resume_en.return_value = {"error": "weak"}
         mock_spacy.return_value = {}
-        mock_gemini.return_value = {"name": "Gemini User", "email": "g@example.com"}
-        mock_map.return_value = {"name": "Gemini User"}
+        mock_oai.return_value = {"name": "John Doe", "email": "john@example.com", "skills": ["Python"]}
+        mock_map.return_value = {"name": "John Doe", "personal_info": {"work_email": "", "personal_email": "", "work_number": ""}, "skills": []}
 
         f = SimpleUploadedFile("scan.pdf", b"%PDF-1.4", content_type="application/pdf")
         out = parse_cv_from_file(f)
-        mock_vision.assert_called_once()
-        mock_gemini.assert_called_once()
-        self.assertTrue(out["nordevit_extraction"]["used_gemini_pdf"])
+        mock_oai.assert_called_once()
+        mock_vision.assert_not_called()
+        self.assertEqual(out["nordevit_extraction"]["llm_calls"]["gemini_pdf"], 0)
         self.assertFalse(out["nordevit_extraction"]["used_vision"])
-        self.assertEqual(out["nordevit_extraction"].get("structured_en_source"), "gemini_pdf")
+        self.assertEqual(out["nordevit_extraction"].get("structured_en_source"), "openai_text")
+        self.assertIn("openai_text", out["nordevit_extraction"].get("path_taken", []))
 
 
 # ==============================================================================
@@ -380,6 +396,52 @@ class DOCXTableExtractTest(TestCase):
         finally:
             if path and os.path.isfile(path):
                 os.remove(path)
+
+
+# ==============================================================================
+# TEST QUALITY REPAIR (deterministico, no costo)
+# ==============================================================================
+
+class CVQualityRepairTest(TestCase):
+    def test_repair_extracts_sections_when_lists_empty(self):
+        from api.services.cv_quality_repair import apply_deterministic_quality_repair
+
+        mapped = {
+            "skills": [],
+            "work_experience_list": [],
+            "education_list": [],
+            "personal_info": {},
+        }
+        text = """
+        Esperienza lavorativa
+        2021-2024 - Backend Developer - ACME
+
+        Formazione
+        2018-2020 - Laurea Magistrale - Politecnico
+
+        Competenze
+        Python, Django, PostgreSQL
+        """
+        meta = apply_deterministic_quality_repair(mapped, text)
+        self.assertTrue(meta["applied"])
+        self.assertGreaterEqual(len(mapped["skills"]), 2)
+        self.assertGreaterEqual(len(mapped["work_experience_list"]), 1)
+        self.assertGreaterEqual(len(mapped["education_list"]), 1)
+
+    def test_repair_does_not_overwrite_existing_lists(self):
+        from api.services.cv_quality_repair import apply_deterministic_quality_repair
+
+        mapped = {
+            "skills": [{"name": "Already", "level": "N/A"}],
+            "work_experience_list": [{"period": "", "title": "Existing role", "subtitle": ""}],
+            "education_list": [{"period": "", "title": "Existing school", "subtitle": ""}],
+            "personal_info": {},
+        }
+        text = "Competenze\nPython, Go\nEsperienza lavorativa\n2020-2024 - Something"
+        meta = apply_deterministic_quality_repair(mapped, text)
+        self.assertFalse(meta["applied"])
+        self.assertEqual(mapped["skills"][0]["name"], "Already")
+        self.assertEqual(mapped["work_experience_list"][0]["title"], "Existing role")
 
 
 # ==============================================================================
@@ -458,6 +520,82 @@ class CVServiceTest(TestCase):
 
 
 # ==============================================================================
+# TEST KPI EXTRACTION REPORT
+# ==============================================================================
+
+class CVExtractionKPIViewTest(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = create_test_user(email="kpi@test.it", password="TestPass123!")
+        self.staff = create_test_user(email="kpiadmin@test.it", password="TestPass123!")
+        self.staff.is_staff = True
+        self.staff.save(update_fields=["is_staff"])
+
+        user_profile = profile_for_django_user(self.user)
+        staff_profile = profile_for_django_user(self.staff)
+        # Allinea il profilo staff per check permissivo in view.
+        staff_profile.is_staff = True
+        staff_profile.save(update_fields=["is_staff"])
+
+        CVData.objects.create(
+            user=user_profile,
+            raw_json={
+                "nordevit_extraction": {
+                    "stage_ms": {"total": 120},
+                    "path_taken": ["local"],
+                    "llm_calls": {"openai_text": 0, "openai_vision": 0, "gemini_pdf": 0},
+                    "quality": {
+                        "initial": {"score": 0.55},
+                        "final": {
+                            "score": 0.78,
+                            "checks": {"name": True, "email": True, "phone": True, "skills": True},
+                        },
+                    },
+                }
+            },
+        )
+        CVData.objects.create(
+            user=staff_profile,
+            raw_json={
+                "nordevit_extraction": {
+                    "stage_ms": {"total": 250},
+                    "path_taken": ["local", "openai_text"],
+                    "llm_calls": {"openai_text": 1, "openai_vision": 0, "gemini_pdf": 0},
+                    "quality": {
+                        "initial": {"score": 0.30},
+                        "final": {
+                            "score": 0.70,
+                            "checks": {"name": True, "email": True, "phone": False, "skills": False},
+                        },
+                    },
+                }
+            },
+        )
+
+    def test_kpi_report_mine_scope(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get("/api/v1/cv/extraction-kpi/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data.get("scope"), "mine")
+        self.assertEqual(response.data.get("total_cvs"), 1)
+        self.assertIn("latency_ms", response.data)
+        self.assertIn("quality", response.data)
+
+    def test_kpi_report_all_scope_requires_staff(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get("/api/v1/cv/extraction-kpi/?scope=all")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_kpi_report_all_scope_for_staff(self):
+        self.client.force_authenticate(user=self.staff)
+        response = self.client.get("/api/v1/cv/extraction-kpi/?scope=all")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data.get("scope"), "all")
+        self.assertEqual(response.data.get("total_cvs"), 2)
+        self.assertEqual(response.data.get("llm_calls", {}).get("openai_text"), 1)
+
+
+# ==============================================================================
 # TEST MODELLI
 # ==============================================================================
 
@@ -498,3 +636,106 @@ class CVPublicShellHTMLTest(TestCase):
         client = Client()
         response = client.get("/u/nonexistent-slug-zzzzzz/")
         self.assertEqual(response.status_code, 404)
+
+
+class CVPublicJsonAPITest(APITestCase):
+    """GET /api/v1/cv/public/<slug>/ — codici errore distinti."""
+
+    def test_unknown_slug_returns_404_not_found_code(self):
+        response = self.client.get("/api/v1/cv/public/does-not-exist-slug-zzzz/")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.data.get("code"), "not_found")
+
+    def test_unpublished_cv_returns_404_not_published_code(self):
+        user = create_test_user("draftowner@test.it", "TestPass123!")
+        prof = profile_for_django_user(user)
+        cv = CVData.objects.create(
+            user=prof,
+            raw_json={},
+            is_published=False,
+            slug="draft-api-test-slug-001",
+        )
+        response = self.client.get(f"/api/v1/cv/public/{cv.slug}/")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.data.get("code"), "not_published")
+
+    def test_published_with_expired_policy_returns_403_forbidden_code(self):
+        user = create_test_user("expiredowner@test.it", "TestPass123!")
+        prof = profile_for_django_user(user)
+        cv = CVData.objects.create(
+            user=prof,
+            raw_json={"personal_info": {"name": "X"}},
+            is_published=True,
+            slug="published-expired-slug-001",
+        )
+        CVLinkPolicy.objects.create(
+            cv=cv,
+            visibility="public_with_expiry",
+            expires_at=timezone.now() - timedelta(days=1),
+        )
+        response = self.client.get(f"/api/v1/cv/public/{cv.slug}/")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data.get("code"), "forbidden")
+
+
+class StripeSubscriptionSyncTest(TestCase):
+    """Sincronizzazione entitlement da webhook subscription Stripe."""
+
+    def setUp(self):
+        self.profile = UserProfile.objects.create_user(
+            email='subsync@test.it',
+            password='TestPass123!',
+            first_name='S',
+            last_name='T',
+        )
+
+    def test_updated_active_sets_period_and_metadata(self):
+        from api.services.stripe_subscription_sync import sync_entitlement_from_subscription
+
+        future_ts = int((timezone.now() + timedelta(days=30)).timestamp())
+        sync_entitlement_from_subscription(
+            {
+                'id': 'sub_test_123',
+                'status': 'active',
+                'current_period_end': future_ts,
+                'metadata': {
+                    'user_id': str(self.profile.id),
+                    'feature': 'cv_publish',
+                    'plan_type': 'pro',
+                },
+            },
+        )
+        ent = Entitlement.objects.get(user=self.profile, feature='cv_publish', is_active=True)
+        self.assertEqual(ent.metadata.get('stripe_subscription_id'), 'sub_test_123')
+        self.assertEqual(ent.metadata.get('subscription_status'), 'active')
+        self.assertIsNotNone(ent.expires_at)
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.plan, 'pro')
+
+    def test_canceled_revokes_entitlement_and_plan(self):
+        from api.services.stripe_subscription_sync import sync_entitlement_from_subscription
+
+        Entitlement.objects.create(
+            user=self.profile,
+            feature='cv_publish',
+            is_active=True,
+            expires_at=None,
+            metadata={
+                'stripe_subscription_id': 'sub_test_456',
+                'checkout_mode': 'subscription',
+            },
+        )
+        self.profile.plan = 'pro'
+        self.profile.save(update_fields=['plan'])
+        sync_entitlement_from_subscription(
+            {
+                'id': 'sub_test_456',
+                'status': 'canceled',
+                'metadata': {'user_id': str(self.profile.id), 'feature': 'cv_publish'},
+            },
+        )
+        self.assertFalse(
+            Entitlement.objects.filter(user=self.profile, feature='cv_publish', is_active=True).exists()
+        )
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.plan, 'free')

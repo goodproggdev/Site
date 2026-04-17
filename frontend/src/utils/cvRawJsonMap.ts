@@ -43,6 +43,8 @@ export function rawJsonToWizardCvData(raw: Record<string, unknown> | null | unde
       lastName,
       email: String(pi.work_email ?? pi.personal_email ?? pi.email ?? raw.email ?? ""),
       phone: String(pi.work_number ?? pi.phone ?? raw.phone ?? ""),
+      /** Ruolo / titolo professionale (mappa su `personal_info.title`). */
+      title: String(pi.title ?? ""),
       bio: summaryText,
       summary: summaryText,
     },
@@ -62,7 +64,7 @@ export function mergeWizardIntoRawJson(
     string,
     unknown
   >;
-  const { firstName, lastName, email, phone, bio, summary } = cv.personalInfo;
+  const { firstName, lastName, email, phone, bio, summary, title } = cv.personalInfo || {};
   const bioText = String(bio ?? summary ?? "").trim();
   const name = [firstName, lastName].filter(Boolean).join(" ").trim() || String(pi.name ?? "");
   pi.first_name = firstName;
@@ -70,6 +72,9 @@ export function mergeWizardIntoRawJson(
   pi.name = name;
   pi.email = email;
   pi.phone = phone;
+  if (title !== undefined) {
+    pi.title = String(title ?? "").trim();
+  }
   if (email) {
     pi.work_email = email;
     pi.personal_email = email;
@@ -108,6 +113,13 @@ export function mergeWizardIntoRawJson(
 export function apiCvRecordToWizard(cv: ApiCVRecord, prev: WizardCvState): WizardCvState {
   const raw = (cv.raw_json || {}) as Record<string, unknown>;
   const partial = rawJsonToWizardCvData(raw);
+  const idRaw = cv.id as unknown;
+  const cvId =
+    typeof idRaw === "number" && Number.isFinite(idRaw)
+      ? idRaw
+      : typeof idRaw === "string"
+        ? Number.parseInt(idRaw, 10)
+        : NaN;
   return {
     ...prev,
     ...partial,
@@ -115,7 +127,7 @@ export function apiCvRecordToWizard(cv: ApiCVRecord, prev: WizardCvState): Wizar
     experience: (partial.experience as unknown[]) ?? prev.experience,
     education: (partial.education as unknown[]) ?? prev.education,
     skills: partial.skills ?? prev.skills,
-    cvId: cv.id,
+    cvId: Number.isFinite(cvId) ? cvId : null,
     parsedData: raw,
   };
 }

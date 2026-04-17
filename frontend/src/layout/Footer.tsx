@@ -47,9 +47,9 @@ const Footer = () => {
                                             </Link>
                                         </li>
                                         <li>
-                                            <a href={`${homeHref}#price`} className="hover:underline cursor-pointer">
+                                            <Link to={`/${lang}/pricing`} className="hover:underline cursor-pointer">
                                                 {t('layout.footer.links.pricing')}
-                                            </a>
+                                            </Link>
                                         </li>
                                     </>
                                 ) : (
@@ -58,7 +58,9 @@ const Footer = () => {
                                             <Link to={homeHref} className="hover:underline cursor-pointer">{t('layout.footer.links.home')}</Link>
                                         </li>
                                         <li>
-                                            <a href={`${homeHref}#price`} className="hover:underline cursor-pointer">{t('layout.footer.links.pricing')}</a>
+                                            <Link to={`/${lang}/pricing`} className="hover:underline cursor-pointer">
+                                                {t('layout.footer.links.pricing')}
+                                            </Link>
                                         </li>
                                         <li className="mt-4">
                                             <a href={`${homeHref}#contact`} className="hover:underline cursor-pointer">{t('layout.footer.links.contact')}</a>

@@ -101,6 +101,7 @@ export default function CVUploadStep({ cvData, updateCVData, onNext }: CVUploadS
       <p className="text-body mb-8">
         {t('builder.upload.description')}
       </p>
+      <p className="text-body-sm mb-6 text-gray-600 dark:text-gray-400">{t('builder.upload.skipFileHint')}</p>
 
       <div
         {...getRootProps()}

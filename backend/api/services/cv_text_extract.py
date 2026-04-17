@@ -36,6 +36,10 @@ def _native_plain_text_source(ext: str) -> str:
         return "docx_python"
     if ext == ".txt":
         return "txt"
+    if ext == ".odt":
+        return "odt_no_native_text"
+    if ext == ".rtf":
+        return "rtf_no_native_text"
     if ext == ".doc":
         return "doc_no_native_text"
     return "unknown"
@@ -61,7 +65,7 @@ def try_office_to_pdf(input_path: str) -> str | None:
 
     timeout = int(getattr(settings, "CV_LIBREOFFICE_TIMEOUT", 90) or 90)
     ext = os.path.splitext(input_path)[1].lower()
-    if ext not in (".doc", ".docx"):
+    if ext not in (".doc", ".docx", ".odt", ".rtf"):
         return None
 
     out_dir = tempfile.mkdtemp(prefix="cv_lo_")
@@ -116,6 +120,29 @@ def _libreoffice_improve_text(file_path: str, current: str) -> tuple[str, bool]:
         shutil.rmtree(out_dir, ignore_errors=True)
 
 
+def _extract_pdf_text_pymupdf(file_path: str) -> str:
+    """Estrazione testo PDF via PyMuPDF (spesso migliore di PyPDF su layout multi-colonna o font strani)."""
+    try:
+        import fitz  # pymupdf
+    except ImportError:
+        return ""
+
+    try:
+        doc = fitz.open(file_path)
+        try:
+            parts: list[str] = []
+            for page in doc:
+                block = page.get_text("text")
+                if block:
+                    parts.append(block)
+            return "\n".join(parts)
+        finally:
+            doc.close()
+    except Exception as e:
+        logger.debug("PyMuPDF text extract skip: %s", e)
+        return ""
+
+
 def extract_plain_text_pipeline(file_path: str) -> tuple[str, dict[str, Any]]:
     """
     Estrae testo con diagnostica. Non solleva: in caso di fallimento ritorna stringa vuota
@@ -124,6 +151,7 @@ def extract_plain_text_pipeline(file_path: str) -> tuple[str, dict[str, Any]]:
     Ritorna (plain_text, nordevit_extraction_dict).
     """
     from demo_resume_parser import extract_text_from_file
+    from api.services.cv_quality_repair import classify_document_profile, normalize_plain_text
 
     settings = _get_settings()
     min_chars = int(getattr(settings, "CV_EXTRACT_MIN_CHARS", 80) or 80)
@@ -136,11 +164,26 @@ def extract_plain_text_pipeline(file_path: str) -> tuple[str, dict[str, Any]]:
     if ext == ".pdf" and not text.strip():
         warnings.append("pdf_no_text_layer")
 
+    if ext == ".pdf":
+        alt = _extract_pdf_text_pymupdf(file_path) or ""
+        t0 = (text or "").strip()
+        t1 = alt.strip()
+        if len(t1) > len(t0):
+            text = alt
+            source = "pdf_pymupdf"
+            if "pdf_no_text_layer" in warnings:
+                warnings.remove("pdf_no_text_layer")
+        elif len(t1) > 0 and len(t1) == len(t0) and t1 != t0:
+            # Stessa lunghezza ma contenuto diverso: preferisci PyMuPDF se ha più newline (layout)
+            if t1.count("\n") > t0.count("\n"):
+                text = alt
+                source = "pdf_pymupdf"
+
     char_count = len(text.strip())
 
-    if ext == ".doc":
+    if ext in (".doc", ".odt", ".rtf"):
         if char_count < min_chars:
-            warnings.append("doc_requires_conversion")
+            warnings.append(f"{ext[1:]}_requires_conversion")
             text, improved = _libreoffice_improve_text(file_path, text)
             if improved:
                 char_count = len(text.strip())
@@ -156,6 +199,10 @@ def extract_plain_text_pipeline(file_path: str) -> tuple[str, dict[str, Any]]:
             source = "libreoffice_pdf"
             used_libreoffice = True
 
+    text = normalize_plain_text(text)
+    char_count = len(text.strip())
+    doc_profile = classify_document_profile(text, ext)
+
     plain_truncated = bool(text) and len(text) > PLAIN_TEXT_META_MAX_LEN
     plain_for_meta: str | None = None
     if text.strip():
@@ -170,6 +217,7 @@ def extract_plain_text_pipeline(file_path: str) -> tuple[str, dict[str, Any]]:
         "used_vision": False,
         "used_gemini_pdf": False,
         "used_libreoffice": used_libreoffice,
+        "document_profile": doc_profile,
     }
 
     if "pdf_no_text_layer" in warnings:

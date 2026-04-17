@@ -6,7 +6,9 @@ Tutte le views sono protette da autenticazione JWT salvo eccezioni esplicite.
 import os
 import json
 import logging
+from collections import Counter
 from datetime import timedelta
+from typing import Any
 from django.utils import timezone
 
 from django.http import JsonResponse
@@ -29,6 +31,29 @@ from .services.job_adapters import JobSearchService
 from .services.job_matching import JobMatcher
 
 logger = logging.getLogger(__name__)
+
+
+def _as_float(value: Any) -> float | None:
+    try:
+        v = float(value)
+        if v >= 0:
+            return v
+    except (TypeError, ValueError):
+        return None
+    return None
+
+
+def _percentile(values: list[float], p: float) -> float | None:
+    if not values:
+        return None
+    data = sorted(values)
+    if len(data) == 1:
+        return data[0]
+    idx = (len(data) - 1) * p
+    lo = int(idx)
+    hi = min(lo + 1, len(data) - 1)
+    frac = idx - lo
+    return data[lo] * (1 - frac) + data[hi] * frac
 
 
 # ==============================================================================
@@ -120,6 +145,34 @@ def parse_cv_upload_view(request):
     except Exception as e:
         logger.warning(f"Impossibile salvare CVData: {e}")
         return Response({"error": "Errore nel salvataggio del CV"}, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_cv_draft_view(request):
+    """
+    Crea un CV vuoto (bozza) per compilazione manuale nel wizard, senza upload file.
+    POST /api/v1/cv/draft/
+    """
+    profile = get_cv_owner_profile(request)
+    if not profile:
+        return Response({"error": "Profilo utente non disponibile."}, status=401)
+    try:
+        cv = CVData.objects.create(
+            user=profile,
+            raw_json={},
+            original_filename='',
+            structured_profile={},
+        )
+        CVLinkPolicy.objects.create(
+            cv=cv,
+            visibility='public_with_expiry',
+            expires_at=timezone.now() + timedelta(days=365),
+        )
+        return Response(CVDataSerializer(cv).data, status=status.HTTP_201_CREATED)
+    except Exception as e:
+        logger.warning('Impossibile creare bozza CV: %s', e)
+        return Response({"error": "Impossibile creare il CV."}, status=500)
 
 
 # ==============================================================================
@@ -497,10 +550,14 @@ def create_stripe_checkout_view(request):
     if not price_id:
         return Response({"error": "Price ID mancante"}, status=400)
 
-    # URL di ritorno — punta alle route del frontend
+    # URL di ritorno — punta alle route del frontend (lang preferibilmente dal body per coerenza con la UI)
     from django.conf import settings as django_settings
     _frontend = getattr(django_settings, 'FRONTEND_URL', request.build_absolute_uri('/').rstrip('/'))
-    _lang = (request.headers.get('Accept-Language', 'it') or 'it').split(',')[0].split('-')[0][:2]
+    _lang = (request.data.get('lang') or '').strip().lower()[:2] or None
+    if _lang not in ('it', 'en'):
+        _lang = (request.headers.get('Accept-Language', 'it') or 'it').split(',')[0].split('-')[0][:2]
+    if _lang not in ('it', 'en'):
+        _lang = 'it'
     success_url = f"{_frontend}/{_lang}/payment/success"
     cancel_url = f"{_frontend}/{_lang}/pricing"
 
@@ -510,19 +567,26 @@ def create_stripe_checkout_view(request):
 
     # Passiamo user_id (UserProfile.id) e cv_id nei metadati per il webhook Stripe
     cv_id = request.data.get("cv_id")
+    checkout_mode = request.data.get("checkout_mode", "payment")
+    if checkout_mode not in ("payment", "subscription"):
+        checkout_mode = "payment"
+
     metadata = {
         "user_id": str(profile.id),
-        "cv_id": cv_id,
-        "plan_type": request.data.get("plan_type", "premium"),
-        "feature": request.data.get("feature", "cv_publish"),
+        "plan_type": str(request.data.get("plan_type", "premium")),
+        "feature": str(request.data.get("feature", "cv_publish")),
+        "checkout_mode": checkout_mode,
     }
+    if cv_id is not None and str(cv_id).strip() != "":
+        metadata["cv_id"] = str(cv_id)
 
     result = create_checkout_session(
         price_id=price_id,
         success_url=success_url,
         cancel_url=cancel_url,
         customer_email=profile.email,
-        metadata=metadata
+        metadata=metadata,
+        checkout_mode=checkout_mode,
     )
 
     if "error" in result:
@@ -565,7 +629,7 @@ def stripe_webhook_view(request):
                 customer_email = session.get('customer_email')
                 user = UserProfile.objects.filter(email=customer_email).first()
 
-            amount_total = session.get('amount_total', 0) / 100
+            amount_total = (session.get('amount_total') or 0) / 100
             stripe_id = session.get('id')
 
             # Create payment record
@@ -580,14 +644,28 @@ def stripe_webhook_view(request):
             )
 
             if user:
-                # Create entitlement
-                expiry_months = int(metadata.get('expiry_months', 12))
-                Entitlement.objects.create(
+                checkout_mode = metadata.get('checkout_mode', 'payment')
+                subscription_id = session.get('subscription')
+                if checkout_mode == 'subscription':
+                    expires_at = None
+                    ent_metadata = {
+                        'stripe_session_id': stripe_id,
+                        'stripe_subscription_id': subscription_id,
+                        'checkout_mode': 'subscription',
+                    }
+                else:
+                    expiry_months = int(metadata.get('expiry_months', 12))
+                    expires_at = timezone.now() + timedelta(days=30 * expiry_months)
+                    ent_metadata = {'stripe_session_id': stripe_id, 'checkout_mode': 'payment'}
+
+                ent, created = Entitlement.objects.update_or_create(
                     user=user,
                     feature=feature,
                     is_active=True,
-                    expires_at=timezone.now() + timedelta(days=30 * expiry_months),
-                    metadata={'stripe_session_id': stripe_id},
+                    defaults={
+                        'expires_at': expires_at,
+                        'metadata': ent_metadata,
+                    },
                 )
 
                 # Update plan
@@ -595,7 +673,12 @@ def stripe_webhook_view(request):
                 user.plan = plan_type
                 user.save()
 
-                logger.info(f"Entitlement {feature} created for {user.email}")
+                logger.info(
+                    "Entitlement %s %s for %s",
+                    feature,
+                    "created" if created else "updated",
+                    user.email,
+                )
 
                 # Pubblica il CV collegato al checkout (metadata `cv_id`), se presente.
                 if feature == 'cv_publish' and metadata.get('cv_id'):
@@ -611,6 +694,14 @@ def stripe_webhook_view(request):
 
         except Exception as e:
             logger.error(f"Errore nel webhook Stripe: {e}")
+
+    elif event['type'] in ('customer.subscription.updated', 'customer.subscription.deleted'):
+        try:
+            from .services.stripe_subscription_sync import sync_entitlement_from_subscription
+
+            sync_entitlement_from_subscription(event['data']['object'])
+        except Exception as e:
+            logger.error('Errore sync subscription Stripe: %s', e, exc_info=True)
 
     return Response({"status": "success"})
 
@@ -661,17 +752,134 @@ class CVDashboardView(APIView):
         return Response({"cvs": data, "stats": user_stats}, status=status.HTTP_200_OK)
 
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def cv_extraction_kpi_view(request):
+    """
+    Report KPI estrazione CV basato su `raw_json.nordevit_extraction`.
+    - scope=mine (default): CV dell'utente
+    - scope=all: solo staff/admin
+    """
+    profile = get_cv_owner_profile(request)
+    if not profile:
+        return Response({"error": "Profilo utente non disponibile."}, status=401)
+
+    scope = (request.query_params.get("scope") or "mine").strip().lower()
+    since_days = request.query_params.get("since_days")
+    is_staff = bool(getattr(request.user, "is_staff", False) or getattr(profile, "is_staff", False))
+
+    if scope == "all":
+        if not is_staff:
+            return Response({"error": "Solo admin/staff possono usare scope=all."}, status=403)
+        qs = CVData.objects.all()
+    else:
+        scope = "mine"
+        qs = CVData.objects.filter(user=profile)
+
+    if since_days:
+        try:
+            days = int(since_days)
+            if days > 0:
+                cutoff = timezone.now() - timedelta(days=days)
+                qs = qs.filter(updated_at__gte=cutoff)
+        except ValueError:
+            return Response({"error": "Parametro since_days non valido."}, status=400)
+
+    total_cvs = qs.count()
+    stage_totals: list[float] = []
+    quality_initial: list[float] = []
+    quality_final: list[float] = []
+    path_counter: Counter[str] = Counter()
+    llm_calls = {"openai_text": 0, "openai_vision": 0, "gemini_pdf": 0}
+    coverage_checks = Counter()
+    with_meta = 0
+    with_quality = 0
+
+    for cv in qs.only("raw_json"):
+        raw = cv.raw_json if isinstance(cv.raw_json, dict) else {}
+        meta = raw.get("nordevit_extraction") if isinstance(raw, dict) else None
+        if not isinstance(meta, dict):
+            continue
+        with_meta += 1
+
+        stage = meta.get("stage_ms")
+        if isinstance(stage, dict):
+            t = _as_float(stage.get("total"))
+            if t is not None:
+                stage_totals.append(t)
+
+        path_taken = meta.get("path_taken")
+        if isinstance(path_taken, list) and path_taken:
+            path_counter["->".join(str(x) for x in path_taken)] += 1
+        else:
+            path_counter["unknown"] += 1
+
+        lc = meta.get("llm_calls")
+        if isinstance(lc, dict):
+            for key in llm_calls:
+                llm_calls[key] += int(lc.get(key) or 0)
+
+        q = meta.get("quality")
+        if isinstance(q, dict):
+            with_quality += 1
+            qi = _as_float((q.get("initial") or {}).get("score") if isinstance(q.get("initial"), dict) else None)
+            qf = _as_float((q.get("final") or {}).get("score") if isinstance(q.get("final"), dict) else None)
+            if qi is not None:
+                quality_initial.append(qi)
+            if qf is not None:
+                quality_final.append(qf)
+            final_checks = (q.get("final") or {}).get("checks") if isinstance(q.get("final"), dict) else None
+            if isinstance(final_checks, dict):
+                for key, ok in final_checks.items():
+                    if bool(ok):
+                        coverage_checks[key] += 1
+
+    latency_summary = {
+        "count": len(stage_totals),
+        "avg": round(sum(stage_totals) / len(stage_totals), 2) if stage_totals else None,
+        "p50": round(_percentile(stage_totals, 0.5), 2) if stage_totals else None,
+        "p90": round(_percentile(stage_totals, 0.9), 2) if stage_totals else None,
+    }
+    quality_summary = {
+        "count": len(quality_final),
+        "avg_initial": round(sum(quality_initial) / len(quality_initial), 3) if quality_initial else None,
+        "avg_final": round(sum(quality_final) / len(quality_final), 3) if quality_final else None,
+        "p50_final": round(_percentile(quality_final, 0.5), 3) if quality_final else None,
+    }
+    denominator = with_quality if with_quality > 0 else 1
+    coverage_rates = {k: round(v / denominator, 3) for k, v in coverage_checks.items()}
+
+    return Response(
+        {
+            "scope": scope,
+            "total_cvs": total_cvs,
+            "with_extraction_meta": with_meta,
+            "with_quality": with_quality,
+            "latency_ms": latency_summary,
+            "quality": quality_summary,
+            "path_distribution": dict(path_counter),
+            "llm_calls": llm_calls,
+            "coverage_rates": coverage_rates,
+        },
+        status=status.HTTP_200_OK,
+    )
+
+
 class CVPublicView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request, slug):
         """Visualizza un CV tramite slug e incrementa le visite."""
         token = request.query_params.get("token")
-        cv, err = resolve_public_cv(slug, token)
-        if err == 404:
-            return Response({"error": "CV non trovato o non pubblicato."}, status=404)
-        if err == 403:
-            return Response({"error": "CV non accessibile o link scaduto."}, status=403)
+        cv, err_status, err_code = resolve_public_cv(slug, token)
+        if err_status:
+            messages = {
+                "not_found": "CV non trovato.",
+                "not_published": "Questo CV non è ancora pubblicato o non è accessibile senza un piano attivo.",
+                "forbidden": "CV non accessibile o link scaduto.",
+            }
+            msg = messages.get(err_code or "", "CV non disponibile.")
+            return Response({"error": msg, "code": err_code}, status=err_status)
 
         cv.visits_count += 1
         cv.save(update_fields=["visits_count"])

@@ -65,8 +65,13 @@ describe("Welcome page", () => {
 describe("Pricing page", () => {
   it("renders pricing section", async () => {
     const { default: Pricing } = await import("../pages/Pricing");
-    render(React.createElement(Pricing));
-    // Verifica che la pagina contenga qualcosa
+    render(
+      <MemoryRouter initialEntries={["/it/pricing"]}>
+        <Routes>
+          <Route path="/:lang/pricing" element={React.createElement(Pricing)} />
+        </Routes>
+      </MemoryRouter>,
+    );
     expect(document.body).toBeTruthy();
   });
 });

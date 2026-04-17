@@ -26,12 +26,13 @@ pypdf>=5.0.0
 pymupdf>=1.24.0
 python-docx==1.1.2
 nltk==3.9.1
-# CV: resume-parser (EN, rule-based + spaCy) e modelli opzionali OpenAI
-resume-parser==0.8.4
+# CV: pyresparser (EN, OmkarPathak — ResumeParser + spaCy); NON usare il pacchetto PyPI omonimo "resume-parser".
+pyresparser==1.0.6
 spacy>=3.7.2,<3.9
 openai>=1.40.0
 google-generativeai>=0.8.0
-# Dopo install: python -m spacy download en_core_web_sm it_core_news_sm
+# Dopo install: python manage.py setup_cv_nlp
+# (oppure: python -m spacy download …; su Windows spesso meglio pip install dei wheel da GitHub explosion/spacy-models)
 
 # Testing
 pytest==8.3.4

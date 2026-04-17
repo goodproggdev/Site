@@ -1,8 +1,9 @@
 import { useEffect, useState, useRef } from 'react';
-import { Button, Label, TextInput, Textarea } from 'flowbite-react';
+import { Button, Label, Modal, TextInput, Textarea } from 'flowbite-react';
 import { useAuth } from '../hooks/useAuth';
-import cvApi, { sendContactForm } from '../api/cvApi';
-import { Link, useParams } from 'react-router-dom';
+import { useHasSessionToken } from '../hooks/useHasSessionToken';
+import cvApi, { deleteCV, sendContactForm, updateJobMatchStatus } from '../api/cvApi';
+import { Link, Navigate, useParams } from 'react-router-dom';
 import { trackEvent } from '../analytics/ga4';
 import { useTranslation } from 'react-i18next';
 import { publicCvAbsoluteUrl } from '../config/site';
@@ -32,15 +33,28 @@ interface JobMatch {
   matchReasons: string[];
   url: string;
   postedAt: string;
+  status?: string;
+}
+
+interface ExtractionKpi {
+  scope: 'mine' | 'all';
+  total_cvs: number;
+  with_extraction_meta: number;
+  latency_ms?: { p50?: number | null };
+  quality?: { avg_final?: number | null };
+  path_distribution?: Record<string, number>;
 }
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const isLoggedIn = useHasSessionToken();
   const { t } = useTranslation();
   const { lang = 'it' } = useParams<{ lang?: string }>();
   const [cvs, setCvs] = useState<CV[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [jobs, setJobs] = useState<JobMatch[]>([]);
+  const [extractionKpi, setExtractionKpi] = useState<ExtractionKpi | null>(null);
+  const [kpiLoading, setKpiLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'cvs' | 'jobs'>('cvs');
 
@@ -48,16 +62,21 @@ export default function Dashboard() {
   const [supportSubject, setSupportSubject] = useState('');
   const [supportMessage, setSupportMessage] = useState('');
   const [supportStatus, setSupportStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [copyToast, setCopyToast] = useState<{ cvId: number; kind: 'url' | 'snippet' } | null>(null);
+  const [copyToastCvId, setCopyToastCvId] = useState<number | null>(null);
   const copyToastTimer = useRef<ReturnType<typeof window.setTimeout> | null>(null);
+  const [cvToDelete, setCvToDelete] = useState<CV | null>(null);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [jobSaveId, setJobSaveId] = useState<string | null>(null);
+  const [jobSaveErrorId, setJobSaveErrorId] = useState<string | null>(null);
 
-  const flashCopyToast = (cvId: number, kind: 'url' | 'snippet') => {
+  const flashCopyToast = (cvId: number) => {
     if (copyToastTimer.current) {
       window.clearTimeout(copyToastTimer.current);
     }
-    setCopyToast({ cvId, kind });
+    setCopyToastCvId(cvId);
     copyToastTimer.current = window.setTimeout(() => {
-      setCopyToast(null);
+      setCopyToastCvId(null);
       copyToastTimer.current = null;
     }, 2200);
   };
@@ -78,34 +97,82 @@ export default function Dashboard() {
   }, [user?.email]);
 
   useEffect(() => {
+    if (!isLoggedIn) return;
     const fetchDashboardData = async () => {
       try {
-        const [dashboardRes, jobsRes] = await Promise.all([
+        const [dashboardRes, jobsRes, kpiRes] = await Promise.all([
           cvApi.get('/api/v1/dashboard/'),
           cvApi.get('/api/v1/jobs/matches/').catch(() => ({ data: { jobs: [] } })),
+          cvApi.get('/api/v1/cv/extraction-kpi/').catch(() => ({ data: null })),
         ]);
         setCvs(dashboardRes.data.cvs);
         setStats(dashboardRes.data.stats);
         setJobs(jobsRes.data.jobs || []);
+        const rawKpi = kpiRes?.data;
+        if (rawKpi && typeof rawKpi === 'object' && !Array.isArray(rawKpi)) {
+          setExtractionKpi(rawKpi as ExtractionKpi);
+        } else {
+          setExtractionKpi(null);
+        }
       } catch (error) {
         console.error("Errore fetch dashboard:", error);
       } finally {
         setLoading(false);
+        setKpiLoading(false);
       }
     };
 
-    fetchDashboardData();
-  }, []);
+    void fetchDashboardData();
+  }, [isLoggedIn]);
 
   const handleCopyPublicUrl = (cv: CV) => {
     const url = publicCvAbsoluteUrl(cv.slug);
-    void navigator.clipboard.writeText(url).then(() => flashCopyToast(cv.id, 'url'));
+    void navigator.clipboard.writeText(url).then(() => flashCopyToast(cv.id));
   };
 
-  const handleCopyLinkedInSnippet = (cv: CV) => {
+  /** Stesso URL di "Copia link": su LinkedIn va incollato solo l'URL (vedi hint sotto i pulsanti / publish step). */
+  const handleCopyLinkedInUrl = (cv: CV) => {
     const url = publicCvAbsoluteUrl(cv.slug);
-    const text = t('dashboard.cvList.linkedInSnippet', { url });
-    void navigator.clipboard.writeText(text).then(() => flashCopyToast(cv.id, 'snippet'));
+    void navigator.clipboard.writeText(url).then(() => flashCopyToast(cv.id));
+  };
+
+  const handleSaveJob = async (job: JobMatch) => {
+    setJobSaveErrorId(null);
+    setJobSaveId(job.id);
+    try {
+      await updateJobMatchStatus(job.id, 'saved');
+      setJobs((prev) => prev.map((j) => (j.id === job.id ? { ...j, status: 'saved' } : j)));
+      trackEvent('job_match_save', { match_id: job.id });
+    } catch {
+      setJobSaveErrorId(job.id);
+    } finally {
+      setJobSaveId(null);
+    }
+  };
+
+  const confirmDeleteCv = async () => {
+    if (!cvToDelete) return;
+    setDeleteSubmitting(true);
+    setDeleteError(null);
+    try {
+      await deleteCV(cvToDelete.id);
+      trackEvent('cv_delete', { cv_id: cvToDelete.id });
+      setCvs((prev) => prev.filter((c) => c.id !== cvToDelete.id));
+      setStats((prev) =>
+        prev
+          ? {
+              ...prev,
+              total_cvs: Math.max(0, prev.total_cvs - 1),
+              total_visits: Math.max(0, prev.total_visits - (cvToDelete.visits_count || 0)),
+            }
+          : prev,
+      );
+      setCvToDelete(null);
+    } catch {
+      setDeleteError(t('dashboard.cvList.deleteError'));
+    } finally {
+      setDeleteSubmitting(false);
+    }
   };
 
   useEffect(() => {
@@ -132,6 +199,10 @@ export default function Dashboard() {
       setSupportStatus('error');
     }
   };
+
+  if (!isLoggedIn) {
+    return <Navigate to={`/${lang}`} replace />;
+  }
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
@@ -167,6 +238,52 @@ export default function Dashboard() {
             <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">{stats?.total_cvs || 0}</p>
           </div>
         </div>
+
+        <section className="mb-8">
+          <div className="card p-6">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('dashboard.extraction.title')}</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t('dashboard.extraction.subtitle')}</p>
+              </div>
+              {kpiLoading ? (
+                <span className="text-xs text-gray-500 dark:text-gray-400">{t('common.loading')}</span>
+              ) : null}
+            </div>
+            {extractionKpi ? (
+              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div className="rounded-lg bg-gray-50 p-4 dark:bg-gray-800/60">
+                  <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('dashboard.extraction.p50Latency')}</p>
+                  <p className="mt-1 text-xl font-semibold text-gray-900 dark:text-white">
+                    {typeof extractionKpi.latency_ms?.p50 === 'number' ? `${Math.round(extractionKpi.latency_ms.p50)} ms` : '—'}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-gray-50 p-4 dark:bg-gray-800/60">
+                  <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('dashboard.extraction.localOnlyRate')}</p>
+                  <p className="mt-1 text-xl font-semibold text-gray-900 dark:text-white">
+                    {(() => {
+                      const dist = extractionKpi.path_distribution || {};
+                      const total = Object.values(dist).reduce((a, b) => a + b, 0);
+                      if (!total) return '—';
+                      const localOnly = dist['local'] || 0;
+                      return `${Math.round((localOnly / total) * 100)}%`;
+                    })()}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-gray-50 p-4 dark:bg-gray-800/60">
+                  <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('dashboard.extraction.qualityScore')}</p>
+                  <p className="mt-1 text-xl font-semibold text-gray-900 dark:text-white">
+                    {typeof extractionKpi.quality?.avg_final === 'number' ? extractionKpi.quality.avg_final.toFixed(3) : '—'}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              !kpiLoading ? (
+                <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">{t('dashboard.extraction.unavailable')}</p>
+              ) : null
+            )}
+          </div>
+        </section>
 
         <section id="support" className="scroll-mt-24 mb-10">
           <div className="card p-6 md:p-8">
@@ -305,15 +422,14 @@ export default function Dashboard() {
                           <Button type="button" size="xs" color="light" onClick={() => handleCopyPublicUrl(cv)}>
                             {t('dashboard.cvList.copyPublicUrl')}
                           </Button>
-                          <Button type="button" size="xs" color="indigo" onClick={() => handleCopyLinkedInSnippet(cv)}>
+                          <Button type="button" size="xs" color="indigo" onClick={() => handleCopyLinkedInUrl(cv)}>
                             {t('dashboard.cvList.copyForLinkedIn')}
                           </Button>
                         </div>
-                        {copyToast?.cvId === cv.id ? (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 pt-1">{t('dashboard.cvList.linkedInPasteHint')}</p>
+                        {copyToastCvId === cv.id ? (
                           <p className="text-xs text-green-700 dark:text-green-400" role="status" aria-live="polite">
-                            {copyToast.kind === 'snippet'
-                              ? t('dashboard.cvList.copiedSnippet')
-                              : t('common.copiedToClipboard')}
+                            {t('common.copiedToClipboard')}
                           </p>
                         ) : null}
                       </div>
@@ -321,15 +437,36 @@ export default function Dashboard() {
                         <div className="text-sm text-gray-500">
                           <span className="font-semibold text-gray-900 dark:text-white">{cv.visits_count}</span> {t('dashboard.cvList.views')}
                         </div>
-                        <div className="flex flex-wrap gap-2">
-                          <Link
-                            to={`/u/${cv.slug}`}
-                            className="btn-icon"
-                            title={t('dashboard.cvList.viewPublic')}
-                            aria-label={t('dashboard.cvList.viewPublic')}
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                          </Link>
+                        <div className="flex flex-wrap items-center gap-2">
+                          {cv.is_published ? (
+                            <Link
+                              to={`/u/${cv.slug}`}
+                              className="btn-icon"
+                              title={t('dashboard.cvList.viewPublic')}
+                              aria-label={t('dashboard.cvList.viewPublic')}
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                            </Link>
+                          ) : (
+                            <>
+                              <button
+                                type="button"
+                                disabled
+                                className="btn-icon cursor-not-allowed opacity-45"
+                                title={t('dashboard.cvList.viewPublicDraftTitle')}
+                                aria-label={t('dashboard.cvList.viewPublicDraftTitle')}
+                              >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                              </button>
+                              <Link
+                                to={`/${lang}/builder?cvId=${cv.id}`}
+                                className="text-xs font-medium text-indigo-600 hover:underline dark:text-indigo-400"
+                                onClick={() => trackEvent('cv_publish_prompt', { entry: 'dashboard_draft_eye', cv_id: cv.id })}
+                              >
+                                {t('dashboard.cvList.viewPublicGoPublish')}
+                              </Link>
+                            </>
+                          )}
                           <Link
                             to={`/${lang}/builder?cvId=${cv.id}`}
                             className="btn-icon"
@@ -356,6 +493,20 @@ export default function Dashboard() {
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                           </Link>
+                          <button
+                            type="button"
+                            className="btn-icon text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/40 dark:hover:text-red-300"
+                            title={t('dashboard.cvList.deleteCv')}
+                            aria-label={t('dashboard.cvList.deleteCvAria')}
+                            onClick={() => {
+                              setDeleteError(null);
+                              setCvToDelete(cv);
+                            }}
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -413,13 +564,27 @@ export default function Dashboard() {
                       </div>
                     )}
                     
-                    <div className="mt-4 flex gap-3">
-                      <button className="btn-primary btn-sm" onClick={() => window.open(job.url, '_blank')}>
+                    <div className="mt-4 flex flex-wrap items-center gap-3">
+                      <button type="button" className="btn-primary btn-sm" onClick={() => window.open(job.url, '_blank')}>
                         {t('dashboard.jobs.apply')}
                       </button>
-                      <button className="btn-secondary btn-sm">
-                        {t('dashboard.jobs.save')}
+                      <button
+                        type="button"
+                        className="btn-secondary btn-sm"
+                        disabled={job.status === 'saved' || jobSaveId === job.id}
+                        onClick={() => void handleSaveJob(job)}
+                      >
+                        {jobSaveId === job.id
+                          ? t('common.loading')
+                          : job.status === 'saved'
+                            ? t('dashboard.jobs.saved')
+                            : t('dashboard.jobs.save')}
                       </button>
+                      {jobSaveErrorId === job.id ? (
+                        <span className="text-xs text-red-600 dark:text-red-400" role="alert">
+                          {t('dashboard.jobs.saveError')}
+                        </span>
+                      ) : null}
                     </div>
                   </div>
                 ))}
@@ -428,6 +593,41 @@ export default function Dashboard() {
           </>
         )}
       </div>
+
+      <Modal
+        show={cvToDelete !== null}
+        onClose={() => {
+          if (!deleteSubmitting) {
+            setCvToDelete(null);
+            setDeleteError(null);
+          }
+        }}
+        size="md"
+        dismissible={!deleteSubmitting}
+      >
+        <Modal.Header className="border-b border-gray-200 dark:border-gray-700">
+          {t('dashboard.cvList.deleteConfirmTitle')}
+        </Modal.Header>
+        <Modal.Body className="space-y-3">
+          <p className="text-sm text-gray-600 dark:text-gray-400">{t('dashboard.cvList.deleteConfirmBody')}</p>
+          {cvToDelete ? (
+            <p className="break-all font-mono text-sm text-gray-900 dark:text-gray-100">/{cvToDelete.slug}</p>
+          ) : null}
+          {deleteError ? (
+            <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+              {deleteError}
+            </p>
+          ) : null}
+        </Modal.Body>
+        <Modal.Footer className="border-t border-gray-200 dark:border-gray-700">
+          <Button color="light" onClick={() => setCvToDelete(null)} disabled={deleteSubmitting}>
+            {t('dashboard.cvList.deleteCancel')}
+          </Button>
+          <Button color="failure" onClick={() => void confirmDeleteCv()} isProcessing={deleteSubmitting}>
+            {t('dashboard.cvList.deleteConfirm')}
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }

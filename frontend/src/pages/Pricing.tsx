@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import ContactForm from './ContactForm';
 import { createCheckoutSession, isAuthenticated } from '../api/cvApi';
 
 const Pricing = () => {
     const { t } = useTranslation();
+    const { lang = 'it' } = useParams<{ lang?: string }>();
     const [searchParams] = useSearchParams();
     const checkoutCvId = (() => {
         const raw = searchParams.get('cv_id');
@@ -17,40 +18,67 @@ const Pricing = () => {
     const [checkoutError, setCheckoutError] = useState<string | null>(null);
     const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
-    const handleCheckout = async (priceId: string, planKey: string) => {
+    const priceOnetime = import.meta.env.VITE_STRIPE_PRICE_ONETIME as string | undefined;
+    const priceMonthly = import.meta.env.VITE_STRIPE_PRICE_MONTHLY as string | undefined;
+    const stripePricesConfigured = Boolean(
+        typeof priceOnetime === 'string' &&
+            priceOnetime.trim() &&
+            typeof priceMonthly === 'string' &&
+            priceMonthly.trim(),
+    );
+
+    const plans = useMemo(
+        () =>
+            [
+                {
+                    key: 'onetime' as const,
+                    checkout_mode: 'payment' as const,
+                    priceId: priceOnetime ?? '',
+                    featured: true,
+                },
+                {
+                    key: 'monthly' as const,
+                    checkout_mode: 'subscription' as const,
+                    priceId: priceMonthly ?? '',
+                    featured: false,
+                },
+            ] as const,
+        [priceOnetime, priceMonthly],
+    );
+
+    const handleCheckout = async (plan: (typeof plans)[number]) => {
         if (!isAuthenticated()) {
             window.dispatchEvent(new CustomEvent('open-signup'));
             return;
         }
+        const priceId = plan.priceId?.trim();
+        if (!priceId) {
+            setCheckoutError(t('pricingPage.priceIdMissing'));
+            return;
+        }
+        if (!stripePricesConfigured) {
+            setCheckoutError(t('pricingPage.configIncomplete'));
+            return;
+        }
         setCheckoutError(null);
-        setLoadingPlan(planKey);
+        setLoadingPlan(plan.key);
         try {
             const data = await createCheckoutSession(priceId, {
                 feature: 'cv_publish',
+                plan_type: plan.key,
+                checkout_mode: plan.checkout_mode,
+                lang,
                 ...(checkoutCvId != null ? { cv_id: checkoutCvId } : {}),
             });
             window.location.href = data.url;
         } catch (error: unknown) {
             const msg =
                 error instanceof Error ? error.message : t('pricingPage.checkoutNetwork');
-            setCheckoutError(msg);
+            setCheckoutError(t('pricingPage.checkoutStartError', { detail: msg }));
         } finally {
             setLoadingPlan(null);
         }
     };
-
-    const plans = [
-        {
-            key: 'onetime',
-            priceId: import.meta.env.VITE_STRIPE_PRICE_ONETIME as string,
-            featured: true,
-        },
-        {
-            key: 'monthly',
-            priceId: import.meta.env.VITE_STRIPE_PRICE_MONTHLY as string,
-            featured: false,
-        },
-    ] as const;
 
     const faqRaw = t('marketing.pricing.faq', { returnObjects: true });
     const firstFaq = Array.isArray(faqRaw) ? faqRaw[0] : null;
@@ -70,6 +98,14 @@ const Pricing = () => {
                 <div className="mx-auto max-w-screen-xl container-padding">
                     {/* Header */}
                     <div className="mx-auto text-center mb-16 max-w-2xl">
+                        {!stripePricesConfigured ? (
+                            <div
+                                className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-left text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100"
+                                role="status"
+                            >
+                                {t('pricingPage.configIncomplete')}
+                            </div>
+                        ) : null}
                         <span className="mb-4 inline-block text-sm font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-400">
                             {t('marketing.pricing.eyebrow')}
                         </span>
@@ -156,8 +192,12 @@ const Pricing = () => {
 
                                     <button
                                         type="button"
-                                        onClick={() => handleCheckout(plan.priceId, plan.key)}
-                                        disabled={loadingPlan === plan.key}
+                                        onClick={() => void handleCheckout(plan)}
+                                        disabled={
+                                            !stripePricesConfigured ||
+                                            !plan.priceId?.trim() ||
+                                            loadingPlan === plan.key
+                                        }
                                         className={plan.featured ? 'btn-primary w-full' : 'btn-secondary w-full'}
                                     >
                                         {loadingPlan === plan.key ? t('common.loading') : (planData?.cta ?? '')}

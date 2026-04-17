@@ -21,6 +21,9 @@ from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
+_VISION_MAX_TOKENS_DEFAULT = 1200
+_VISION_TIMEOUT_DEFAULT_SEC = 22
+
 
 def try_pdf_vision_extracted_en(pdf_path: str) -> Optional[dict[str, Any]]:
     """
@@ -52,6 +55,8 @@ def try_pdf_vision_extracted_en(pdf_path: str) -> Optional[dict[str, Any]]:
 
     max_pages = int(getattr(settings, "CV_PDF_VISION_MAX_PAGES", 3) or 3)
     model = getattr(settings, "OPENAI_CV_VISION_MODEL", "gpt-4o-mini")
+    max_tokens = int(getattr(settings, "CV_OPENAI_VISION_MAX_TOKENS", _VISION_MAX_TOKENS_DEFAULT) or _VISION_MAX_TOKENS_DEFAULT)
+    timeout_sec = int(getattr(settings, "CV_OPENAI_TIMEOUT_SEC", _VISION_TIMEOUT_DEFAULT_SEC) or _VISION_TIMEOUT_DEFAULT_SEC)
 
     image_parts: list[dict[str, Any]] = []
     try:
@@ -90,7 +95,7 @@ def try_pdf_vision_extracted_en(pdf_path: str) -> Optional[dict[str, Any]]:
         '"education":[{"degree":"","school":"","period":""}]}'
     )
 
-    client = OpenAI(api_key=api_key)
+    client = OpenAI(api_key=api_key, timeout=timeout_sec)
     try:
         completion = client.chat.completions.create(
             model=model,
@@ -99,8 +104,8 @@ def try_pdf_vision_extracted_en(pdf_path: str) -> Optional[dict[str, Any]]:
                 {"role": "user", "content": [{"type": "text", "text": user_text}, *image_parts]},
             ],
             response_format={"type": "json_object"},
-            temperature=0.2,
-            max_tokens=4096,
+            temperature=0,
+            max_tokens=max_tokens,
         )
         raw = completion.choices[0].message.content or "{}"
         raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip(), flags=re.IGNORECASE)

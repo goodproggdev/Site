@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { I18nextProvider } from "react-i18next";
 import i18n from "../i18n";
@@ -51,11 +51,10 @@ describe("CvSiteEditor", () => {
       </I18nextProvider>,
     );
 
-    await waitFor(() => {
-      expect(screen.getByRole("region", { name: /anteprima cv/i })).toBeInTheDocument();
-    });
+    const previewRegion = await screen.findByRole("region", { name: /anteprima cv/i });
+    expect(previewRegion).toBeInTheDocument();
     expect(screen.getByRole("region", { name: /proprietà/i })).toBeInTheDocument();
-    expect(await screen.findByText("TypeScript")).toBeInTheDocument();
+    expect(await within(previewRegion).findByText("TypeScript")).toBeInTheDocument();
   });
 
   it("persists list edits via updateCvData", async () => {
@@ -71,7 +70,8 @@ describe("CvSiteEditor", () => {
       </I18nextProvider>,
     );
 
-    const titleInput = await screen.findByDisplayValue("Dev");
+    const previewRegion = await screen.findByRole("region", { name: /anteprima cv/i });
+    const titleInput = within(previewRegion).getByDisplayValue("Dev");
     fireEvent.change(titleInput, { target: { value: "Lead" } });
 
     await waitFor(
@@ -88,5 +88,34 @@ describe("CvSiteEditor", () => {
     );
     expect(Array.isArray(lastPayload?.skills)).toBe(true);
     expect(Array.isArray(lastPayload?.education_list)).toBe(true);
+  });
+
+  it("persists nordevit_editor density when changed from toolbar", async () => {
+    vi.mocked(cvApi.updateCvData).mockClear();
+    const { default: CvSiteEditor } = await import("../pages/CvSiteEditor");
+    render(
+      <I18nextProvider i18n={i18n}>
+        <MemoryRouter initialEntries={["/it/cv/9/edit"]}>
+          <Routes>
+            <Route path="/:lang/cv/:cvId/edit" element={<CvSiteEditor />} />
+          </Routes>
+        </MemoryRouter>
+      </I18nextProvider>,
+    );
+
+    const densitySelect = await screen.findByLabelText(/densità scheda/i);
+    fireEvent.change(densitySelect, { target: { value: "compact" } });
+
+    await waitFor(
+      () => {
+        expect(cvApi.updateCvData).toHaveBeenCalled();
+      },
+      { timeout: 4000 },
+    );
+
+    const calls = vi.mocked(cvApi.updateCvData).mock.calls;
+    const lastPayload = calls[calls.length - 1]?.[1] as Record<string, unknown>;
+    const editor = lastPayload?.nordevit_editor as Record<string, unknown> | undefined;
+    expect(editor?.density).toBe("compact");
   });
 });

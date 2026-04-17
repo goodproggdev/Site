@@ -264,11 +264,21 @@ export default function Settings() {
                   ) : (
                     <div className="rounded-lg border border-dashed border-gray-300 p-6 text-center dark:border-gray-600">
                       <p className="mb-3 text-sm text-gray-500 dark:text-gray-400">{t('settings.billing.noActive')}</p>
-                      <Link to={`/${lang}/#price`} className="btn-primary text-sm">
+                    </div>
+                  )}
+
+                  {!isPro ? (
+                    <div className={entitlements.length > 0 ? 'mt-4 rounded-lg border border-indigo-100 bg-indigo-50/60 p-4 dark:border-indigo-900/40 dark:bg-indigo-950/30' : 'mt-4 text-center'}>
+                      {entitlements.length > 0 ? (
+                        <p className="mb-3 text-sm text-gray-700 dark:text-gray-300">
+                          {t('settings.billing.upgradeHint')}
+                        </p>
+                      ) : null}
+                      <Link to={`/${lang}/pricing`} className="btn-primary text-sm inline-flex">
                         {t('settings.billing.upgrade')}
                       </Link>
                     </div>
-                  )}
+                  ) : null}
                 </div>
               )}
             </div>

@@ -1,7 +1,8 @@
 import { useState, lazy, Suspense, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Progress } from 'flowbite-react';
-import { getCvDetail, updateCvData } from '../../api/cvApi';
+import { createCvDraft, getCvDetail, updateCvData } from '../../api/cvApi';
+import type { CVData as ApiCVRecord } from '../../api/types';
 import { apiCvRecordToWizard, mergeWizardIntoRawJson } from '../../utils/cvRawJsonMap';
 
 // Lazy load steps for better performance
@@ -49,10 +50,19 @@ export default function CVWizard({ onComplete, initialCvId = null }: CVWizardPro
   const rawBaseRef = useRef<Record<string, unknown>>({});
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [autosaveStatus, setAutosaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [initialLoadPending, setInitialLoadPending] = useState(!!initialCvId);
+  const [draftCreating, setDraftCreating] = useState(false);
 
   useEffect(() => {
-    if (!initialCvId) return;
+    if (!initialCvId) {
+      setLoadError(null);
+      setInitialLoadPending(false);
+      return;
+    }
     let cancelled = false;
+    setLoadError(null);
+    setInitialLoadPending(true);
     (async () => {
       try {
         const rec = await getCvDetail(initialCvId);
@@ -62,13 +72,18 @@ export default function CVWizard({ onComplete, initialCvId = null }: CVWizardPro
         setCvData((prev) => apiCvRecordToWizard(rec, prev));
         setCurrentStep(1);
       } catch {
-        if (!cancelled) setAutosaveStatus('error');
+        if (!cancelled) {
+          setAutosaveStatus('error');
+          setLoadError(t('builder.loadCvError'));
+        }
+      } finally {
+        if (!cancelled) setInitialLoadPending(false);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [initialCvId]);
+  }, [initialCvId, t]);
 
   const persistDraft = useCallback(async (draft: CVData) => {
     const id = draft.cvId;
@@ -95,9 +110,24 @@ export default function CVWizard({ onComplete, initialCvId = null }: CVWizardPro
   const CurrentStepComponent = steps[currentStep].component;
   const progress = ((currentStep + 1) / steps.length) * 100;
 
-  const handleNext = () => {
+  const handleNext = async () => {
+    if (currentStep === 0 && !cvData.cvId) {
+      setDraftCreating(true);
+      setLoadError(null);
+      try {
+        const rec = await createCvDraft();
+        const base = { ...((rec.raw_json || {}) as Record<string, unknown>) };
+        rawBaseRef.current = base;
+        setCvData((prev) => apiCvRecordToWizard(rec as ApiCVRecord, prev));
+      } catch {
+        setLoadError(t('builder.draftCreateError'));
+        setDraftCreating(false);
+        return;
+      }
+      setDraftCreating(false);
+    }
     if (currentStep < steps.length - 1) {
-      setCurrentStep(prev => prev + 1);
+      setCurrentStep((prev) => prev + 1);
     } else {
       onComplete?.();
     }
@@ -125,6 +155,11 @@ export default function CVWizard({ onComplete, initialCvId = null }: CVWizardPro
 
   return (
     <div className="max-w-4xl mx-auto">
+      {loadError ? (
+        <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100">
+          {loadError}
+        </p>
+      ) : null}
       {cvData.cvId ? (
         <p className="mb-2 text-right text-xs text-gray-500 dark:text-gray-400" aria-live="polite">
           {autosaveStatus === 'saving' ? t('builder.autosave.saving') : null}
@@ -175,9 +210,14 @@ export default function CVWizard({ onComplete, initialCvId = null }: CVWizardPro
         </Button>
         <Button
           color="indigo"
-          onClick={handleNext}
+          disabled={draftCreating || (currentStep === 0 && initialLoadPending)}
+          onClick={() => void handleNext()}
         >
-          {currentStep === steps.length - 1 ? t('common.finish') : t('common.next')}
+          {draftCreating
+            ? t('common.loading')
+            : currentStep === steps.length - 1
+              ? t('common.finish')
+              : t('common.next')}
         </Button>
       </div>
     </div>

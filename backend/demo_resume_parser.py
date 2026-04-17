@@ -37,27 +37,49 @@ except ImportError:
     CORS = None
     logger.debug("Flask/Flask-CORS non installati (non necessari per Django).")
 
-import tempfile # Per gestire file temporanei
+import tempfile  # Per gestire file temporanei
 
-# Importa resume-parser (PyPI: layout vari tra versioni; proviamo più entrypoint).
-ResumeParser = None
-try:
-    from resume_parser import ResumeParser as _ResumeParser
 
-    ResumeParser = _ResumeParser
-except ImportError:
+def _ensure_nltk_for_pyresparser() -> None:
+    """pyresparser importa subito `nltk.corpus.stopwords`: serve almeno stopwords (e punkt per tokenize)."""
     try:
-        from resume_parser.resume_parser import ResumeParser as _ResumeParser2
+        import nltk
+        from nltk.corpus import stopwords
 
-        ResumeParser = _ResumeParser2
-    except ImportError:
-        logger.info("Libreria 'resume-parser' non installata: parser EN rule-based disabilitato.")
+        stopwords.words("english")
+    except LookupError:
+        import nltk
+
+        for pkg in (
+            "stopwords",
+            "punkt",
+            "wordnet",
+            "omw-1.4",
+            "averaged_perceptron_tagger",
+            "maxent_ne_chunker",
+            "words",
+            "brown",
+        ):
+            try:
+                nltk.download(pkg, quiet=True)
+            except Exception as e:
+                logger.debug("NLTK download %s: %s", pkg, e)
+
+
+# Parser EN: pyresparser (PyPI), compatibile con `ResumeParser(path).get_extracted_data()`.
+# Il pacchetto PyPI `resume-parser` (kbrajwani) è diverso e rompe l'import: non usarlo.
+ResumeParser = None
+_ensure_nltk_for_pyresparser()
+try:
+    from pyresparser import ResumeParser as _PyResumeParser
+
+    ResumeParser = _PyResumeParser
 except Exception as e:
-    logger.warning("Errore import 'resume-parser': %s", e)
+    logger.warning("Libreria 'pyresparser' non disponibile: %s", e)
 
 RESUME_PARSER_AVAILABLE = ResumeParser is not None
 if RESUME_PARSER_AVAILABLE:
-    logger.info("Libreria 'resume-parser' caricata (ResumeParser).")
+    logger.info("Libreria 'pyresparser' caricata (ResumeParser EN).")
 
 # --- Carica i modelli linguistici di spaCy ---
 # Carica i modelli all'avvio dell'applicazione Flask
@@ -158,34 +180,139 @@ def extract_text_from_file(file_path):
         return None
 
 
-# --- Funzione per l'estrazione con resume-parser (modello inglese) ---
+def _pyresparser_raw_to_extracted_en(raw: dict) -> dict:
+    """
+    Adatta l'output di pyresparser.get_extracted_data() al formato atteso da
+    map_extracted_data_to_template (lato EN).
+    """
+    if not raw:
+        return {}
+    out: dict = {}
+
+    name = raw.get("name")
+    if name and str(name).strip():
+        out["name"] = str(name).strip()
+
+    email = raw.get("email")
+    if email and str(email).strip():
+        out["email"] = str(email).strip()
+
+    phone = raw.get("mobile_number")
+    if phone and str(phone).strip():
+        out["phone"] = str(phone).strip()
+
+    skills = raw.get("skills")
+    if isinstance(skills, list) and skills:
+        out["skills"] = [str(s).strip() for s in skills if s is not None and str(s).strip()]
+    elif isinstance(skills, str) and skills.strip():
+        out["skills"] = [skills.strip()]
+
+    # Istruzione: degree / college_name spesso sono liste
+    education_en = []
+    degrees = raw.get("degree") or []
+    colleges = raw.get("college_name") or []
+    if not isinstance(degrees, list):
+        degrees = [degrees] if degrees else []
+    if not isinstance(colleges, list):
+        colleges = [colleges] if colleges else []
+    n = max(len(degrees), len(colleges))
+    for i in range(n):
+        title = str(degrees[i]).strip() if i < len(degrees) and degrees[i] else ""
+        sub = str(colleges[i]).strip() if i < len(colleges) and colleges[i] else ""
+        if title or sub:
+            education_en.append({"period": "", "title": title, "subtitle": sub})
+    if education_en:
+        out["education_en"] = education_en
+
+    # Esperienza: pyresparser mette in `experience` una lista di stringhe (estratte da sezioni)
+    experience_out = []
+    exp_raw = raw.get("experience")
+    if isinstance(exp_raw, str) and exp_raw.strip():
+        exp_raw = [exp_raw]
+    if isinstance(exp_raw, list):
+        for line in exp_raw:
+            t = str(line).strip()
+            if not t:
+                continue
+            experience_out.append(
+                {
+                    "title": t[:240],
+                    "company": "",
+                    "years": "",
+                    "description": t[240:] if len(t) > 240 else "",
+                }
+            )
+
+    designation = raw.get("designation")
+    companies = raw.get("company_names")
+    if isinstance(designation, list) and designation:
+        if not isinstance(companies, list):
+            companies = [companies] if companies else []
+        for i, des in enumerate(designation):
+            title = str(des).strip() if des else ""
+            comp = str(companies[i]).strip() if i < len(companies) and companies[i] else ""
+            if title or comp:
+                experience_out.append(
+                    {
+                        "title": title,
+                        "company": comp,
+                        "years": "",
+                        "description": "",
+                    }
+                )
+
+    if experience_out:
+        out["experience"] = experience_out
+
+    # Sommario sintetico da designazione / titoli
+    parts = []
+    if isinstance(designation, list) and designation:
+        parts.append(", ".join(str(x).strip() for x in designation if x))
+    elif isinstance(designation, str) and designation.strip():
+        parts.append(designation.strip())
+    te = raw.get("total_experience")
+    if te is not None and str(te).strip():
+        parts.append(f"Esperienza totale (anni indicativi): {te}")
+    if parts:
+        out["summary"] = ". ".join(parts)
+
+    return out
+
+
+# --- Funzione per l'estrazione EN (pyresparser + en_core_web_sm interno al pacchetto) ---
 def extract_with_resume_parser_en(file_path):
     """
-    Estrae dati usando resume-parser (basato su modello inglese) dal percorso del file.
-    Utilizza il modello nlp_en (en_core_web_sm) caricato esternamente.
+    Estrae dati strutturati in EN dal file CV usando pyresparser (spaCy en_core_web_sm + modello custom nel pacchetto).
     """
     if not RESUME_PARSER_AVAILABLE:
-        return {"error": "Estrazione inglese (resume-parser) non disponibile: libreria non importata."}
-    if nlp_en is None:
-        return {"error": "Estrazione inglese (resume-parser) non disponibile: modello spaCy 'en_core_web_sm' non caricato."}
+        return {
+            "error": (
+                "Estrazione inglese non disponibile: installare pyresparser e i corpora NLTK "
+                "(stopwords, punkt, …). Esegui: python manage.py setup_cv_nlp"
+            )
+        }
     if not os.path.exists(file_path):
-         return {"error": f"File non trovato per resume-parser: {file_path}"}
+        return {"error": f"File non trovato per pyresparser: {file_path}"}
 
-    print(f"\n--- Tentativo di estrazione con resume-parser (modello inglese: en_core_web_sm) da {os.path.basename(file_path)} ---")
+    print(f"\n--- Estrazione EN con pyresparser da {os.path.basename(file_path)} ---")
 
     try:
-        # MODIFICA CHIAVE: Passa il modello nlp_en caricato esplicitamente
-        parser = ResumeParser(file_path, clean_text=True, spacy_model=nlp_en)
-        extracted_data = parser.get_extracted_data()
-        print("Estrazione resume-parser completata.")
-        # Aggiungi un controllo per vedere se i dati estratti sono vuoti o minimi
-        if not extracted_data or all(value is None or (isinstance(value, (list, dict)) and not value) or (isinstance(value, str) and not value.strip()) for value in extracted_data.values()):
-            print("AVVISO: resume-parser ha restituito dati vuoti o minimi. Il CV potrebbe non essere in un formato/lingua ottimale per questo parser.")
+        parser = ResumeParser(file_path)
+        raw = parser.get_extracted_data()
+        extracted_data = _pyresparser_raw_to_extracted_en(raw or {})
+        print("Estrazione pyresparser completata.")
+        if not extracted_data or all(
+            v in (None, "", [], {})
+            for v in extracted_data.values()
+        ):
+            print(
+                "AVVISO: pyresparser ha restituito dati vuoti o minimi. "
+                "Prova DOCX o PDF con testo selezionabile."
+            )
         return extracted_data
     except Exception as e:
-        print(f"Errore o eccezione durante l'esecuzione di resume-parser: {str(e)}")
-        print("Questo potrebbe essere dovuto a incompatibilità o problemi interni alla libreria resume-parser, anche usando en_core_web_sm.")
-        return {"error": f"Errore durante l'estrazione con resume-parser (inglese): {str(e)}"}
+        print(f"Errore durante pyresparser: {e}")
+        return {"error": f"Errore durante l'estrazione EN (pyresparser): {str(e)}"}
 
 
 # --- Funzione per l'estrazione migliorata con spaCy (modello italiano) ---

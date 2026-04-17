@@ -1,10 +1,29 @@
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { CVStepProps } from './CVWizard';
+import { normalizeListItem, type TemplateListItem } from '../../utils/cvTemplateLists';
 
 interface CVPreviewStepProps extends Omit<CVStepProps, 'updateCVData' | 'onNext'> {}
 
+function toListItems(items: unknown[]): TemplateListItem[] {
+  return items.map((x) => normalizeListItem(x));
+}
+
 export default function CVPreviewStep({ cvData }: CVPreviewStepProps) {
   const { t } = useTranslation();
+
+  const experienceItems = useMemo(
+    () => toListItems(Array.isArray(cvData.experience) ? cvData.experience : []),
+    [cvData.experience],
+  );
+  const educationItems = useMemo(
+    () => toListItems(Array.isArray(cvData.education) ? cvData.education : []),
+    [cvData.education],
+  );
+  const skills = useMemo(() => (cvData.skills || []).map((s) => String(s).trim()).filter(Boolean), [cvData.skills]);
+
+  const hasExp = experienceItems.some((x) => x.period || x.title || x.subtitle);
+  const hasEdu = educationItems.some((x) => x.period || x.title || x.subtitle);
 
   return (
     <div>
@@ -43,28 +62,66 @@ export default function CVPreviewStep({ cvData }: CVPreviewStepProps) {
         {cvData.personalInfo.summary && (
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t('builder.preview.sections.profile')}</h2>
-            <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+            <p className="text-gray-600 dark:text-gray-400 leading-relaxed whitespace-pre-line">
               {cvData.personalInfo.summary}
             </p>
           </div>
         )}
 
-        {/* Experience placeholder */}
         <div className="mb-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('builder.preview.sections.experience')}</h2>
-          <p className="text-gray-500 italic">{t('builder.preview.empty.experience')}</p>
+          {!hasExp ? (
+            <p className="text-gray-500 italic">{t('builder.preview.empty.experience')}</p>
+          ) : (
+            <ul className="space-y-4">
+              {experienceItems
+                .filter((x) => x.period || x.title || x.subtitle)
+                .map((row, i) => (
+                  <li key={`pe-${i}`} className="border-l-2 border-indigo-500 pl-4">
+                    {row.period ? <p className="text-sm text-gray-500 dark:text-gray-400">{row.period}</p> : null}
+                    {row.title ? <p className="font-medium text-gray-900 dark:text-white">{row.title}</p> : null}
+                    {row.subtitle ? <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{row.subtitle}</p> : null}
+                  </li>
+                ))}
+            </ul>
+          )}
         </div>
 
-        {/* Education placeholder */}
         <div className="mb-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('builder.preview.sections.education')}</h2>
-          <p className="text-gray-500 italic">{t('builder.preview.empty.education')}</p>
+          {!hasEdu ? (
+            <p className="text-gray-500 italic">{t('builder.preview.empty.education')}</p>
+          ) : (
+            <ul className="space-y-4">
+              {educationItems
+                .filter((x) => x.period || x.title || x.subtitle)
+                .map((row, i) => (
+                  <li key={`ed-${i}`} className="border-l-2 border-indigo-500 pl-4">
+                    {row.period ? <p className="text-sm text-gray-500 dark:text-gray-400">{row.period}</p> : null}
+                    {row.title ? <p className="font-medium text-gray-900 dark:text-white">{row.title}</p> : null}
+                    {row.subtitle ? <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{row.subtitle}</p> : null}
+                  </li>
+                ))}
+            </ul>
+          )}
         </div>
 
-        {/* Skills placeholder */}
         <div>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('builder.preview.sections.skills')}</h2>
-          <p className="text-gray-500 italic">{t('builder.preview.empty.skills')}</p>
+          {skills.length === 0 ? (
+            <p className="text-gray-500 italic">{t('builder.preview.empty.skills')}</p>
+          ) : (
+            <ul className="flex flex-wrap gap-2">
+              {skills.map((name) => (
+                <li
+                  key={name}
+                  className="rounded-full bg-indigo-50 px-3 py-1 text-sm text-indigo-900 dark:bg-indigo-900/40 dark:text-indigo-100"
+                >
+                  {name}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     </div>

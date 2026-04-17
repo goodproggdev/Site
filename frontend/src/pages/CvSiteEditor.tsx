@@ -5,52 +5,74 @@ import { Button, Label, Select, TextInput, Textarea } from 'flowbite-react';
 import axios from 'axios';
 import { getCvDetail, updateCvData } from '../api/cvApi';
 import { formatAndLocalizeDrfErrors } from '../utils/apiErrorI18n';
-import CvPublicSections from '../components/CvPublicSections';
-import type { TemplateListItem, TemplateLists, TemplateSkill } from '../utils/cvTemplateLists';
-import { readTemplateLists, patchTemplateLists } from '../utils/cvTemplateLists';
+import CvPreviewCard, {
+  readCardVisualFromRaw,
+  type CvPreviewDensity,
+  type CvPreviewHeadingSize,
+} from '../components/cv-preview/CvPreviewCard';
+import type { CvPublicSectionsEditHandlers } from '../components/CvPublicSections';
+import type { TemplateListItem } from '../utils/cvTemplateLists';
+import { normalizeListItem } from '../utils/cvTemplateLists';
+import type { WizardCvState } from '../utils/cvRawJsonMap';
+import { mergeWizardIntoRawJson, rawJsonToWizardCvData } from '../utils/cvRawJsonMap';
 
 type Accent = 'indigo' | 'violet' | 'teal';
 
-function readEditor(raw: Record<string, unknown>) {
+type EditorTab = 'personal' | 'experience' | 'education' | 'skills';
+
+type CardVisual = { density: CvPreviewDensity; headingSize: CvPreviewHeadingSize };
+
+function readAccent(raw: Record<string, unknown>): Accent {
   const ed = (raw.nordevit_editor as Record<string, unknown>) || {};
-  return {
-    accent: (['indigo', 'violet', 'teal'].includes(String(ed.accent)) ? ed.accent : 'indigo') as Accent,
-    headline: String(ed.headline ?? ''),
-    tagline: String(ed.tagline ?? ''),
-    summary: String(ed.summary ?? ''),
-  };
+  return (['indigo', 'violet', 'teal'].includes(String(ed.accent)) ? ed.accent : 'indigo') as Accent;
 }
 
-function mergeEditor(raw: Record<string, unknown>, patch: ReturnType<typeof readEditor>) {
-  const pi = { ...(typeof raw.personal_info === 'object' && raw.personal_info ? raw.personal_info : {}) } as Record<
-    string,
-    unknown
-  >;
-  if (patch.headline) pi.name = patch.headline;
-  if (patch.tagline) pi.title = patch.tagline;
-  const next = {
-    ...raw,
-    personal_info: pi,
-    summary: patch.summary || raw.summary,
+/** Unisce wizard + accent e mantiene `nordevit_editor` allineato (retrocompatibilità con dati già salvati). */
+function buildMergedPayload(
+  raw: Record<string, unknown>,
+  wizard: WizardCvState,
+  accent: Accent,
+  visual: CardVisual,
+): Record<string, unknown> {
+  const merged = mergeWizardIntoRawJson({ ...raw }, wizard);
+  const pi = (merged.personal_info as Record<string, unknown>) || {};
+  const name = String(pi.name ?? '');
+  const jobTitle = String(pi.title ?? '');
+  const summary = String(merged.summary ?? '');
+  const prevEd =
+    typeof merged.nordevit_editor === 'object' && merged.nordevit_editor
+      ? { ...(merged.nordevit_editor as Record<string, unknown>) }
+      : {};
+  return {
+    ...merged,
     nordevit_editor: {
-      accent: patch.accent,
-      headline: patch.headline,
-      tagline: patch.tagline,
-      summary: patch.summary,
+      ...prevEd,
+      accent,
+      density: visual.density,
+      headingSize: visual.headingSize,
+      headline: name,
+      tagline: jobTitle,
+      summary,
     },
   };
-  return next;
 }
 
-function buildMergedPayload(raw: Record<string, unknown>, editor: ReturnType<typeof readEditor>, lists: TemplateLists) {
-  return patchTemplateLists(mergeEditor(raw, editor), lists);
+function wizardFromRaw(base: Record<string, unknown>, cvId: number): WizardCvState {
+  const partial = rawJsonToWizardCvData(base);
+  const pi = (base.personal_info as Record<string, unknown>) || {};
+  const titleFromRaw = String(partial.personalInfo?.title ?? pi.title ?? '');
+  return {
+    personalInfo: {
+      ...partial.personalInfo,
+      title: titleFromRaw,
+    },
+    experience: (partial.experience as unknown[]) ?? [],
+    education: (partial.education as unknown[]) ?? [],
+    skills: partial.skills ?? [],
+    cvId,
+    parsedData: base,
+  };
 }
-
-const emptyLists = (): TemplateLists => ({
-  work_experience_list: [],
-  education_list: [],
-  skills: [],
-});
 
 export default function CvSiteEditor() {
   const { t } = useTranslation();
@@ -63,8 +85,20 @@ export default function CvSiteEditor() {
   const [raw, setRaw] = useState<Record<string, unknown>>({});
   const rawRef = useRef<Record<string, unknown>>({});
   const [publicSlug, setPublicSlug] = useState('');
-  const [editor, setEditor] = useState(readEditor({}));
-  const [lists, setLists] = useState<TemplateLists>(emptyLists);
+  const [wizard, setWizard] = useState<WizardCvState>({
+    personalInfo: {},
+    experience: [],
+    education: [],
+    skills: [],
+    cvId: null,
+    parsedData: null,
+  });
+  const [accent, setAccent] = useState<Accent>('indigo');
+  const [density, setDensity] = useState<CvPreviewDensity>('comfortable');
+  const [headingSize, setHeadingSize] = useState<CvPreviewHeadingSize>('md');
+  const [previewViewport, setPreviewViewport] = useState<'desktop' | 'mobile'>('desktop');
+  const [drawerOpen, setDrawerOpen] = useState(true);
+  const [activeTab, setActiveTab] = useState<EditorTab>('personal');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [saveMsg, setSaveMsg] = useState('');
 
@@ -83,18 +117,14 @@ export default function CvSiteEditor() {
     try {
       const rec = await getCvDetail(cvId);
       const base = { ...((rec.raw_json || {}) as Record<string, unknown>) };
-      const ed = readEditor(base);
-      if (!ed.headline) {
-        const pi = (base.personal_info as Record<string, unknown>) || {};
-        ed.headline = String(pi.name ?? base.name ?? '');
-        ed.tagline = String(pi.title ?? '');
-        ed.summary = String(base.summary ?? pi.summary ?? '');
-      }
       setPublicSlug(rec.slug || '');
       setRaw(base);
       rawRef.current = base;
-      setEditor(ed);
-      setLists(readTemplateLists(base));
+      setWizard(wizardFromRaw(base, cvId));
+      setAccent(readAccent(base));
+      const vis = readCardVisualFromRaw(base);
+      setDensity(vis.density);
+      setHeadingSize(vis.headingSize);
     } catch (e) {
       if (axios.isAxiosError(e) && e.response?.status === 404) {
         setError(t('cvEditor.notFound'));
@@ -112,7 +142,7 @@ export default function CvSiteEditor() {
 
   const runSave = useCallback(async () => {
     if (!Number.isFinite(cvId)) return;
-    const merged = buildMergedPayload(rawRef.current, editor, lists);
+    const merged = buildMergedPayload(rawRef.current, wizard, accent, { density, headingSize });
     setSaveStatus('saving');
     setSaveMsg('');
     try {
@@ -133,60 +163,155 @@ export default function CvSiteEditor() {
         setSaveMsg(t('cvEditor.saveError'));
       }
     }
-  }, [cvId, editor, lists, t]);
+  }, [cvId, wizard, accent, density, headingSize, t]);
 
   useEffect(() => {
     if (loading || error) return;
     const h = window.setTimeout(() => void runSave(), 800);
     return () => window.clearTimeout(h);
-  }, [editor, lists, loading, error, runSave]);
+  }, [wizard, accent, density, headingSize, loading, error, runSave]);
 
-  const previewRaw = useMemo(() => {
-    const merged = mergeEditor(raw, editor);
-    return patchTemplateLists(merged, lists);
-  }, [raw, editor, lists]);
+  const cardVisual = useMemo(() => ({ density, headingSize }), [density, headingSize]);
+  const previewMerged = useMemo(
+    () => buildMergedPayload(raw, wizard, accent, cardVisual),
+    [raw, wizard, accent, cardVisual],
+  );
 
-  const previewData = useMemo(() => {
-    const pi = { ...(typeof raw.personal_info === 'object' ? raw.personal_info : {}) } as Record<string, unknown>;
+  const editorCanvasRaw = useMemo(() => {
+    const merged = mergeWizardIntoRawJson({ ...raw }, wizard);
+    const work = (Array.isArray(wizard.experience) ? wizard.experience : []).map((x) => normalizeListItem(x));
+    const edu = (Array.isArray(wizard.education) ? wizard.education : []).map((x) => normalizeListItem(x));
+    const skills = (wizard.skills || []).map((n) => ({ name: String(n), level: 'N/A' as const }));
+    const pi = (merged.personal_info as Record<string, unknown>) || {};
+    const name = String(pi.name ?? '');
+    const jobTitle = String(pi.title ?? '');
+    const summary = String(merged.summary ?? '');
+    const prevEd =
+      typeof merged.nordevit_editor === 'object' && merged.nordevit_editor
+        ? { ...(merged.nordevit_editor as Record<string, unknown>) }
+        : {};
     return {
-      personal_info: {
-        name: editor.headline || String(pi.name ?? ''),
-        title: editor.tagline || String(pi.title ?? ''),
+      ...merged,
+      work_experience_list: work,
+      education_list: edu,
+      skills,
+      nordevit_editor: {
+        ...prevEd,
+        accent,
+        density,
+        headingSize,
+        headline: name,
+        tagline: jobTitle,
+        summary,
       },
-      summary: editor.summary || String(raw.summary ?? ''),
-      nordevit_editor: { accent: editor.accent },
     };
-  }, [raw, editor]);
+  }, [raw, wizard, accent, density, headingSize]);
 
-  const gradient =
-    editor.accent === 'violet'
-      ? 'from-violet-500 to-fuchsia-600'
-      : editor.accent === 'teal'
-        ? 'from-teal-500 to-cyan-600'
-        : 'from-indigo-500 to-purple-600';
+  const hero = useMemo(() => {
+    const pi = (previewMerged.personal_info as Record<string, unknown>) || {};
+    return {
+      name: String(pi.name ?? ''),
+      title: String(pi.title ?? ''),
+      summary: String(previewMerged.summary ?? ''),
+    };
+  }, [previewMerged]);
 
-  const updateWorkRow = (index: number, field: keyof TemplateListItem, value: string) => {
-    setLists((s) => {
-      const work_experience_list = s.work_experience_list.map((row, i) =>
-        i === index ? { ...row, [field]: value } : row,
-      );
-      return { ...s, work_experience_list };
-    });
+  const experienceItems = useMemo(
+    () => (Array.isArray(wizard.experience) ? wizard.experience : []).map((x) => normalizeListItem(x)),
+    [wizard.experience],
+  );
+
+  const educationItems = useMemo(
+    () => (Array.isArray(wizard.education) ? wizard.education : []).map((x) => normalizeListItem(x)),
+    [wizard.education],
+  );
+
+  const patchPersonal = (field: string, value: string) => {
+    setWizard((w) => ({
+      ...w,
+      personalInfo: { ...w.personalInfo, [field]: value },
+    }));
   };
 
-  const updateEduRow = (index: number, field: keyof TemplateListItem, value: string) => {
-    setLists((s) => {
-      const education_list = s.education_list.map((row, i) => (i === index ? { ...row, [field]: value } : row));
-      return { ...s, education_list };
-    });
+  const setExperienceItems = (items: TemplateListItem[]) => {
+    setWizard((w) => ({ ...w, experience: items as unknown[] }));
   };
 
-  const updateSkillRow = (index: number, field: keyof TemplateSkill, value: string) => {
-    setLists((s) => {
-      const skills = s.skills.map((row, i) => (i === index ? { ...row, [field]: value } : row));
-      return { ...s, skills };
-    });
+  const setEducationItems = (items: TemplateListItem[]) => {
+    setWizard((w) => ({ ...w, education: items as unknown[] }));
   };
+
+  const updateWorkRow = useCallback((index: number, field: keyof TemplateListItem, value: string) => {
+    setWizard((w) => {
+      const items = (Array.isArray(w.experience) ? w.experience : []).map((x) => normalizeListItem(x));
+      const next = items.map((row, i) => (i === index ? { ...row, [field]: value } : row));
+      return { ...w, experience: next as unknown[] };
+    });
+  }, []);
+
+  const updateEduRow = useCallback((index: number, field: keyof TemplateListItem, value: string) => {
+    setWizard((w) => {
+      const items = (Array.isArray(w.education) ? w.education : []).map((x) => normalizeListItem(x));
+      const next = items.map((row, i) => (i === index ? { ...row, [field]: value } : row));
+      return { ...w, education: next as unknown[] };
+    });
+  }, []);
+
+  const applyFullName = (full: string) => {
+    const trimmed = full.trim();
+    const parts = trimmed.split(/\s+/).filter(Boolean);
+    const firstName = parts[0] ?? '';
+    const lastName = parts.slice(1).join(' ');
+    setWizard((w) => ({
+      ...w,
+      personalInfo: { ...w.personalInfo, firstName, lastName },
+    }));
+  };
+
+  const sectionsEditHandlers: CvPublicSectionsEditHandlers = useMemo(
+    () => ({
+      onWorkChange: updateWorkRow,
+      onEducationChange: updateEduRow,
+      onSkillChange: (index, name) => {
+        setWizard((w) => {
+          const next = [...(w.skills || [])];
+          next[index] = name;
+          return { ...w, skills: next };
+        });
+      },
+      onAddWork: () => setExperienceItems([...experienceItems, { period: '', title: '', subtitle: '' }]),
+      onAddEducation: () => setEducationItems([...educationItems, { period: '', title: '', subtitle: '' }]),
+      onAddSkill: () => setWizard((w) => ({ ...w, skills: [...(w.skills || []), ''] })),
+      onRemoveWork: (index) => setExperienceItems(experienceItems.filter((_, i) => i !== index)),
+      onRemoveEducation: (index) => setEducationItems(educationItems.filter((_, i) => i !== index)),
+      onRemoveSkill: (index) =>
+        setWizard((w) => ({
+          ...w,
+          skills: (w.skills || []).filter((_, i) => i !== index),
+        })),
+    }),
+    [experienceItems, educationItems, updateWorkRow, updateEduRow],
+  );
+
+  const tabBtn = (tab: EditorTab, labelKey: string) => (
+    <button
+      key={tab}
+      type="button"
+      role="tab"
+      id={`cv-editor-tab-${tab}`}
+      aria-selected={activeTab === tab}
+      aria-controls={`cv-editor-panel-${tab}`}
+      tabIndex={activeTab === tab ? 0 : -1}
+      onClick={() => setActiveTab(tab)}
+      className={`shrink-0 snap-start rounded-lg px-4 py-2.5 text-sm font-medium transition-colors min-h-[44px] ${
+        activeTab === tab
+          ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-200'
+          : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
+      }`}
+    >
+      {t(labelKey)}
+    </button>
+  );
 
   if (!Number.isFinite(cvId)) {
     return (
@@ -234,6 +359,16 @@ export default function CvSiteEditor() {
             <Button type="button" color="light" size="sm" onClick={() => void runSave()}>
               {t('cvEditor.saveNow')}
             </Button>
+            <Button
+              type="button"
+              color="light"
+              size="sm"
+              aria-expanded={drawerOpen}
+              aria-controls="cv-editor-properties-panel"
+              onClick={() => setDrawerOpen((o) => !o)}
+            >
+              {drawerOpen ? t('cvEditor.visual.hideProperties') : t('cvEditor.visual.showProperties')}
+            </Button>
             <Link to={`/${lang}/dashboard`} className="btn-secondary text-sm">
               {t('cvEditor.backDashboard')}
             </Link>
@@ -250,204 +385,316 @@ export default function CvSiteEditor() {
         </div>
       </div>
 
-      <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 lg:grid-cols-2">
+      <div className="mx-auto max-w-7xl px-4 py-6">
         <div
-          className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800"
-          role="region"
-          aria-label={t('cvEditor.previewRegion')}
+          className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800"
+          role="toolbar"
+          aria-label={t('cvEditor.visual.toolbarAria')}
         >
-          <div className={`rounded-xl bg-gradient-to-r p-[2px] ${gradient}`}>
-            <div className="rounded-[10px] bg-white p-6 dark:bg-gray-900">
-              <div className="mb-4 flex items-center gap-3">
-                <div className={`h-12 w-12 rounded-full bg-gradient-to-tr ${gradient}`} />
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                    {(previewData as { personal_info?: { name?: string } }).personal_info?.name}
-                  </h3>
-                  <p
-                    className={`text-xs font-semibold uppercase tracking-wide ${
-                      editor.accent === 'violet'
-                        ? 'text-violet-600 dark:text-violet-400'
-                        : editor.accent === 'teal'
-                          ? 'text-teal-600 dark:text-teal-400'
-                          : 'text-indigo-600 dark:text-indigo-400'
-                    }`}
-                  >
-                    {(previewData as { personal_info?: { title?: string } }).personal_info?.title}
-                  </p>
-                </div>
-              </div>
-              <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-300">
-                {(previewData as { summary?: string }).summary}
-              </p>
-              <CvPublicSections raw={previewRaw} accent={editor.accent} showPlaceholder={false} />
-            </div>
+          <div className="flex min-w-[10rem] flex-col gap-1">
+            <Label htmlFor="ed-toolbar-accent" value={t('cvEditor.accent')} className="text-xs" />
+            <Select
+              id="ed-toolbar-accent"
+              sizing="sm"
+              value={accent}
+              onChange={(e) => setAccent(e.target.value as Accent)}
+            >
+              <option value="indigo">{t('cvEditor.accentIndigo')}</option>
+              <option value="violet">{t('cvEditor.accentViolet')}</option>
+              <option value="teal">{t('cvEditor.accentTeal')}</option>
+            </Select>
+          </div>
+          <div className="flex min-w-[10rem] flex-col gap-1">
+            <Label htmlFor="ed-toolbar-density" value={t('cvEditor.visual.density')} className="text-xs" />
+            <Select
+              id="ed-toolbar-density"
+              sizing="sm"
+              value={density}
+              onChange={(e) => setDensity(e.target.value as CvPreviewDensity)}
+            >
+              <option value="comfortable">{t('cvEditor.visual.densityComfortable')}</option>
+              <option value="compact">{t('cvEditor.visual.densityCompact')}</option>
+            </Select>
+          </div>
+          <div className="flex min-w-[10rem] flex-col gap-1">
+            <Label htmlFor="ed-toolbar-heading" value={t('cvEditor.visual.headingSize')} className="text-xs" />
+            <Select
+              id="ed-toolbar-heading"
+              sizing="sm"
+              value={headingSize}
+              onChange={(e) => setHeadingSize(e.target.value as CvPreviewHeadingSize)}
+            >
+              <option value="sm">{t('cvEditor.visual.headingSm')}</option>
+              <option value="md">{t('cvEditor.visual.headingMd')}</option>
+              <option value="lg">{t('cvEditor.visual.headingLg')}</option>
+            </Select>
+          </div>
+          <div className="flex flex-wrap items-end gap-2 border-l border-gray-200 pl-3 dark:border-gray-600">
+            <span className="pb-2 text-xs font-medium text-gray-600 dark:text-gray-400">
+              {t('cvEditor.visual.viewport')}
+            </span>
+            <Button
+              type="button"
+              size="xs"
+              color={previewViewport === 'mobile' ? 'dark' : 'light'}
+              onClick={() => setPreviewViewport('mobile')}
+            >
+              {t('cvEditor.visual.viewportMobile')}
+            </Button>
+            <Button
+              type="button"
+              size="xs"
+              color={previewViewport === 'desktop' ? 'dark' : 'light'}
+              onClick={() => setPreviewViewport('desktop')}
+            >
+              {t('cvEditor.visual.viewportDesktop')}
+            </Button>
           </div>
         </div>
 
-        <div
-          className="max-h-[calc(100vh-8rem)] space-y-6 overflow-y-auto rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800"
-          role="region"
-          aria-label={t('cvEditor.properties')}
-        >
-          <div className="space-y-4">
-            <h2 className="text-base font-semibold text-gray-900 dark:text-white">{t('cvEditor.properties')}</h2>
-            <div>
-              <Label htmlFor="ed-accent" value={t('cvEditor.accent')} />
-              <Select
-                id="ed-accent"
-                className="mt-1"
-                value={editor.accent}
-                onChange={(e) => setEditor((s) => ({ ...s, accent: e.target.value as Accent }))}
-              >
-                <option value="indigo">{t('cvEditor.accentIndigo')}</option>
-                <option value="violet">{t('cvEditor.accentViolet')}</option>
-                <option value="teal">{t('cvEditor.accentTeal')}</option>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="ed-headline" value={t('cvEditor.headline')} />
-              <TextInput
-                id="ed-headline"
-                value={editor.headline}
-                onChange={(e) => setEditor((s) => ({ ...s, headline: e.target.value }))}
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <Label htmlFor="ed-tagline" value={t('cvEditor.tagline')} />
-              <TextInput
-                id="ed-tagline"
-                value={editor.tagline}
-                onChange={(e) => setEditor((s) => ({ ...s, tagline: e.target.value }))}
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <Label htmlFor="ed-summary" value={t('cvEditor.summary')} />
-              <Textarea
-                id="ed-summary"
-                rows={5}
-                value={editor.summary}
-                onChange={(e) => setEditor((s) => ({ ...s, summary: e.target.value }))}
-                className="mt-1"
-              />
-            </div>
+        {drawerOpen ? (
+          <button
+            type="button"
+            aria-label={t('cvEditor.visual.closeDrawerOverlay')}
+            className="fixed inset-0 z-30 bg-black/40 lg:hidden"
+            onClick={() => setDrawerOpen(false)}
+          />
+        ) : null}
+
+        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-6">
+          <div
+            className={`relative z-10 min-w-0 flex-1 ${previewViewport === 'mobile' ? 'mx-auto max-w-[420px]' : ''}`}
+            role="region"
+            aria-label={t('cvEditor.previewRegion')}
+          >
+            <CvPreviewCard
+              accent={accent}
+              rawForSections={editorCanvasRaw}
+              hero={hero}
+              mode="edit"
+              showSkeletonSections={false}
+              showPlaceholderSections={false}
+              density={density}
+              headingSize={headingSize}
+              heroBinding={{
+                onNameChange: applyFullName,
+                onTitleChange: (v) => patchPersonal('title', v),
+                onSummaryChange: (v) => patchPersonal('summary', v),
+              }}
+              sectionsEditable
+              sectionsEditHandlers={sectionsEditHandlers}
+            />
           </div>
 
-          <ListEditorSection
-            idPrefix="work"
-            title={t('cvEditor.lists.editWorkExperience')}
-            emptyHint={t('cvEditor.sections.emptyWorkExperience')}
-            rows={lists.work_experience_list}
-            onAdd={() =>
-              setLists((s) => ({
-                ...s,
-                work_experience_list: [...s.work_experience_list, { period: '', title: '', subtitle: '' }],
-              }))
-            }
-            onRemove={(index) =>
-              setLists((s) => ({
-                ...s,
-                work_experience_list: s.work_experience_list.filter((_, i) => i !== index),
-              }))
-            }
-            onChangeRow={updateWorkRow}
-            t={t}
-          />
-
-          <ListEditorSection
-            idPrefix="edu"
-            title={t('cvEditor.lists.editEducation')}
-            emptyHint={t('cvEditor.sections.emptyEducation')}
-            rows={lists.education_list}
-            onAdd={() =>
-              setLists((s) => ({
-                ...s,
-                education_list: [...s.education_list, { period: '', title: '', subtitle: '' }],
-              }))
-            }
-            onRemove={(index) =>
-              setLists((s) => ({
-                ...s,
-                education_list: s.education_list.filter((_, i) => i !== index),
-              }))
-            }
-            onChangeRow={updateEduRow}
-            t={t}
-          />
-
-          <div className="space-y-3 border-t border-gray-200 pt-4 dark:border-gray-700">
-            <div className="flex items-center justify-between gap-2">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t('cvEditor.lists.editSkills')}</h3>
+          <div
+            id="cv-editor-properties-panel"
+            className={[
+              'z-40 flex max-h-[min(100dvh,100vh)] w-full max-w-md shrink-0 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800',
+              'max-lg:fixed max-lg:right-0 max-lg:top-0 max-lg:max-h-screen max-lg:rounded-none max-lg:border-l max-lg:shadow-xl',
+              drawerOpen ? 'max-lg:flex' : 'max-lg:hidden',
+              drawerOpen ? 'lg:flex' : 'lg:hidden',
+            ].join(' ')}
+            role="region"
+            aria-label={t('cvEditor.properties')}
+          >
+          <div className="shrink-0 border-b border-gray-200 px-6 pb-3 pt-6 dark:border-gray-700">
+            <div className="flex items-start justify-between gap-2">
+              <h2 className="text-base font-semibold text-gray-900 dark:text-white">{t('cvEditor.properties')}</h2>
               <Button
                 type="button"
-                size="xs"
                 color="light"
-                onClick={() =>
-                  setLists((s) => ({
-                    ...s,
-                    skills: [...s.skills, { name: '', level: '' }],
-                  }))
-                }
+                size="xs"
+                className="lg:hidden"
+                onClick={() => setDrawerOpen(false)}
               >
-                {t('cvEditor.lists.addRow')}
+                {t('cvEditor.visual.closeDrawer')}
               </Button>
             </div>
-            {lists.skills.length === 0 ? (
-              <p className="text-xs text-gray-500 dark:text-gray-400">{t('cvEditor.sections.emptySkills')}</p>
-            ) : (
-              <ul className="space-y-3">
-                {lists.skills.map((row, index) => (
-                  <li key={index} className="rounded-lg border border-gray-200 p-3 dark:border-gray-600">
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      <div>
-                        <Label htmlFor={`sk-name-${index}`} value={t('cvEditor.lists.skillName')} className="text-xs" />
-                        <TextInput
-                          id={`sk-name-${index}`}
-                          sizing="sm"
-                          className="mt-1"
-                          value={row.name}
-                          onChange={(e) => updateSkillRow(index, 'name', e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor={`sk-lv-${index}`} value={t('cvEditor.lists.skillLevel')} className="text-xs" />
-                        <TextInput
-                          id={`sk-lv-${index}`}
-                          sizing="sm"
-                          className="mt-1"
-                          value={row.level === 'N/A' ? '' : row.level}
-                          placeholder="N/A"
-                          onChange={(e) => updateSkillRow(index, 'level', e.target.value)}
-                        />
-                      </div>
-                    </div>
-                    <Button
-                      type="button"
-                      size="xs"
-                      color="failure"
-                      className="mt-2"
-                      onClick={() =>
-                        setLists((s) => ({
-                          ...s,
-                          skills: s.skills.filter((_, i) => i !== index),
-                        }))
-                      }
-                    >
-                      {t('cvEditor.lists.removeRow')}
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            )}
           </div>
+
+          <div className="shrink-0 border-b border-gray-200 bg-white px-2 pt-2 dark:border-gray-700 dark:bg-gray-800 lg:px-6">
+            <div
+              role="tablist"
+              aria-label={t('cvEditor.tabsAriaLabel')}
+              className="-mx-1 flex max-w-full flex-nowrap gap-2 overflow-x-auto overscroll-x-contain px-1 pb-2 pt-1 [scrollbar-width:thin] touch-pan-x snap-x snap-mandatory"
+            >
+              {tabBtn('personal', 'builder.form.personalInfo')}
+              {tabBtn('experience', 'builder.form.experience')}
+              {tabBtn('education', 'builder.form.education')}
+              {tabBtn('skills', 'builder.form.skills')}
+            </div>
+            <p className="pb-2 text-center text-xs text-gray-500 dark:text-gray-400 lg:hidden">{t('cvEditor.tabsScrollHint')}</p>
+          </div>
+
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-4">
+            <div
+              className="space-y-4"
+              role="tabpanel"
+              id="cv-editor-panel-personal"
+              aria-labelledby="cv-editor-tab-personal"
+              hidden={activeTab !== 'personal'}
+            >
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor="ed-fn" value={t('builder.form.labels.firstName')} />
+                  <TextInput
+                    id="ed-fn"
+                    className="mt-1"
+                    value={wizard.personalInfo.firstName || ''}
+                    onChange={(e) => patchPersonal('firstName', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="ed-ln" value={t('builder.form.labels.lastName')} />
+                  <TextInput
+                    id="ed-ln"
+                    className="mt-1"
+                    value={wizard.personalInfo.lastName || ''}
+                    onChange={(e) => patchPersonal('lastName', e.target.value)}
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="ed-title" value={t('cvEditor.tagline')} />
+                <TextInput
+                  id="ed-title"
+                  className="mt-1"
+                  value={wizard.personalInfo.title || ''}
+                  onChange={(e) => patchPersonal('title', e.target.value)}
+                  placeholder={t('cvEditor.tagline')}
+                />
+              </div>
+              <div>
+                <Label htmlFor="ed-email" value={t('builder.form.labels.email')} />
+                <TextInput
+                  id="ed-email"
+                  type="email"
+                  className="mt-1"
+                  value={wizard.personalInfo.email || ''}
+                  onChange={(e) => patchPersonal('email', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="ed-phone" value={t('builder.form.labels.phone')} />
+                <TextInput
+                  id="ed-phone"
+                  className="mt-1"
+                  value={wizard.personalInfo.phone || ''}
+                  onChange={(e) => patchPersonal('phone', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="ed-summary" value={t('builder.form.labels.summary')} />
+                <Textarea
+                  id="ed-summary"
+                  rows={5}
+                  className="mt-1"
+                  value={wizard.personalInfo.summary || ''}
+                  onChange={(e) => patchPersonal('summary', e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div
+              role="tabpanel"
+              id="cv-editor-panel-experience"
+              aria-labelledby="cv-editor-tab-experience"
+              hidden={activeTab !== 'experience'}
+            >
+            <ListEditorSection
+              idPrefix="work"
+              title={t('cvEditor.lists.editWorkExperience')}
+              emptyHint={t('cvEditor.sections.emptyWorkExperience')}
+              rows={experienceItems}
+              subtitleMultiline
+              onAdd={() => setExperienceItems([...experienceItems, { period: '', title: '', subtitle: '' }])}
+              onRemove={(index) => setExperienceItems(experienceItems.filter((_, i) => i !== index))}
+              onChangeRow={updateWorkRow}
+              t={t}
+            />
+            </div>
+
+            <div
+              role="tabpanel"
+              id="cv-editor-panel-education"
+              aria-labelledby="cv-editor-tab-education"
+              hidden={activeTab !== 'education'}
+            >
+            <ListEditorSection
+              idPrefix="edu"
+              title={t('cvEditor.lists.editEducation')}
+              emptyHint={t('cvEditor.sections.emptyEducation')}
+              rows={educationItems}
+              onAdd={() => setEducationItems([...educationItems, { period: '', title: '', subtitle: '' }])}
+              onRemove={(index) => setEducationItems(educationItems.filter((_, i) => i !== index))}
+              onChangeRow={updateEduRow}
+              t={t}
+            />
+            </div>
+
+            <div
+              className="space-y-3"
+              role="tabpanel"
+              id="cv-editor-panel-skills"
+              aria-labelledby="cv-editor-tab-skills"
+              hidden={activeTab !== 'skills'}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t('cvEditor.lists.editSkills')}</h3>
+                <Button
+                  type="button"
+                  size="xs"
+                  color="light"
+                  onClick={() => setWizard((w) => ({ ...w, skills: [...(w.skills || []), ''] }))}
+                >
+                  {t('cvEditor.lists.addRow')}
+                </Button>
+              </div>
+              {(wizard.skills || []).length === 0 ? (
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t('cvEditor.sections.emptySkills')}</p>
+              ) : (
+                <ul className="space-y-3">
+                  {(wizard.skills || []).map((skill, index) => (
+                    <li key={`sk-${index}`} className="flex flex-wrap items-end gap-2">
+                      <div className="min-w-0 flex-1">
+                        <Label htmlFor={`sk-${index}`} value={t('cvEditor.lists.skillName')} className="text-xs" />
+                        <TextInput
+                          id={`sk-${index}`}
+                          className="mt-1"
+                          value={skill}
+                          onChange={(e) => {
+                            const next = [...(wizard.skills || [])];
+                            next[index] = e.target.value;
+                            setWizard((w) => ({ ...w, skills: next }));
+                          }}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        size="xs"
+                        color="failure"
+                        onClick={() =>
+                          setWizard((w) => ({
+                            ...w,
+                            skills: (w.skills || []).filter((_, i) => i !== index),
+                          }))
+                        }
+                      >
+                        {t('cvEditor.lists.removeRow')}
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
 
           <p className="text-xs text-gray-500 dark:text-gray-400">
             {t('cvEditor.persistNote')} {t('cvEditor.draftVsPublished')}
           </p>
+          </div>
         </div>
       </div>
+    </div>
     </div>
   );
 }
@@ -457,6 +704,7 @@ function ListEditorSection({
   title,
   emptyHint,
   rows,
+  subtitleMultiline,
   onAdd,
   onRemove,
   onChangeRow,
@@ -466,13 +714,14 @@ function ListEditorSection({
   title: string;
   emptyHint: string;
   rows: TemplateListItem[];
+  subtitleMultiline?: boolean;
   onAdd: () => void;
   onRemove: (index: number) => void;
   onChangeRow: (index: number, field: keyof TemplateListItem, value: string) => void;
   t: (key: string) => string;
 }) {
   return (
-    <div className="space-y-3 border-t border-gray-200 pt-4 dark:border-gray-700">
+    <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{title}</h3>
         <Button type="button" size="xs" color="light" onClick={onAdd}>
@@ -508,13 +757,23 @@ function ListEditorSection({
                 </div>
                 <div>
                   <Label htmlFor={`${idPrefix}-${index}-s`} value={t('cvEditor.lists.subtitle')} className="text-xs" />
-                  <TextInput
-                    id={`${idPrefix}-${index}-s`}
-                    sizing="sm"
-                    className="mt-1"
-                    value={row.subtitle}
-                    onChange={(e) => onChangeRow(index, 'subtitle', e.target.value)}
-                  />
+                  {subtitleMultiline ? (
+                    <Textarea
+                      id={`${idPrefix}-${index}-s`}
+                      rows={3}
+                      className="mt-1"
+                      value={row.subtitle}
+                      onChange={(e) => onChangeRow(index, 'subtitle', e.target.value)}
+                    />
+                  ) : (
+                    <TextInput
+                      id={`${idPrefix}-${index}-s`}
+                      sizing="sm"
+                      className="mt-1"
+                      value={row.subtitle}
+                      onChange={(e) => onChangeRow(index, 'subtitle', e.target.value)}
+                    />
+                  )}
                 </div>
               </div>
               <Button type="button" size="xs" color="failure" className="mt-2" onClick={() => onRemove(index)}>

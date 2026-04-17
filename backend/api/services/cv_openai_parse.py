@@ -14,7 +14,9 @@ from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
-_MAX_CHARS = 14_000
+_MAX_CHARS_DEFAULT = 9_000
+_MAX_TOKENS_DEFAULT = 1200
+_TIMEOUT_DEFAULT_SEC = 18
 
 
 def _flat_to_extracted_en(flat: dict[str, Any]) -> dict[str, Any]:
@@ -104,16 +106,19 @@ def try_openai_extracted_en(cv_text: str) -> Optional[dict[str, Any]]:
         return None
 
     model = getattr(settings, "OPENAI_CV_MODEL", "gpt-4o-mini")
+    max_chars = int(getattr(settings, "CV_OPENAI_TEXT_MAX_CHARS", _MAX_CHARS_DEFAULT) or _MAX_CHARS_DEFAULT)
+    max_tokens = int(getattr(settings, "CV_OPENAI_TEXT_MAX_TOKENS", _MAX_TOKENS_DEFAULT) or _MAX_TOKENS_DEFAULT)
+    timeout_sec = int(getattr(settings, "CV_OPENAI_TIMEOUT_SEC", _TIMEOUT_DEFAULT_SEC) or _TIMEOUT_DEFAULT_SEC)
     try:
         from openai import OpenAI
     except ImportError:
         logger.warning("pacchetto 'openai' non installato: impossibile usare CV_PARSE_USE_OPENAI")
         return None
 
-    snippet = text[:_MAX_CHARS]
+    snippet = text[:max_chars]
     system = (
         "Sei un estrattore di dati da curriculum. Rispondi SOLO con un oggetto JSON UTF-8 valido, "
-        "senza markdown né testo fuori dal JSON."
+        "senza markdown né testo fuori dal JSON. Compila SOLO i campi esplicitamente presenti."
     )
     user = (
         "Analizza il seguente testo di curriculum ed estrai i campi.\n\n"
@@ -126,7 +131,7 @@ def try_openai_extracted_en(cv_text: str) -> Optional[dict[str, Any]]:
         '"education":[{"degree":"","school":"","period":""}]}'
     )
 
-    client = OpenAI(api_key=api_key)
+    client = OpenAI(api_key=api_key, timeout=timeout_sec)
     try:
         completion = client.chat.completions.create(
             model=model,
@@ -135,8 +140,8 @@ def try_openai_extracted_en(cv_text: str) -> Optional[dict[str, Any]]:
                 {"role": "user", "content": user},
             ],
             response_format={"type": "json_object"},
-            temperature=0.2,
-            max_tokens=4096,
+            temperature=0,
+            max_tokens=max_tokens,
         )
         raw = completion.choices[0].message.content or "{}"
         raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip(), flags=re.IGNORECASE)

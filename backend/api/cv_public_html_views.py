@@ -112,15 +112,21 @@ def cv_public_shell_view(request, slug: str):
     GET /u/<slug>/ — HTML con meta completi; body carica la SPA se gli asset sono configurati.
     """
     token = request.GET.get("token")
-    cv, err = resolve_public_cv(slug, token)
-    if err == 404:
+    cv, err_status, err_code = resolve_public_cv(slug, token)
+    if err_status == 404:
+        if err_code == "not_published":
+            body = "Questo CV non è ancora pubblicato o non è accessibile senza un piano attivo."
+            title = "CV non pubblicato"
+        else:
+            body = "CV non trovato."
+            title = "CV non trovato"
         return HttpResponseNotFound(
-            "<!DOCTYPE html><html lang='it'><head><meta charset='utf-8'><title>CV non trovato</title>"
+            f"<!DOCTYPE html><html lang='it'><head><meta charset='utf-8'><title>{title}</title>"
             "<meta name='robots' content='noindex,nofollow'></head>"
-            "<body><p>CV non trovato o non pubblicato.</p></body></html>",
+            f"<body><p>{body}</p></body></html>",
             content_type="text/html; charset=utf-8",
         )
-    if err == 403:
+    if err_status == 403:
         return HttpResponseForbidden(
             "<!DOCTYPE html><html><head><meta charset='utf-8'><title>Accesso negato</title>"
             "<meta name='robots' content='noindex,nofollow'></head>"

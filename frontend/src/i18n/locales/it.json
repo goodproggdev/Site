@@ -2,7 +2,9 @@
   "pricingPage": {
     "checkoutStartError": "Errore durante l'avvio del pagamento: {{detail}}",
     "checkoutRetry": "Riprova più tardi.",
-    "checkoutNetwork": "Errore di connessione al server."
+    "checkoutNetwork": "Errore di connessione al server.",
+    "configIncomplete": "Configurazione pagamenti incompleta: imposta VITE_STRIPE_PRICE_ONETIME e VITE_STRIPE_PRICE_MONTHLY nel file .env.local (Price ID da Stripe Dashboard).",
+    "priceIdMissing": "Prezzo non configurato per questo piano. Controlla le variabili d'ambiente Stripe."
   },
   "landing": {
     "trustStrip": {
@@ -119,6 +121,8 @@
     "title": "Crea il tuo CV",
     "pageTitle": "Modifica CV",
     "backDashboard": "Torna alla dashboard",
+    "loadCvError": "Non è stato possibile caricare il CV dal server (sessione scaduta o CV non trovato). Ricarica la pagina o rifai l’accesso.",
+    "draftCreateError": "Non è stato possibile creare una bozza CV. Controlla la connessione o rifai l’accesso.",
     "autosave": {
       "saving": "Salvataggio…",
       "saved": "Salvato",
@@ -135,10 +139,12 @@
       "description": "Supportiamo PDF, DOCX, DOC e TXT. Estraiamo automaticamente le informazioni.",
       "dropzone": "Trascina qui il tuo file o clicca per selezionare",
       "formats": "Formati supportati: PDF, DOCX, DOC, TXT (max 10MB)",
+      "skipFileHint": "Puoi anche premere «Avanti» senza file: creiamo una bozza vuota da compilare a mano.",
       "extractionWarningPdfNoText": "Questo PDF sembra una scansione senza testo selezionabile: l’estrazione automatica potrebbe essere incompleta.",
       "extractionWarningPdfNoTextHint": "Carica un PDF con testo selezionabile, oppure DOC/DOCX, oppure chiedi all’amministratore di abilitare l’analisi avanzata dei PDF sul server."
     },
     "form": {
+      "extractionBothFailed": "L’analisi automatica non ha estratto campi strutturati (parser EN/IT non disponibili o CV non leggibile). Prova un DOCX o un PDF con testo selezionabile. Sul backend: pyresparser + spaCy (en_core_web_sm, it_core_news_sm), corpora NLTK e dipendenze PDF. Dalla cartella backend: python manage.py setup_cv_nlp",
       "personalInfo": "Informazioni Personali",
       "experience": "Esperienza Lavorativa",
       "education": "Formazione",
@@ -197,7 +203,7 @@
       "linkedInLanding": "Il link che incolli su LinkedIn (o in email / candidature) porta alla tua pagina CV pubblica (indirizzo tipo …/u/tuo-slug), non alla home del sito.",
       "publicPageNote": "Lo slug della pagina viene generato in automatico quando il CV viene salvato; la pagina è raggiungibile con quel link quando attivi pubblicazione e piano. Una pagina dedicata e stabile può essere indicizzata dai motori di ricerca: così chi ti cerca per nome o competenze ha un punto in più oltre al solo profilo LinkedIn (posizioni e tempi di indicizzazione dipendono dai motori).",
       "linkedInEditHint": "Per aggiungere il link al profilo: apri LinkedIn (pulsante sotto), vai a Siti web, scegli «Altro» e incolla l’URL. Se la pagina non è ancora pubblica, il link funzionerà dopo pubblicazione e piano.",
-      "copyLinkedInSnippet": "Copia testo per LinkedIn",
+      "copyLinkedInSnippet": "Copia link per LinkedIn",
       "openLinkedInProfile": "Apri LinkedIn (siti web profilo)",
       "shareTitle": "Il mio CV digitale",
       "shareDone": "Condivisione avviata",
@@ -214,12 +220,15 @@
       "expiry": "Scadenza link",
       "customUrl": "URL personalizzato (opzionale)",
       "publishing": "Pubblicazione in corso...",
-      "publishButton": "Pubblica CV"
+      "publishButton": "Pubblica CV",
+      "errorNoCvId": "Il CV non è ancora collegato al server (manca l’ID). Torna allo step Carica e premi «Avanti» per creare una bozza, oppure ricarica il file."
     }
   },
   "cvEditor": {
     "title": "Editor sito CV",
     "subtitle": "Anteprima e tema: le modifiche si salvano automaticamente sul tuo CV.",
+    "tabsAriaLabel": "Sezioni da modificare",
+    "tabsScrollHint": "Su schermi piccoli puoi scorrere le tab in orizzontale.",
     "invalidId": "ID CV non valido.",
     "notFound": "CV non trovato o non accessibile.",
     "loadError": "Impossibile caricare il CV.",
@@ -260,6 +269,28 @@
       "subtitle": "Sottotitolo / azienda o istituto",
       "skillName": "Nome competenza",
       "skillLevel": "Livello (opzionale)"
+    },
+    "visual": {
+      "editRow": "Modifica riga",
+      "editSkill": "Modifica",
+      "toolbarAria": "Strumenti anteprima e layout",
+      "density": "Densità scheda",
+      "densityComfortable": "Comoda",
+      "densityCompact": "Compatta",
+      "headingSize": "Dimensione nome",
+      "headingSm": "Piccola",
+      "headingMd": "Media",
+      "headingLg": "Grande",
+      "viewport": "Anteprima",
+      "viewportMobile": "Mobile",
+      "viewportDesktop": "Desktop",
+      "showProperties": "Mostra proprietà",
+      "hideProperties": "Nascondi proprietà",
+      "closeDrawer": "Chiudi",
+      "closeDrawerOverlay": "Chiudi pannello proprietà",
+      "heroName": "Nome completo",
+      "heroTitle": "Titolo professionale",
+      "heroSummary": "Riassunto professionale"
     }
   },
   "dashboard": {
@@ -279,15 +310,23 @@
       "noCvs": "Non hai ancora nessun CV. Crea il tuo primo CV digitale dalla home.",
       "startNow": "Inizia ora →",
       "viewPublic": "Visualizza sito pubblico",
+      "viewPublicDraftTitle": "Pubblica il CV per aprire la pagina pubblica",
+      "viewPublicGoPublish": "Vai al builder per pubblicare",
       "publicUrl": "Link pubblico CV",
       "draftUrlHint": "Questo indirizzo sarà raggiungibile da tutti dopo la pubblicazione e l’attivazione del piano.",
       "copyPublicUrl": "Copia link",
-      "copyForLinkedIn": "Copia testo per LinkedIn",
-      "copiedSnippet": "Testo per LinkedIn copiato",
-      "linkedInSnippet": "Il mio CV online (pagina pubblica):\n{{url}}\n\nSu LinkedIn: Profilo → Informazioni di contatto → Siti web → Altro, e incolla il link.",
+      "copyForLinkedIn": "Copia link per LinkedIn",
+      "linkedInPasteHint": "Su LinkedIn: Profilo → Informazioni di contatto → Siti web → Altro, e incolla solo l’URL.",
       "editContent": "Modifica contenuti (wizard)",
       "editSite": "Editor stile e testi",
-      "cvSettings": "Impostazioni CV e link"
+      "cvSettings": "Impostazioni CV e link",
+      "deleteCv": "Elimina CV",
+      "deleteCvAria": "Elimina questo CV",
+      "deleteConfirmTitle": "Eliminare questo CV?",
+      "deleteConfirmBody": "Verranno rimossi contenuti, link pubblico associato a questo slug e statistiche di visite. L’azione non si può annullare.",
+      "deleteConfirm": "Elimina definitivamente",
+      "deleteCancel": "Annulla",
+      "deleteError": "Impossibile eliminare il CV. Riprova."
     },
     "jobs": {
       "title": "Opportunità per te",
@@ -295,6 +334,8 @@
       "matchScore": "Match {{score}}%",
       "apply": "Candidati",
       "save": "Salva",
+      "saved": "Salvato",
+      "saveError": "Salvataggio non riuscito.",
       "noJobs": "Nessuna offerta disponibile al momento. Aggiorna il tuo CV per ricevere più match."
     },
     "support": {
@@ -309,6 +350,14 @@
       "success": "Messaggio inviato. Ti risponderemo al più presto.",
       "error": "Invio non riuscito. Riprova tra poco.",
       "again": "Invia un altro messaggio"
+    },
+    "extraction": {
+      "title": "Qualità estrazione CV",
+      "subtitle": "Metriche reali del tuo flusso di parsing (fast-first).",
+      "p50Latency": "Latenza P50",
+      "localOnlyRate": "Solo locale",
+      "qualityScore": "Score qualità medio",
+      "unavailable": "Metriche non disponibili al momento."
     }
   },
   "settings": {
@@ -366,6 +415,7 @@
       "activeFeatures": "Funzionalità attive",
       "expiresOn": "Scade il",
       "noActive": "Nessun piano attivo",
+      "upgradeHint": "Il piano Pro include la pubblicazione illimitata del CV e altre funzioni. Attivalo dalla pagina prezzi.",
       "upgrade": "Attiva il piano Pro",
       "features": {
         "cv_publish": "Pubblicazione CV",
@@ -859,6 +909,12 @@
   },
   "publicCV": {
     "notFound": "CV non trovato",
+    "errorNotFoundTitle": "Pagina non trovata",
+    "errorNotFoundDescription": "Non esiste un CV pubblico con questo indirizzo. Controlla il link o torna alla home.",
+    "errorNotPublishedTitle": "CV non ancora pubblico",
+    "errorNotPublishedDescription": "Questo indirizzo esiste ma il CV non è ancora pubblicato o non è accessibile senza un piano attivo. Pubblica dal builder o attiva il piano, poi riprova.",
+    "errorForbiddenTitle": "Accesso negato",
+    "errorForbiddenDescription": "Il link non è valido, è scaduto o la pagina è privata. Controlla di usare l’URL aggiornato o il link con token.",
     "backHome": "Torna alla Home",
     "pageTitle": "{{name}} — CV digitale | Nordevit",
     "metaDescriptionFallback": "CV digitale di {{name}} — Nordevit."

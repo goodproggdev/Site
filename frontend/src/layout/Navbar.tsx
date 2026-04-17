@@ -234,11 +234,13 @@ const Navbar: React.FC = () => {
 	};
 
 	const logout = async () => {
+		setMobileMenuOpen(false);
 		try {
 			await apiLogout();
 		} catch {
-			/* ignore */
+			/* ignore: i token vengono comunque rimossi in `cvApi.logout` (finally) */
 		}
+		navigate(`/${lang}`, { replace: true });
 	};
 
 	// Click outside to close mobile menu
@@ -278,7 +280,7 @@ const Navbar: React.FC = () => {
 		{ href: `/${lang}#home`, label: t('layout.navbar.menu.home') },
 		{ href: `/${lang}#about`, label: t('layout.navbar.menu.about') },
 		{ href: `/${lang}#services`, label: t('layout.navbar.menu.services') },
-		{ href: `/${lang}#price`, label: t('layout.navbar.menu.pricing') },
+		{ href: `/${lang}/pricing`, label: t('layout.navbar.menu.pricing') },
 		{ href: `/${lang}#contact`, label: t('layout.navbar.menu.contact') },
 	];
 
@@ -421,7 +423,6 @@ const Navbar: React.FC = () => {
 											type="button"
 											onClick={() => {
 												void logout();
-												setMobileMenuOpen(false);
 											}}
 											className="px-3 py-2 text-sm font-medium text-left text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg dark:text-gray-400 dark:hover:text-white"
 										>

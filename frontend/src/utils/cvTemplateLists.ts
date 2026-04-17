@@ -24,26 +24,46 @@ export function normalizeListItem(item: unknown): TemplateListItem {
   if (!o) {
     return { period: "", title: "", subtitle: "" };
   }
+  const pick = (a: unknown, b: unknown) => (a != null && String(a).trim() !== "" ? a : b);
+  const period = pick(
+    pick(o.period, o.Period),
+    pick(o.dates, pick(o.date_range, pick(o.years, o.timeframe))),
+  );
+  const title = pick(
+    pick(o.title, o.Title),
+    pick(o.degree, pick(o.role, pick(o.position, o.job_title))),
+  );
+  const subtitle = pick(
+    pick(o.subtitle, o.Subtitle),
+    pick(o.company, pick(o.Company, pick(o.institution, pick(o.employer, o.organization)))),
+  );
   return {
-    period: String(o.period ?? o.dates ?? o.date_range ?? o.years ?? ""),
-    title: String(o.title ?? o.degree ?? o.role ?? ""),
-    subtitle: String(o.subtitle ?? o.company ?? o.institution ?? o.employer ?? ""),
+    period: String(period ?? ""),
+    title: String(title ?? ""),
+    subtitle: String(subtitle ?? ""),
   };
 }
 
-function readList(raw: Record<string, unknown>, primaryKey: string, legacyKey: string): TemplateListItem[] {
-  const primary = raw[primaryKey];
-  const legacy = raw[legacyKey];
-  const arr = Array.isArray(primary) ? primary : Array.isArray(legacy) ? legacy : [];
-  return arr.map(normalizeListItem);
+/** Preferisce il primo array non vuoto tra le chiavi indicate; altrimenti il primo array trovato (anche vuoto). */
+function firstArray(raw: Record<string, unknown>, keys: string[]): unknown[] {
+  let firstAny: unknown[] | null = null;
+  for (const k of keys) {
+    const v = raw[k];
+    if (!Array.isArray(v)) continue;
+    if (firstAny === null) firstAny = v;
+    if (v.length > 0) return v;
+  }
+  return firstAny ?? [];
 }
 
 export function readWorkExperienceList(raw: Record<string, unknown>): TemplateListItem[] {
-  return readList(raw, "work_experience_list", "experience");
+  const arr = firstArray(raw, ["work_experience_list", "experience", "work_experience", "employment", "positions"]);
+  return arr.map(normalizeListItem);
 }
 
 export function readEducationList(raw: Record<string, unknown>): TemplateListItem[] {
-  return readList(raw, "education_list", "education");
+  const arr = firstArray(raw, ["education_list", "education", "studies", "degrees"]);
+  return arr.map(normalizeListItem);
 }
 
 export function readSkillsList(raw: Record<string, unknown>): TemplateSkill[] {

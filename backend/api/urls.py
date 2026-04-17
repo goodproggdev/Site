@@ -2,6 +2,7 @@ from django.urls import path
 from .views import (
     match_resume,
     parse_cv_upload_view,
+    create_cv_draft_view,
     my_cv_list,
     delete_cv,
     create_stripe_checkout_view,
@@ -16,6 +17,7 @@ from .views import (
     cv_link_policy,
     regenerate_cv_token,
     revoke_cv_access,
+    cv_extraction_kpi_view,
     # Job Matching
     get_job_matches,
     refresh_job_matches,
@@ -25,6 +27,7 @@ from .views import (
 urlpatterns = [
     # CV
     path('cv/', my_cv_list, name='my_cv_list'),
+    path('cv/draft/', create_cv_draft_view, name='cv-draft'),
     path('cv/<int:cv_id>/delete/', delete_cv, name='delete_cv'),
     path('parse-cv-upload/', parse_cv_upload_view, name='parse_cv_upload'),
 
@@ -40,6 +43,7 @@ urlpatterns = [
     path('cv/<int:cv_id>/link-policy/', cv_link_policy, name='cv_link_policy'),
     path('cv/<int:cv_id>/regenerate-token/', regenerate_cv_token, name='regenerate_cv_token'),
     path('cv/<int:cv_id>/revoke/', revoke_cv_access, name='revoke_cv_access'),
+    path('cv/extraction-kpi/', cv_extraction_kpi_view, name='cv_extraction_kpi'),
 
     # Job Matching
     path('jobs/matches/', get_job_matches, name='get_job_matches'),

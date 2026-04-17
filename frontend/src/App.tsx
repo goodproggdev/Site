@@ -14,6 +14,7 @@ const Dashboard = lazy(() => import('./pages/Dashboard'));
 const PublicCV = lazy(() => import('./pages/PublicCV'));
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('./pages/TermsOfService'));
+const PricingPage = lazy(() => import('./pages/PricingPage'));
 const Settings = lazy(() => import('./pages/Settings'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
@@ -93,6 +94,7 @@ function LocalizedRoutes() {
       <Route path="cv/:slug" element={<PublicCV />} />
       <Route path="privacy" element={<PrivacyPolicy />} />
       <Route path="terms" element={<TermsOfService />} />
+      <Route path="pricing" element={<PricingPage />} />
       <Route path="*" element={<Navigate to={`/${currentLang}`} replace />} />
     </Routes>
   );

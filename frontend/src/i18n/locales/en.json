@@ -2,7 +2,9 @@
   "pricingPage": {
     "checkoutStartError": "Could not start checkout: {{detail}}",
     "checkoutRetry": "Please try again later.",
-    "checkoutNetwork": "Could not connect to the server."
+    "checkoutNetwork": "Could not connect to the server.",
+    "configIncomplete": "Payment configuration is incomplete: set VITE_STRIPE_PRICE_ONETIME and VITE_STRIPE_PRICE_MONTHLY in .env.local (Price IDs from the Stripe Dashboard).",
+    "priceIdMissing": "This plan has no configured price. Check your Stripe environment variables."
   },
   "landing": {
     "trustStrip": {
@@ -119,6 +121,8 @@
     "title": "Create Your CV",
     "pageTitle": "Edit CV",
     "backDashboard": "Back to dashboard",
+    "loadCvError": "Could not load this CV from the server (session expired or CV not found). Reload the page or sign in again.",
+    "draftCreateError": "Could not create a draft CV. Check your connection or sign in again.",
     "autosave": {
       "saving": "Saving…",
       "saved": "Saved",
@@ -135,10 +139,12 @@
       "description": "We support PDF, DOCX, DOC, and TXT. We automatically extract information.",
       "dropzone": "Drag your file here or click to select",
       "formats": "Supported formats: PDF, DOCX, DOC, TXT (max 10MB)",
+      "skipFileHint": "You can also press “Next” without a file—we’ll create an empty draft you can fill in manually.",
       "extractionWarningPdfNoText": "This PDF looks like a scan without a selectable text layer, so automatic extraction may be incomplete.",
       "extractionWarningPdfNoTextHint": "Upload a PDF with selectable text, or DOC/DOCX, or ask your administrator to enable advanced PDF parsing on the server."
     },
     "form": {
+      "extractionBothFailed": "Automatic parsing did not produce structured fields (EN/IT parsers unavailable or CV text not readable). Try DOCX or a PDF with selectable text. Backend needs: pyresparser, spaCy models (en_core_web_sm, it_core_news_sm), NLTK corpora, and PDF libs. From the backend folder run: python manage.py setup_cv_nlp",
       "personalInfo": "Personal Information",
       "experience": "Work Experience",
       "education": "Education",
@@ -197,7 +203,7 @@
       "linkedInLanding": "The link you paste on LinkedIn (or in email / applications) opens your public CV page (a URL like …/u/your-slug), not the marketing homepage.",
       "publicPageNote": "The page slug is created automatically when the CV is saved; the page is reachable at that URL once you enable publishing and your plan. A dedicated, stable page can be indexed by search engines, so people searching your name or skills have another entry point beyond LinkedIn alone (indexing timing and ranking depend on the search engines).",
       "linkedInEditHint": "To add the link on your profile: open LinkedIn (button below), go to Websites, pick “Other”, and paste the URL. If the page is not published yet, the link will work after you publish and activate your plan.",
-      "copyLinkedInSnippet": "Copy text for LinkedIn",
+      "copyLinkedInSnippet": "Copy link for LinkedIn",
       "openLinkedInProfile": "Open LinkedIn (profile websites)",
       "shareTitle": "My digital CV",
       "shareDone": "Share sheet opened",
@@ -214,12 +220,15 @@
       "expiry": "Link Expiry",
       "customUrl": "Custom URL (optional)",
       "publishing": "Publishing...",
-      "publishButton": "Publish CV"
+      "publishButton": "Publish CV",
+      "errorNoCvId": "This CV is not linked to the server yet (missing ID). Go back to Upload and press “Next” to create a draft, or upload a file again."
     }
   },
   "cvEditor": {
     "title": "CV site editor",
     "subtitle": "Preview and theme: changes autosave to your CV.",
+    "tabsAriaLabel": "Sections to edit",
+    "tabsScrollHint": "On small screens you can scroll the tabs horizontally.",
     "invalidId": "Invalid CV id.",
     "notFound": "CV not found or not accessible.",
     "loadError": "Could not load the CV.",
@@ -260,6 +269,28 @@
       "subtitle": "Subtitle / company or school",
       "skillName": "Skill name",
       "skillLevel": "Level (optional)"
+    },
+    "visual": {
+      "editRow": "Edit row",
+      "editSkill": "Edit",
+      "toolbarAria": "Preview and layout tools",
+      "density": "Card density",
+      "densityComfortable": "Comfortable",
+      "densityCompact": "Compact",
+      "headingSize": "Name heading size",
+      "headingSm": "Small",
+      "headingMd": "Medium",
+      "headingLg": "Large",
+      "viewport": "Preview",
+      "viewportMobile": "Mobile",
+      "viewportDesktop": "Desktop",
+      "showProperties": "Show properties",
+      "hideProperties": "Hide properties",
+      "closeDrawer": "Close",
+      "closeDrawerOverlay": "Close properties panel",
+      "heroName": "Full name",
+      "heroTitle": "Professional title",
+      "heroSummary": "Professional summary"
     }
   },
   "dashboard": {
@@ -279,15 +310,23 @@
       "noCvs": "You don't have any CVs yet. Create your first digital CV from the home page.",
       "startNow": "Get started →",
       "viewPublic": "View public site",
+      "viewPublicDraftTitle": "Publish your CV to open the public page",
+      "viewPublicGoPublish": "Open builder to publish",
       "publicUrl": "Public CV link",
       "draftUrlHint": "This URL will be reachable by everyone after you publish and your plan is active.",
       "copyPublicUrl": "Copy link",
-      "copyForLinkedIn": "Copy text for LinkedIn",
-      "copiedSnippet": "LinkedIn text copied",
-      "linkedInSnippet": "My online CV (public page):\n{{url}}\n\nOn LinkedIn: Profile → Contact info → Websites → Other, and paste the link.",
+      "copyForLinkedIn": "Copy link for LinkedIn",
+      "linkedInPasteHint": "On LinkedIn: Profile → Contact info → Websites → Other, and paste the URL only.",
       "editContent": "Edit content (wizard)",
       "editSite": "Style and copy editor",
-      "cvSettings": "CV and link settings"
+      "cvSettings": "CV and link settings",
+      "deleteCv": "Delete CV",
+      "deleteCvAria": "Delete this CV",
+      "deleteConfirmTitle": "Delete this CV?",
+      "deleteConfirmBody": "This removes the CV data, its public link for this slug, and visit stats. You cannot undo this.",
+      "deleteConfirm": "Delete permanently",
+      "deleteCancel": "Cancel",
+      "deleteError": "Could not delete the CV. Please try again."
     },
     "jobs": {
       "title": "Opportunities for You",
@@ -295,6 +334,8 @@
       "matchScore": "Match {{score}}%",
       "apply": "Apply",
       "save": "Save",
+      "saved": "Saved",
+      "saveError": "Could not save.",
       "noJobs": "No offers available at the moment. Update your CV to receive more matches."
     },
     "support": {
@@ -309,6 +350,14 @@
       "success": "Message sent. We will get back to you shortly.",
       "error": "Could not send your message. Please try again later.",
       "again": "Send another message"
+    },
+    "extraction": {
+      "title": "CV extraction quality",
+      "subtitle": "Live metrics from your fast-first parsing pipeline.",
+      "p50Latency": "P50 latency",
+      "localOnlyRate": "Local-only rate",
+      "qualityScore": "Average quality score",
+      "unavailable": "Metrics are currently unavailable."
     }
   },
   "settings": {
@@ -366,6 +415,7 @@
       "activeFeatures": "Active features",
       "expiresOn": "Expires on",
       "noActive": "No active plan",
+      "upgradeHint": "The Pro plan includes unlimited CV publishing and more. Activate it from the pricing page.",
       "upgrade": "Activate Pro plan",
       "features": {
         "cv_publish": "CV Publishing",
@@ -859,6 +909,12 @@
   },
   "publicCV": {
     "notFound": "CV not found",
+    "errorNotFoundTitle": "Page not found",
+    "errorNotFoundDescription": "There is no public CV at this address. Check the link or go back home.",
+    "errorNotPublishedTitle": "CV not published yet",
+    "errorNotPublishedDescription": "This address exists but the CV is not published yet or is not reachable without an active plan. Publish from the builder or activate your plan, then try again.",
+    "errorForbiddenTitle": "Access denied",
+    "errorForbiddenDescription": "The link is invalid, expired, or the page is private. Use the updated URL or the tokenized link.",
     "backHome": "Back to Home",
     "pageTitle": "{{name}} — Digital CV | Nordevit",
     "metaDescriptionFallback": "Digital CV for {{name}} — Nordevit."

@@ -99,7 +99,10 @@ REST_AUTH = {
     'JWT_AUTH_COOKIE': 'cv-auth',
     'JWT_AUTH_REFRESH_COOKIE': 'cv-refresh-token',
     'JWT_AUTH_SECURE': not DEBUG,
-    'JWT_AUTH_HTTPONLY': True,
+    # False: la SPA ottiene JWT via POST /auth/token/ (SimpleJWT) e li tiene in localStorage;
+    # dj-rest-auth LogoutView legge il refresh dal body JSON per la blacklist (token_blacklist).
+    # Con True il logout cerca solo i cookie HttpOnly che questa SPA non imposta → refresh non revocato.
+    'JWT_AUTH_HTTPONLY': False,
     'JWT_AUTH_SAMESITE': 'Lax',
     'SESSION_LOGIN': False,
     'PASSWORD_RESET_SERIALIZER': 'api.auth_serializers.SpaPasswordResetSerializer',
@@ -136,7 +139,10 @@ MIDDLEWARE = [
 # ==============================================================================
 CORS_ALLOWED_ORIGINS = config(
     'CORS_ALLOWED_ORIGINS',
-    default='http://localhost:5173,http://127.0.0.1:5173',
+    default=(
+        'http://localhost:5173,http://127.0.0.1:5173,'
+        'http://localhost:4173,http://127.0.0.1:4173'
+    ),
     cast=Csv(),
 )
 CORS_ALLOW_CREDENTIALS = True
@@ -154,7 +160,10 @@ CORS_ALLOW_HEADERS = [
 
 CSRF_TRUSTED_ORIGINS = config(
     'CSRF_TRUSTED_ORIGINS',
-    default='http://localhost:5173,http://127.0.0.1:5173',
+    default=(
+        'http://localhost:5173,http://127.0.0.1:5173,'
+        'http://localhost:4173,http://127.0.0.1:4173'
+    ),
     cast=Csv(),
 )
 
@@ -256,9 +265,15 @@ if config('USE_S3_STORAGE', default=False, cast=bool):
 CV_PARSE_USE_OPENAI = config('CV_PARSE_USE_OPENAI', default=False, cast=bool)
 OPENAI_API_KEY = config('OPENAI_API_KEY', default='')
 OPENAI_CV_MODEL = config('OPENAI_CV_MODEL', default='gpt-4o-mini')
+CV_OPENAI_TIMEOUT_SEC = config('CV_OPENAI_TIMEOUT_SEC', default=18, cast=int)
+CV_OPENAI_TEXT_MAX_CHARS = config('CV_OPENAI_TEXT_MAX_CHARS', default=9000, cast=int)
+CV_OPENAI_TEXT_MAX_TOKENS = config('CV_OPENAI_TEXT_MAX_TOKENS', default=1200, cast=int)
+CV_OPENAI_VISION_MAX_TOKENS = config('CV_OPENAI_VISION_MAX_TOKENS', default=1200, cast=int)
 
 # Estrazione testo: soglia minima caratteri; sotto soglia si tenta LibreOffice (DOC/DOCX) e vision PDF
 CV_EXTRACT_MIN_CHARS = config('CV_EXTRACT_MIN_CHARS', default=80, cast=int)
+CV_FAST_SCORE_THRESHOLD = config('CV_FAST_SCORE_THRESHOLD', default=0.62, cast=float)
+CV_FAST_MIN_CHARS_FOR_OPENAI = config('CV_FAST_MIN_CHARS_FOR_OPENAI', default=80, cast=int)
 CV_LIBREOFFICE_BIN = config('CV_LIBREOFFICE_BIN', default='')
 CV_LIBREOFFICE_TIMEOUT = config('CV_LIBREOFFICE_TIMEOUT', default=90, cast=int)
 

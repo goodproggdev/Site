@@ -19,11 +19,11 @@ export default function CVPublishStep({ cvData }: CVPublishStepProps) {
   const [published, setPublished] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
   const [cvUrl, setCvUrl] = useState('');
-  const [copyHint, setCopyHint] = useState<'link' | 'snippet' | 'share' | null>(null);
+  const [copyHint, setCopyHint] = useState<'link' | 'share' | null>(null);
 
   const handlePublish = async () => {
     if (!cvData.cvId) {
-      setPublishError(t('builder.publish.errorNoCvId', 'CV non trovato. Ricarica il file.'));
+      setPublishError(t('builder.publish.errorNoCvId'));
       return;
     }
     setIsPublishing(true);
@@ -51,10 +51,9 @@ export default function CVPublishStep({ cvData }: CVPublishStepProps) {
     });
   };
 
-  const handleCopyLinkedInSnippet = () => {
-    const text = t('dashboard.cvList.linkedInSnippet', { url: cvUrl });
-    void navigator.clipboard.writeText(text).then(() => {
-      setCopyHint('snippet');
+  const handleCopyLinkedInUrl = () => {
+    void navigator.clipboard.writeText(cvUrl).then(() => {
+      setCopyHint('link');
       window.setTimeout(() => setCopyHint(null), 2500);
     });
   };
@@ -64,7 +63,7 @@ export default function CVPublishStep({ cvData }: CVPublishStepProps) {
       try {
         await navigator.share({
           title: t('builder.publish.shareTitle'),
-          text: t('dashboard.cvList.linkedInSnippet', { url: cvUrl }),
+          text: cvUrl,
           url: cvUrl,
         });
         setCopyHint('share');
@@ -108,11 +107,12 @@ export default function CVPublishStep({ cvData }: CVPublishStepProps) {
           </div>
         </Card>
 
+        <p className="mb-3 text-center text-xs text-gray-500 dark:text-gray-400">{t('dashboard.cvList.linkedInPasteHint')}</p>
         <div className="flex flex-col sm:flex-row gap-2 justify-center mb-3">
           <Button type="button" color="light" onClick={() => window.open(cvUrl, '_blank', 'noopener,noreferrer')}>
             {t('builder.publish.view')}
           </Button>
-          <Button type="button" color="light" onClick={handleCopyLinkedInSnippet}>
+          <Button type="button" color="light" onClick={handleCopyLinkedInUrl}>
             {t('builder.publish.copyLinkedInSnippet')}
           </Button>
           <Button type="button" color="indigo" onClick={() => window.open(LINKEDIN_PROFILE_CONTACT_EDIT, '_blank', 'noopener,noreferrer')}>
@@ -126,11 +126,7 @@ export default function CVPublishStep({ cvData }: CVPublishStepProps) {
         </div>
         {copyHint ? (
           <p className="text-sm text-green-700 dark:text-green-400" role="status" aria-live="polite">
-            {copyHint === 'snippet'
-              ? t('dashboard.cvList.copiedSnippet')
-              : copyHint === 'share'
-                ? t('builder.publish.shareDone')
-                : t('common.copiedToClipboard')}
+            {copyHint === 'share' ? t('builder.publish.shareDone') : t('common.copiedToClipboard')}
           </p>
         ) : null}
       </div>
@@ -148,8 +144,8 @@ export default function CVPublishStep({ cvData }: CVPublishStepProps) {
         <Link
           to={
             cvData.cvId
-              ? `/${lang ?? 'it'}?cv_id=${encodeURIComponent(String(cvData.cvId))}#price`
-              : `/${lang ?? 'it'}#price`
+              ? `/${lang ?? 'it'}/pricing?cv_id=${encodeURIComponent(String(cvData.cvId))}`
+              : `/${lang ?? 'it'}/pricing`
           }
           className="font-medium text-indigo-600 underline-offset-2 hover:underline dark:text-indigo-400"
         >

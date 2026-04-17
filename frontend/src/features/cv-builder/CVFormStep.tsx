@@ -100,6 +100,10 @@ export default function CVFormStep({ cvData, updateCVData }: CVFormStepProps) {
   );
 
   const showPdfTextWarning = shouldShowPdfNoTextLayerWarning(cvData);
+  const raw = cvData.parsedData;
+  const extractionEn = raw && typeof raw === 'object' ? String((raw as Record<string, unknown>).extraction_status_en ?? '') : '';
+  const extractionIt = raw && typeof raw === 'object' ? String((raw as Record<string, unknown>).extraction_status_it ?? '') : '';
+  const showExtractionFailedBanner = extractionEn === 'Failed' && extractionIt === 'Failed';
 
   const headingKey =
     activeTab === 'personal'
@@ -112,6 +116,14 @@ export default function CVFormStep({ cvData, updateCVData }: CVFormStepProps) {
 
   return (
     <div>
+      {showExtractionFailedBanner && (
+        <div
+          role="status"
+          className="mb-6 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-100"
+        >
+          <p className="font-medium">{t('builder.form.extractionBothFailed')}</p>
+        </div>
+      )}
       {showPdfTextWarning && (
         <div
           role="status"

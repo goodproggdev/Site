@@ -56,6 +56,9 @@ api.interceptors.response.use(
             { refresh },
           );
           localStorage.setItem("access_token", data.access);
+          if (typeof data.refresh === "string" && data.refresh.length > 0) {
+            localStorage.setItem("refresh_token", data.refresh);
+          }
           originalRequest.headers.Authorization = `Bearer ${data.access}`;
           notifyAuthTokensChanged();
           return api(originalRequest);
@@ -123,8 +126,13 @@ export async function register(
 }
 
 export async function logout(): Promise<void> {
+  const refresh = localStorage.getItem("refresh_token");
   try {
-    await api.post("/auth/logout/");
+    if (refresh) {
+      await api.post("/auth/logout/", { refresh });
+    } else {
+      await api.post("/auth/logout/");
+    }
   } finally {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
@@ -246,8 +254,19 @@ export async function deleteCV(cvId: number): Promise<void> {
   await api.delete(`${API_V1_PREFIX}/cv/${cvId}/delete/`);
 }
 
+/** Segna un job match come salvato (o altro stato consentito dal backend). */
+export async function updateJobMatchStatus(matchId: string, status: "viewed" | "saved" | "applied" | "dismissed"): Promise<void> {
+  await api.post(`${API_V1_PREFIX}/jobs/matches/${matchId}/status/`, { status });
+}
+
 export async function getCvDetail(cvId: number): Promise<CVData> {
   const { data } = await api.get<CVData>(`${API_V1_PREFIX}/cv/${cvId}/`);
+  return data;
+}
+
+/** Bozza vuota per wizard senza upload (compilazione manuale). */
+export async function createCvDraft(): Promise<CVData> {
+  const { data } = await api.post<CVData>(`${API_V1_PREFIX}/cv/draft/`, {});
   return data;
 }
 
@@ -277,17 +296,53 @@ export async function sendContactForm(payload: {
 // STRIPE API
 // ==============================================================================
 
+export type CheckoutSessionResponse = {
+  url?: string;
+  session_id?: string;
+  error?: string;
+};
+
+export type CreateCheckoutOptions = {
+  cv_id?: number;
+  feature?: string;
+  plan_type?: string;
+  checkout_mode?: "payment" | "subscription";
+  lang?: string;
+};
+
 export async function createCheckoutSession(
   priceId: string,
-  options?: { cv_id?: number; feature?: string; plan_type?: string },
-): Promise<{ url: string }> {
-  const { data } = await api.post<{ url: string }>(`${API_V1_PREFIX}/stripe/create-checkout/`, {
-    price_id: priceId,
-    ...(options?.cv_id != null ? { cv_id: options.cv_id } : {}),
-    ...(options?.feature ? { feature: options.feature } : {}),
-    ...(options?.plan_type ? { plan_type: options.plan_type } : {}),
-  });
-  return data;
+  options?: CreateCheckoutOptions,
+): Promise<{ url: string; session_id?: string }> {
+  try {
+    const { data } = await api.post<CheckoutSessionResponse>(
+      `${API_V1_PREFIX}/stripe/create-checkout/`,
+      {
+        price_id: priceId,
+        ...(options?.cv_id != null ? { cv_id: options.cv_id } : {}),
+        ...(options?.feature ? { feature: options.feature } : {}),
+        ...(options?.plan_type ? { plan_type: options.plan_type } : {}),
+        ...(options?.checkout_mode ? { checkout_mode: options.checkout_mode } : {}),
+        ...(options?.lang ? { lang: options.lang } : {}),
+      },
+    );
+    if (typeof data.error === "string") {
+      throw new Error(data.error);
+    }
+    if (typeof data.url !== "string" || !data.url) {
+      throw new Error("Checkout response missing redirect URL");
+    }
+    return { url: data.url, session_id: data.session_id };
+  } catch (e) {
+    if (
+      axios.isAxiosError(e) &&
+      e.response?.data &&
+      typeof (e.response.data as { error?: string }).error === "string"
+    ) {
+      throw new Error((e.response.data as { error: string }).error);
+    }
+    throw e;
+  }
 }
 
 // ==============================================================================

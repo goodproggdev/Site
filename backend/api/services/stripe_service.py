@@ -10,21 +10,34 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 
 from typing import Optional, Dict
 
-def create_checkout_session(price_id: str, success_url: str, cancel_url: str, customer_email: Optional[str] = None, metadata: Optional[Dict] = None) -> dict:
-    """Crea una sessione Stripe Checkout con metadati per il tracking."""
+def create_checkout_session(
+    price_id: str,
+    success_url: str,
+    cancel_url: str,
+    customer_email: Optional[str] = None,
+    metadata: Optional[Dict] = None,
+    checkout_mode: str = 'payment',
+) -> dict:
+    """Crea una sessione Stripe Checkout con metadati per il tracking.
+
+    checkout_mode: ``payment`` (una tantum) oppure ``subscription`` (prezzo ricorrente Stripe).
+    """
     try:
+        mode = 'subscription' if checkout_mode == 'subscription' else 'payment'
         session_params = {
             'payment_method_types': ['card'],
             'line_items': [{'price': price_id, 'quantity': 1}],
-            'mode': 'payment',
+            'mode': mode,
             'success_url': success_url,
             'cancel_url': cancel_url,
         }
         if customer_email:
             session_params['customer_email'] = customer_email
-        
+
         if metadata:
             session_params['metadata'] = metadata
+            if mode == 'subscription':
+                session_params['subscription_data'] = {'metadata': dict(metadata)}
 
         session = stripe.checkout.Session.create(**session_params)
         return {'session_id': session.id, 'url': session.url}
