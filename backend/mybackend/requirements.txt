@@ -1,0 +1,41 @@
+# Requirements "slim" per il deploy serverless su Vercel.
+#
+# Esclude di proposito le librerie NLP pesanti (spacy, nltk, pyresparser,
+# pymupdf, google-generativeai): superano facilmente il limite di 250MB per
+# funzione serverless di Vercel (una singola virtualenv con questi pacchetti
+# arriva a 400MB+, vedi analisi progetto: backend/_pip_check e
+# backend/resume_matcher_env rimossi dalla history erano proprio questo).
+#
+# Il parsing CV su Vercel usa quindi SOLO il percorso OpenAI (CV_PARSE_USE_OPENAI=True):
+# leggero, nessuna dipendenza compilata pesante. Il codice in
+# backend/demo_resume_parser.py e backend/api/services/cv_service.py gestisce
+# già l'assenza di spacy/nltk/pyresparser tramite try/except (vedi log
+# "Parser CV non disponibili"), quindi non serve nessuna modifica applicativa.
+#
+# Per un host tradizionale (Railway/Render/VPS) continua a usare requirements.txt.
+
+asgiref==3.8.1
+Django==5.1.6
+dj-database-url
+django-cors-headers==4.7.0
+django-filter==25.1
+djangorestframework==3.15.2
+Markdown==3.7
+sqlparse==0.5.3
+
+python-decouple==3.8
+djangorestframework-simplejwt==5.3.1
+dj-rest-auth==6.0.0
+django-allauth==65.4.1
+
+stripe==11.5.0
+
+psycopg[binary]
+django-storages[s3]
+whitenoise==6.8.2
+
+# Parsing CV: solo estrazione testo "leggera" + OpenAI (niente spacy/nltk/pyresparser/pymupdf)
+PyPDF2==3.0.1
+pypdf>=5.0.0
+python-docx==1.1.2
+openai>=1.40.0
