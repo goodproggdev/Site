@@ -7,10 +7,10 @@ from django.core.mail import send_mail
 from django.views.decorators.csrf import csrf_exempt
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
+from django.conf import settings as django_settings
 import os
 import docx
 import PyPDF2
-import socket
 import smtplib
 import json
 import io
@@ -110,20 +110,18 @@ def extract_text(file_path, file_name):
 @ensure_csrf_cookie
 @csrf_protect
 def contact_view(request):
-    def check_internet():
-        try:
-            socket.create_connection(("8.8.8.8", 53), timeout=5)
-            return True
-        except OSError:
-            return False
+    """Form di contatto pubblico.
 
+    NOTA: in passato veniva eseguito un controllo manuale di raggiungibilita
+    di Internet (socket verso 8.8.8.8:53) prima di processare la richiesta.
+    Rimosso: dietro proxy/firewall (comune su hosting gestiti) quel controllo
+    falliva sempre, restituendo 503 anche quando il form era valido e la posta
+    funzionava. send_mail() fallisce gia da solo se non c'e connettivita.
+    """
     if request.method == 'POST':
         try:
-            if not check_internet():
-                return JsonResponse({'error': 'Nessuna connessione internet'}, status=503)
-
             data = json.loads(request.body)
-            
+
             email = data.get('email', '').strip()
             subject = data.get('subject', '').strip()
             message = data.get('message', '').strip()
@@ -136,7 +134,7 @@ def contact_view(request):
                     subject=f"{subject} - From {email}",
                     message=message,
                     from_email=email,
-                    recipient_list=['sitiegestionali@gmail.com'],
+                    recipient_list=[getattr(django_settings, 'EMAIL_RECIPIENT', 'admin@example.com')],
                     fail_silently=False,
                 )
             except smtplib.SMTPException as e:
