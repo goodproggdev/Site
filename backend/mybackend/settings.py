@@ -125,6 +125,10 @@ ACCOUNT_UNIQUE_EMAIL = True
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    # WhiteNoise: serve i file statici (admin, DRF browsable API) direttamente
+    # dal processo Django. Utile su hosting serverless (es. Vercel) dove non
+    # c'e' un server statico/reverse proxy separato davanti all'app.
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -248,6 +252,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 if config('USE_S3_STORAGE', default=False, cast=bool):
     AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID', default='')

@@ -19,6 +19,7 @@ stripe==11.5.0
 # Deploy / storage
 psycopg[binary]
 django-storages[s3]
+whitenoise==6.8.2
 
 # Parsing e NLP
 PyPDF2==3.0.1
