@@ -4,6 +4,6 @@
 # Vercel serve direttamente senza passare dalla funzione serverless Python.
 set -e
 echo "BUILD START (Vercel - backend Django)"
-python3 -m pip install -r requirements-vercel.txt
+python3 -m pip install --break-system-packages -r requirements-vercel.txt
 python3 manage.py collectstatic --noinput --clear
 echo "BUILD END"
