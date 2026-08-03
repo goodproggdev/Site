@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin, Group, Permission
 from django.utils import timezone
+import hashlib
 import uuid
 
 
@@ -77,18 +78,33 @@ class UserProfile(AbstractBaseUser, PermissionsMixin):
     def get_full_name(self):
         return f"{self.first_name} {self.last_name}".strip() or self.email
 
+    @staticmethod
+    def hash_verification_token(raw_token):
+        """Hash di un token di verifica email in chiaro.
+
+        Il token viene salvato nel DB solo in forma hashata (SHA-256, deterministico
+        cosi' da restare interrogabile via lookup indicizzato): se il DB viene
+        compromesso i token grezzi inviati via email non sono direttamente
+        riutilizzabili. Non serve salt: il token e' gia' ad alta entropia
+        (secrets.token_urlsafe(32)) e monouso/a scadenza breve, quindi non e'
+        soggetto a rischi di rainbow table pratici come una password utente.
+        """
+        return hashlib.sha256(raw_token.encode('utf-8')).hexdigest()
+
     def generate_email_verification_token(self):
-        """Generate a new email verification token."""
+        """Generate a new email verification token. Ritorna il token in chiaro
+        (da inviare via email); nel DB viene salvato solo il suo hash."""
         import secrets
-        self.email_verification_token = secrets.token_urlsafe(32)
+        raw_token = secrets.token_urlsafe(32)
+        self.email_verification_token = self.hash_verification_token(raw_token)
         self.email_verification_sent_at = timezone.now()
         self.save(update_fields=['email_verification_token', 'email_verification_sent_at'])
-        return self.email_verification_token
+        return raw_token
 
     def verify_email(self, token):
-        """Verify email with the given token."""
+        """Verify email with the given (plaintext) token."""
         from datetime import timedelta
-        if not self.email_verification_token or self.email_verification_token != token:
+        if not self.email_verification_token or self.email_verification_token != self.hash_verification_token(token):
             return False, 'Invalid verification token'
 
         # Token expires after 24 hours

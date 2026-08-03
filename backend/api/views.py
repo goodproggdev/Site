@@ -970,7 +970,7 @@ def verify_email_view(request):
         return Response({"error": "Verification token is required"}, status=400)
 
     try:
-        user = UserProfile.objects.get(email_verification_token=token)
+        user = UserProfile.objects.get(email_verification_token=UserProfile.hash_verification_token(token))
         success, message = user.verify_email(token)
 
         if success:
