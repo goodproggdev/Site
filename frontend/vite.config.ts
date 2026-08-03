@@ -26,10 +26,13 @@ export default defineConfig({
     globals: true,
     environment: "jsdom",
     setupFiles: "./src/__tests__/setup.ts",
+    // Esclude i test Playwright E2E (frontend/e2e/*.spec.ts): usano un test runner
+    // diverso e Vitest li raccoglieva per errore facendoli fallire in "npm test".
+    exclude: ["node_modules/**", "e2e/**"],
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov", "html"],
-      exclude: ["node_modules/", "src/__tests__/"],
+      exclude: ["node_modules/", "src/__tests__/", "e2e/"],
     },
   },
 });
