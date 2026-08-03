@@ -32,7 +32,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ planName, onFormSubmit }) => 
   }, [planName, t]);
 
   useEffect(() => {
-    let timer: any;
+    let timer: ReturnType<typeof setTimeout>;
     if (status === "success" || status === "error") {
       timer = setTimeout(() => setStatus("idle"), 5000);
     }

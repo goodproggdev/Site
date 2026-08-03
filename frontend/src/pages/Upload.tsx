@@ -1,3 +1,7 @@
+// Debito tecnico noto: il file non ha ancora tipi propri (115+ errori tsc se
+// rimosso), serve un refactor dedicato con copertura di test prima di attivare
+// il type-check qui. Vedi analisi progetto.
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 // TODO: Refactor this file to add proper TypeScript types
 // This file has 2500+ lines with legacy type issues that require extensive refactoring
@@ -102,7 +106,7 @@ const mergeSourceDataIfNotEmpty = (destinationData, sourceData) => {
 
     if (sourceData) {
         for (const key in sourceData) {
-            if (sourceData.hasOwnProperty(key)) {
+            if (Object.prototype.hasOwnProperty.call(sourceData, key)) {
                 const sourceValue = sourceData[key];
                 const destinationValue = newData[key];
 
@@ -139,7 +143,7 @@ const updateUntouchedGenericFields = (currentData, newGenericData, previousGener
 
 
     for (const key in newGenericData) {
-        if (newGenericData.hasOwnProperty(key)) {
+        if (Object.prototype.hasOwnProperty.call(newGenericData, key)) {
             const newGenericValue = newGenericData[key];
             const currentValue = newData[key];
             const previousGenericValue = previousGenericData && typeof previousGenericData === 'object' ? previousGenericData[key] : undefined;
@@ -223,10 +227,6 @@ const updateUntouchedGenericFields = (currentData, newGenericData, previousGener
 const UploadModal = ({ isOpen, onClose }) => {
     const { t } = useTranslation();
 
-// Dentro UploadModal component, tra le dichiarazioni degli stati e dei ref esistenti
-    const [isResetting, setIsResetting] = useState(false);
-    const resetHandledRef = useRef(false); // Useremo questo per gestire il processo di reset
-
   // === CARICA STATO DA LOCAL STORAGE O USA STRUTTURA INIZIALE ===
   // Dentro UploadModal component, nella dichiarazione dello stato formData
     const [formData, setFormData] = useState(() => {
@@ -260,19 +260,10 @@ const UploadModal = ({ isOpen, onClose }) => {
     // Stato per memorizzare la categoria selezionata
     // Carica la categoria salvata se disponibile, altrimenti usa il default
     const [selectedCategory, setSelectedCategory] = useState(() => {
-         try {
-             const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
-              if (savedData) {
-                  const parsedData = JSON.parse(savedData);
-                   // Assumiamo che la categoria sia salvata in un campo specifico se necessario,
-                   // altrimenti usiamo il default o proviamo a dedurla.
-                   // Per ora, usiamo il default 'digitale-it' o un campo dedicato se lo aggiungiamo.
-                   // Manteniamo il default 'digitale-it' per semplicità a meno che non aggiungi un campo 'category' al JSON.
-              }
-         } catch (error) {
-             console.error("Could not load category from localStorage:", error);
-         }
-        return 'digitale-it'; // Usa sempre il default iniziale se non salvato esplicitamente o errore
+        // NOTA: la categoria non viene ancora persistita per-campo nel JSON salvato in
+        // localStorage: si usa sempre il default finche' non si aggiunge un campo 'category'
+        // dedicato alla struttura salvata.
+        return 'digitale-it';
     });
 
 
@@ -517,7 +508,7 @@ const UploadModal = ({ isOpen, onClose }) => {
         // Naviga attraverso le chiavi per trovare il valore nel formData corrente
         for (let i = 0; i < keys.length; i++) {
             // Controlla che il percorso esista e sia un oggetto/array navigabile
-            if (currentValue && typeof currentValue === 'object' && currentValue.hasOwnProperty(keys[i])) {
+            if (currentValue && typeof currentValue === 'object' && Object.prototype.hasOwnProperty.call(currentValue, keys[i])) {
                 currentValue = currentValue[keys[i]];
             } else {
                 // Se la chiave non esiste nel formData corrente, non possiamo popolarla con un "esempio"

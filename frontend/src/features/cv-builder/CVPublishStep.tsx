@@ -93,7 +93,7 @@ export default function CVPublishStep({ cvData }: CVPublishStepProps) {
         <p className="text-gray-600 dark:text-gray-400 mb-4">
           {t('builder.publish.successMessage')}
         </p>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mb-6 text-left rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-600 dark:bg-slate-900/80 dark:text-slate-200">
+        <p className="text-xs text-gray-500 mb-6 text-left rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-600 dark:bg-slate-900/80 dark:text-slate-200">
           {t('builder.publish.linkedInEditHint')}
         </p>
 
