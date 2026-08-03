@@ -50,3 +50,8 @@ coverage.xml
 # Vite
 frontend/dist/
 frontend/.vite/
+
+# Virtualenv/site-packages accidentalmente committati in passato (237MB+): mai più
+_pip_check/
+resume_matcher_env/
+**/site-packages/
