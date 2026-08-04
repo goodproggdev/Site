@@ -40,7 +40,14 @@
       "src": "/u/(.*)",
       "dest": "backend/mybackend/wsgi.py"
     },
-    { "handle": "filesystem" },
+    {
+      "src": "/assets/(.*)",
+      "dest": "frontend/assets/$1"
+    },
+    {
+      "src": "/(.*\\.(?:jpg|jpeg|png|svg|ico|webp|gif|json|txt|xml|woff|woff2|ttf|map))$",
+      "dest": "frontend/$1"
+    },
     {
       "src": "/(.*)",
       "dest": "frontend/index.html"
