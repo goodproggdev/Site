@@ -41,12 +41,29 @@ import tempfile  # Per gestire file temporanei
 
 
 def _ensure_nltk_for_pyresparser() -> None:
-    """pyresparser importa subito `nltk.corpus.stopwords`: serve almeno stopwords (e punkt per tokenize)."""
+    """pyresparser importa subito `nltk.corpus.stopwords`: serve almeno stopwords (e punkt per tokenize).
+
+    Bug corretto: qui si intercettava solo LookupError (corpora NLTK mancanti
+    ma nltk installato), non ImportError/ModuleNotFoundError (nltk assente
+    del tutto, come nel deploy Vercel "slim" dove nltk e' escluso apposta per
+    stare sotto il limite di dimensione della function). Se nltk non e'
+    installato, "import nltk" dentro il try falliva con un'eccezione NON
+    catturata da "except LookupError", che risaliva fino al modulo e faceva
+    fallire l'IMPORT di tutto demo_resume_parser.py (non solo la parte EN):
+    da qui il messaggio 'Backend parser non disponibile' su ogni caricamento
+    CV, anche per l'estrazione IT/generica che non dipende da pyresparser.
+    """
     try:
         import nltk
         from nltk.corpus import stopwords
 
         stopwords.words("english")
+    except ImportError:
+        logger.info(
+            "nltk non installato: il parser EN (pyresparser) restera' "
+            "disabilitato, ma il resto del parsing CV funziona comunque."
+        )
+        return
     except LookupError:
         import nltk
 

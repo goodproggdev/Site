@@ -292,8 +292,9 @@ const Navbar: React.FC = () => {
 			<nav className="bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-800 sticky top-0 z-50">
 				<div className="mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-8">
 					<div className="flex items-center justify-between h-16">
-						{/* Logo */}
-						<Link to={isLoggedIn ? `/${lang}/dashboard` : `/${lang}`} className="flex items-center gap-2">
+						{/* Logo: porta sempre alla home, anche da loggato (prima andava a
+						/dashboard, impedendo di rivedere la home mentre si e' loggati). */}
+						<Link to={`/${lang}`} className="flex items-center gap-2">
 							<img src="/logo-nordev.png" className="h-8 w-8" alt={t('layout.navbar.brand')} />
 							<span className="text-xl font-bold text-indigo-600 dark:text-indigo-400">{t('layout.navbar.brand')}</span>
 						</Link>
