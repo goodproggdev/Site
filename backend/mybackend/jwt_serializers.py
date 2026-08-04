@@ -7,12 +7,16 @@ il client SPA invia invece { email, password }.
 
 from __future__ import annotations
 
+import logging
+
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 from rest_framework import exceptions, serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from allauth.account.models import EmailAddress
+
+logger = logging.getLogger(__name__)
 
 
 class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -34,13 +38,25 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
         if not email:
             raise serializers.ValidationError({"email": [_("This field may not be blank.")]})
 
-        try:
-            user = User.objects.get(email__iexact=email)
-        except User.DoesNotExist:
+        # .get() qui andava in errore (500) se due utenti condividevano la stessa
+        # email: il modello User di Django non impone un vincolo di unicita' sul
+        # campo email (solo ACCOUNT_UNIQUE_EMAIL di allauth lo valida in fase di
+        # registrazione via API, ma non blocca altre vie di creazione, es. shell/
+        # script di provisioning). Con .filter().first() il login sceglie in modo
+        # deterministico il record piu' vecchio invece di rompersi.
+        matching_users = list(User.objects.filter(email__iexact=email).order_by("id"))
+        if not matching_users:
             raise exceptions.AuthenticationFailed(
                 self.error_messages["no_active_account"],
                 "no_active_account",
             )
+        if len(matching_users) > 1:
+            logger.warning(
+                "Piu' utenti con la stessa email in login (%s): uso il piu' vecchio (id=%s). "
+                "Andrebbero deduplicati.",
+                email, matching_users[0].pk,
+            )
+        user = matching_users[0]
 
         attrs[User.USERNAME_FIELD] = getattr(user, User.USERNAME_FIELD)
         data = super().validate(attrs)
