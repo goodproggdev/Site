@@ -288,9 +288,14 @@ class CVData(models.Model):
         max_length=500, blank=True, default='',
         help_text="Posizioni lavorative che il CV vuole ricoprire (separate da virgola).",
     )
-    show_services_pricing = models.BooleanField(
+    show_pricing = models.BooleanField(
         default=True,
-        help_text="Mostra le sezioni Servizi/Tariffe nella pagina pubblica (tipico per liberi professionisti).",
+        help_text=(
+            "Mostra la sezione Tariffe/Pricing nella pagina pubblica. La sezione Servizi, invece, "
+            "viene mostrata automaticamente ogni volta che ci sono dati (non serve un flag: anche "
+            "un dipendente puo' descrivere i servizi/competenze offerte, ma non tutti vendono "
+            "pacchetti a prezzo fisso)."
+        ),
     )
     language = models.CharField(max_length=5, choices=LANGUAGE_CHOICES, default='it')
     is_published = models.BooleanField(default=False)

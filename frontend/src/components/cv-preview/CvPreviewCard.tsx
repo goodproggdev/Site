@@ -1,7 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { TextInput, Textarea } from 'flowbite-react';
 import CvPublicSections, { type CvAccent, type CvPublicSectionsEditHandlers } from '../CvPublicSections';
-import CvPublicExtraSections from '../CvPublicExtraSections';
 import { readTemplateLists, templateListsHaveContent } from '../../utils/cvTemplateLists';
 
 export type CvPreviewCardMode = 'static' | 'edit';
@@ -176,19 +175,13 @@ export default function CvPreviewCard({
       );
     }
     return (
-      <>
-        <CvPublicSections
-          raw={rawForSections}
-          accent={accent}
-          showPlaceholder={showPlaceholderSections ? !publicHasSections : false}
-          editable={sectionsEditable}
-          editHandlers={sectionsEditHandlers}
-        />
-        {/* Sezioni ricche (expertise/portfolio/servizi/tariffe/statistiche/lingue):
-            solo in modalita' statica (pagina pubblica + anteprima), non ancora
-            editabili dall'editor visuale. */}
-        {mode === 'static' ? <CvPublicExtraSections raw={rawForSections} accent={accent} /> : null}
-      </>
+      <CvPublicSections
+        raw={rawForSections}
+        accent={accent}
+        showPlaceholder={showPlaceholderSections ? !publicHasSections : false}
+        editable={sectionsEditable}
+        editHandlers={sectionsEditHandlers}
+      />
     );
   };
 

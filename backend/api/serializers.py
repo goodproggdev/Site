@@ -19,7 +19,7 @@ class CVDataSerializer(serializers.ModelSerializer):
     class Meta:
         model = CVData
         fields = ['id', 'slug', 'language', 'template_slug', 'category', 'target_positions',
-                  'show_services_pricing', 'is_published',
+                  'show_pricing', 'is_published',
                   'original_filename', 'raw_json', 'created_at', 'updated_at']
         read_only_fields = ['id', 'slug', 'created_at', 'updated_at']
 

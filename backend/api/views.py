@@ -26,7 +26,7 @@ from .models import (
 from .serializers import ItemSerializer, CVDataSerializer
 from .request_identity import get_cv_owner_profile
 from .services.cv_service import parse_cv_from_file, validate_cv_file
-from .services.cv_category_content import default_show_services_pricing
+from .services.cv_category_content import default_show_pricing
 from .services.cv_public_access import resolve_public_cv
 from .services.job_adapters import JobSearchService
 from .services.job_matching import JobMatcher
@@ -113,11 +113,11 @@ def parse_cv_upload_view(request):
     if category not in valid_categories:
         category = ''
     target_positions = (request.data.get('target_positions') or '').strip()
-    show_services_raw = request.data.get('show_services_pricing')
-    if show_services_raw is None:
-        show_services_pricing = default_show_services_pricing(category or None)
+    show_pricing_raw = request.data.get('show_pricing')
+    if show_pricing_raw is None:
+        show_pricing = default_show_pricing(category or None)
     else:
-        show_services_pricing = str(show_services_raw).lower() in ('true', '1', 'yes', 'on')
+        show_pricing = str(show_pricing_raw).lower() in ('true', '1', 'yes', 'on')
 
     # Validazione preventiva
     validation_error = validate_cv_file(cv_file)
@@ -143,7 +143,7 @@ def parse_cv_upload_view(request):
             structured_profile=result.get('structured', {}),
             category=category,
             target_positions=target_positions,
-            show_services_pricing=show_services_pricing,
+            show_pricing=show_pricing,
         )
 
         # Create default link policy
@@ -902,10 +902,12 @@ class CVPublicView(APIView):
         cv.save(update_fields=["visits_count"])
 
         payload = dict(cv.raw_json) if isinstance(cv.raw_json, dict) else {}
-        # Metadati di template (categoria, visibilita' Servizi/Tariffe) usati dal
-        # frontend per decidere quali sezioni mostrare sulla pagina pubblica.
+        # Metadati di template (categoria, template scelto, visibilita' Tariffe)
+        # usati dal frontend per scegliere il template giusto e le sezioni da
+        # mostrare sulla pagina pubblica.
         payload["_category"] = cv.category
-        payload["_show_services_pricing"] = cv.show_services_pricing
+        payload["_show_pricing"] = cv.show_pricing
+        payload["_template_slug"] = cv.template_slug
         return Response(payload, status=status.HTTP_200_OK)
 
 

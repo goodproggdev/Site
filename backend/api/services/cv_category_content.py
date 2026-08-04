@@ -42,22 +42,22 @@ VALID_CATEGORIES = list(_CATEGORY_BANK.keys()) or [
     "logistica",
 ]
 
-# Categorie per cui, di default, ha senso mostrare Servizi/Tariffe (profili
-# tipicamente freelance/consulenza). L'utente puo' comunque sovrascrivere questa
-# scelta nel form (campo show_services_pricing).
-_FREELANCE_DEFAULT_CATEGORIES = {
+# La sezione Servizi viene sempre mostrata quando ci sono dati (anche un
+# dipendente puo' descrivere i servizi/competenze che offre). La sezione
+# Tariffe/Pricing (pacchetti a prezzo fisso), invece, ha senso solo per
+# categorie tipicamente da libero professionista/consulente con progetti a
+# preventivo — non per profili "responsabile/dipendente" (es. un responsabile
+# di produzione nel fashion elenca i suoi servizi ma non vende "pacchetti").
+_PRICING_DEFAULT_CATEGORIES = {
     "digitale-it",
     "commerciale-vendita",
-    "amministrative-finanziarie",
-    "logistica",
-    "ingegneri-tecnici",
 }
 
 
-def default_show_services_pricing(category: Optional[str]) -> bool:
+def default_show_pricing(category: Optional[str]) -> bool:
     if not category:
         return True
-    return category in _FREELANCE_DEFAULT_CATEGORIES
+    return category in _PRICING_DEFAULT_CATEGORIES
 
 
 def _keyword_score(text: str, keywords: list[str]) -> int:
@@ -150,7 +150,10 @@ def generate_category_sections(
         ranked = _rank_bank_items(list(bank.get("services", [])), keywords, ["title", "description"])
         populated_data["services"] = ranked
 
-    if not populated_data.get("pricing_packs"):
+    # Le tariffe a pacchetto le riempiamo solo per le categorie dove ha senso
+    # mostrarle di default (vedi default_show_pricing): altrimenti resterebbero
+    # dati morti, mai visibili, generati per niente.
+    if not populated_data.get("pricing_packs") and default_show_pricing(category):
         populated_data["pricing_packs"] = list(bank.get("pricing_packs", []))
 
     if not populated_data.get("statistics"):

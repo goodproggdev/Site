@@ -170,14 +170,16 @@ export function readCvCategory(raw: Record<string, unknown> | null | undefined):
 }
 
 /**
- * Indica se, per questo CV, vanno mostrate le sezioni Servizi/Tariffe.
- * La chiave `_show_services_pricing` è presente solo nel payload pubblico:
- * se assente (es. contesto editor) non applichiamo alcuna restrizione,
- * lasciando che sia solo la presenza dei dati a decidere.
+ * Indica se, per questo CV, va mostrata la sezione Tariffe/Pricing (pacchetti
+ * a prezzo fisso). La sezione Servizi invece si mostra sempre quando ci sono
+ * dati: non tutti i professionisti vendono "pacchetti", ma quasi chiunque puo'
+ * descrivere i servizi/competenze che offre.
+ * La chiave `_show_pricing` è presente solo nel payload pubblico: se assente
+ * (es. contesto editor) non applichiamo alcuna restrizione.
  */
-export function readShowServicesPricing(raw: Record<string, unknown> | null | undefined): boolean {
-  if (!raw || !("_show_services_pricing" in raw)) return true;
-  return raw._show_services_pricing !== false;
+export function readShowPricing(raw: Record<string, unknown> | null | undefined): boolean {
+  if (!raw || !("_show_pricing" in raw)) return true;
+  return raw._show_pricing !== false;
 }
 
 export interface ExtraSections {

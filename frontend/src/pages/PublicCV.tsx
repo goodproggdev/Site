@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import axios from "axios";
 import cvApi from "../api/cvApi";
-import Home from "./Home";
+import { getPublicCvTemplate } from "../components/cv-template/templateRegistry";
 import { getRouteLangFromBrowser } from "../utils/localizedPath";
 import { applyPublicCvMeta, clearPublicCvMeta, pickCvMetaFromPayload } from "../utils/publicCvMeta";
 import { DEFAULT_DOCUMENT_TITLE } from "../config/site";
@@ -143,10 +143,16 @@ const PublicCV: React.FC = () => {
     );
   }
 
+  if (!cvData) {
+    return null;
+  }
+
+  const Template = getPublicCvTemplate(String(cvData._template_slug ?? ""));
+
   return (
     <div className="public-cv-container">
       <Suspense fallback={<div>{t("common.loading")}...</div>}>
-        <Home initialData={cvData ?? undefined} isPublicView={true} />
+        <Template raw={cvData} />
       </Suspense>
     </div>
   );
