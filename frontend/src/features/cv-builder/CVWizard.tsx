@@ -52,6 +52,13 @@ export default function CVWizard({ onComplete, initialCvId = null }: CVWizardPro
   });
   const rawBaseRef = useRef<Record<string, unknown>>({});
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Rif. sincrono al cvId corrente: `handleNext` puo' essere chiamato subito dopo
+  // `updateCVData({ cvId: ... })` nello stesso gestore (es. in CVUploadStep.onDrop).
+  // Lo state di React non e' aggiornato in modo sincrono, quindi leggere `cvData.cvId`
+  // dentro `handleNext` in quel momento vedrebbe ancora il valore precedente (null) e
+  // creerebbe per errore una bozza vuota separata, buttando via i dati appena caricati.
+  // Il ref invece e' sempre aggiornato subito.
+  const cvIdRef = useRef<number | null | undefined>(null);
   const [autosaveStatus, setAutosaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [loadError, setLoadError] = useState<string | null>(null);
   const [initialLoadPending, setInitialLoadPending] = useState(!!initialCvId);
@@ -114,13 +121,14 @@ export default function CVWizard({ onComplete, initialCvId = null }: CVWizardPro
   const progress = ((currentStep + 1) / steps.length) * 100;
 
   const handleNext = async () => {
-    if (currentStep === 0 && !cvData.cvId) {
+    if (currentStep === 0 && !cvIdRef.current) {
       setDraftCreating(true);
       setLoadError(null);
       try {
         const rec = await createCvDraft();
         const base = { ...((rec.raw_json || {}) as Record<string, unknown>) };
         rawBaseRef.current = base;
+        cvIdRef.current = rec.id;
         setCvData((prev) => apiCvRecordToWizard(rec as ApiCVRecord, prev));
       } catch {
         setLoadError(t('builder.draftCreateError'));
@@ -143,6 +151,9 @@ export default function CVWizard({ onComplete, initialCvId = null }: CVWizardPro
   };
 
   const updateCVData = (newData: Partial<CVData>) => {
+    if ('cvId' in newData) {
+      cvIdRef.current = newData.cvId;
+    }
     setCvData((prev) => {
       const next = { ...prev, ...newData };
       if (newData.parsedData && typeof newData.parsedData === 'object' && newData.cvId) {
