@@ -256,7 +256,13 @@
       "skills": "Competenze",
       "emptyWorkExperience": "Nessuna esperienza inserita.",
       "emptyEducation": "Nessuna formazione inserita.",
-      "emptySkills": "Nessuna competenza inserita."
+      "emptySkills": "Nessuna competenza inserita.",
+      "expertise": "Le Mie Competenze Chiave",
+      "portfolio": "Portfolio",
+      "services": "Servizi",
+      "pricing": "Tariffe",
+      "statistics": "In Numeri",
+      "languages": "Lingue"
     },
     "lists": {
       "editWorkExperience": "Esperienza lavorativa",
@@ -955,7 +961,10 @@
       "commerciale": "Esperti commerciali e di vendita",
       "amministrative": "Figure amministrative e finanziarie con competenze specifiche",
       "logistica": "Specialisti della logistica"
-    }
+    },
+    "targetPositionsLabel": "Posizioni lavorative che vuoi ricoprire",
+    "targetPositionsPlaceholder": "Es. Backend Developer, Cloud Engineer",
+    "targetPositionsHint": "Facoltativo: aiuta a dare priorità ai contenuti più rilevanti per le posizioni a cui punti."
   },
   "pages": {
     "privacyPolicy": "Privacy Policy",

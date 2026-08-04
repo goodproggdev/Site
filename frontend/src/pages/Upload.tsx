@@ -266,6 +266,11 @@ const UploadModal = ({ isOpen, onClose }) => {
         return 'digitale-it';
     });
 
+    // Posizioni lavorative che il CV vuole ricoprire (es. "Backend Developer, Cloud Engineer").
+    // Usate lato backend per dare priorita' ai contenuti a template piu' rilevanti
+    // (expertise/servizi) tra quelli della categoria scelta.
+    const [targetPositions, setTargetPositions] = useState('');
+
 
    // Ref per memorizzare i dati di default della categoria *precedentemente* applicata.
      // Usiamo useRef perché non vogliamo che il suo cambiamento causi un re-render,
@@ -446,6 +451,9 @@ const UploadModal = ({ isOpen, onClose }) => {
            formDataToSend.append('cv_file', file); // Aggiungi il file CV con il nome 'cv_file' (deve corrispondere al backend)
            // Invia anche la categoria selezionata al backend - Potrebbe influenzare il parsing
            formDataToSend.append('category', selectedCategory);
+           if (targetPositions.trim()) {
+               formDataToSend.append('target_positions', targetPositions.trim());
+           }
 
 
            try {
@@ -898,6 +906,23 @@ const UploadModal = ({ isOpen, onClose }) => {
                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-300">
                      {t("uploadModal.categoryHint")}
                  </p>
+
+                 <div className="mt-4">
+                     <label htmlFor="target-positions" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                         {t("uploadModal.targetPositionsLabel")}
+                     </label>
+                     <input
+                         id="target-positions"
+                         type="text"
+                         value={targetPositions}
+                         onChange={(e) => setTargetPositions(e.target.value)}
+                         placeholder={t("uploadModal.targetPositionsPlaceholder")}
+                         className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-blue-500 dark:focus:ring-blue-500"
+                     />
+                     <p className="mt-1 text-sm text-gray-500 dark:text-gray-300">
+                         {t("uploadModal.targetPositionsHint")}
+                     </p>
+                 </div>
             </div>
 
 

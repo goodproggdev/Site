@@ -256,7 +256,13 @@
       "skills": "Skills",
       "emptyWorkExperience": "No work experience added yet.",
       "emptyEducation": "No education added yet.",
-      "emptySkills": "No skills added yet."
+      "emptySkills": "No skills added yet.",
+      "expertise": "Key Expertise",
+      "portfolio": "Portfolio",
+      "services": "Services",
+      "pricing": "Pricing",
+      "statistics": "By The Numbers",
+      "languages": "Languages"
     },
     "lists": {
       "editWorkExperience": "Work experience",
@@ -955,7 +961,10 @@
       "commerciale": "Sales and commercial experts",
       "amministrative": "Administrative and finance roles with specific expertise",
       "logistica": "Logistics specialists"
-    }
+    },
+    "targetPositionsLabel": "Job positions you're targeting",
+    "targetPositionsPlaceholder": "E.g. Backend Developer, Cloud Engineer",
+    "targetPositionsHint": "Optional: helps prioritize the most relevant content for the roles you're aiming for."
   },
   "pages": {
     "privacyPolicy": "Privacy Policy",
