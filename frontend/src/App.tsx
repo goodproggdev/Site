@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, useParams, useLocation } from "react-router-dom";
 import { useTranslation } from 'react-i18next';
 import ErrorBoundary from "./components/ErrorBoundary";
 import CookieConsent from "./components/CookieConsent";
@@ -100,21 +100,39 @@ function LocalizedRoutes() {
   );
 }
 
+// La pagina CV pubblica (/u/:slug oppure /:lang/cv/:slug) è il sito "vetrina"
+// della singola persona: non deve avere la navbar/footer della piattaforma,
+// altrimenti sembra un errore invece di un sito a sé stante.
+function isPublicCvRoute(pathname: string): boolean {
+  if (/^\/u\/[^/]+\/?$/.test(pathname)) return true;
+  if (/^\/[a-z]{2}\/cv\/[^/]+\/?$/.test(pathname)) return true;
+  return false;
+}
+
+function AppShell() {
+  const location = useLocation();
+  const hideChrome = isPublicCvRoute(location.pathname);
+
+  return (
+    <div className="flex flex-col min-h-screen bg-white dark:bg-gray-900">
+      {!hideChrome ? <Navbar /> : null}
+      <main className="flex-grow">
+        <Suspense fallback={<LoadingSpinner />}>
+          <AppRoutes />
+        </Suspense>
+      </main>
+      {!hideChrome ? <Footer /> : null}
+      <CookieConsent />
+    </div>
+  );
+}
+
 function App() {
   return (
     <Router>
       <GaRouteListener />
       <ErrorBoundary>
-        <div className="flex flex-col min-h-screen bg-white dark:bg-gray-900">
-          <Navbar />
-          <main className="flex-grow">
-            <Suspense fallback={<LoadingSpinner />}>
-              <AppRoutes />
-            </Suspense>
-          </main>
-          <Footer />
-          <CookieConsent />
-        </div>
+        <AppShell />
       </ErrorBoundary>
     </Router>
   );
