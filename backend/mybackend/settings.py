@@ -118,6 +118,9 @@ ACCOUNT_USERNAME_REQUIRED = False
 # Per saltare la verifica in locale: ACCOUNT_EMAIL_VERIFICATION=none nel .env
 ACCOUNT_EMAIL_VERIFICATION = config('ACCOUNT_EMAIL_VERIFICATION', default='mandatory')
 ACCOUNT_UNIQUE_EMAIL = True
+# Adapter che non fa fallire signup/reset password se l'invio email va in
+# errore (es. SMTP non ancora configurato in produzione): vedi adapters.py.
+ACCOUNT_ADAPTER = 'mybackend.adapters.ResilientAccountAdapter'
 
 # ==============================================================================
 # MIDDLEWARE
