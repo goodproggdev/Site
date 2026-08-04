@@ -135,6 +135,27 @@ def _parse_skills(lines: list[str]) -> list[dict[str, str]]:
     return out[:40]
 
 
+def _merge_continuation_lines(items: list[dict[str, str]]) -> list[dict[str, str]]:
+    """
+    Una riga senza periodo (es. "Sviluppo di API REST e microservizi." sotto
+    "Backend Developer - Acme Srl (2019 - Presente)") e' quasi sempre la
+    descrizione della voce precedente, non una nuova esperienza/formazione:
+    la agganciamo come dettaglio invece di farla diventare una voce a se'
+    stante con periodo vuoto.
+    """
+    merged: list[dict[str, str]] = []
+    for item in items:
+        is_continuation = not item.get("period") and bool(merged)
+        if is_continuation:
+            prev = merged[-1]
+            extra = (item.get("title") or item.get("subtitle") or "").strip()
+            if extra:
+                prev["subtitle"] = f"{prev['subtitle']} {extra}".strip() if prev.get("subtitle") else extra
+            continue
+        merged.append(item)
+    return merged
+
+
 def _non_empty(value: Any) -> bool:
     if value is None:
         return False
@@ -178,6 +199,7 @@ def apply_deterministic_quality_repair(mapped_data: dict[str, Any], plain_text: 
     if not _non_empty(current_exp) and sections["experience"]:
         parsed = [_to_item(x) for x in sections["experience"][:16]]
         parsed = [x for x in parsed if _non_empty(x.get("title")) or _non_empty(x.get("subtitle")) or _non_empty(x.get("period"))]
+        parsed = _merge_continuation_lines(parsed)
         if parsed:
             mapped_data["work_experience_list"] = parsed
             meta["experience_added"] = len(parsed)
@@ -188,6 +210,7 @@ def apply_deterministic_quality_repair(mapped_data: dict[str, Any], plain_text: 
     if not _non_empty(current_edu) and sections["education"]:
         parsed = [_to_item(x) for x in sections["education"][:16]]
         parsed = [x for x in parsed if _non_empty(x.get("title")) or _non_empty(x.get("subtitle")) or _non_empty(x.get("period"))]
+        parsed = _merge_continuation_lines(parsed)
         if parsed:
             mapped_data["education_list"] = parsed
             meta["education_added"] = len(parsed)
