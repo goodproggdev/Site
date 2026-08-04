@@ -1,5 +1,5 @@
 import React, { useLayoutEffect } from 'react';
-import { Navigate, useLocation, useParams } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useHasSessionToken } from '../hooks/useHasSessionToken';
 import Welcome from './Welcome';
@@ -54,7 +54,6 @@ interface HomeProps {
 
 const Home: React.FC<HomeProps> = ({ initialData, isPublicView = false }) => {
   const location = useLocation();
-  const { lang = 'it' } = useParams<{ lang?: string }>();
   const isLoggedIn = useHasSessionToken();
 
   useLayoutEffect(() => {
@@ -68,9 +67,12 @@ const Home: React.FC<HomeProps> = ({ initialData, isPublicView = false }) => {
     });
   }, [location.pathname, location.hash, isPublicView, isLoggedIn]);
 
-  if (!isPublicView && isLoggedIn) {
-    return <Navigate to={`/${lang}/dashboard`} replace />;
-  }
+  // Nota: in precedenza, da loggato, visitare la home (`/it`) rimandava sempre
+  // automaticamente a `/it/dashboard`, rendendo impossibile rivedere la home
+  // page (anche cliccando sul logo, che pure porta correttamente a `/it`).
+  // L'utente ha chiesto esplicitamente di poter vedere la home anche da loggato,
+  // quindi qui non facciamo piu' alcun redirect automatico: il passaggio alla
+  // dashboard dopo il login resta gestito esplicitamente da Navbar.tsx.
 
   return (
     <>

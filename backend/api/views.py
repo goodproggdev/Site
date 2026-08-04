@@ -26,6 +26,7 @@ from .models import (
 from .serializers import ItemSerializer, CVDataSerializer
 from .request_identity import get_cv_owner_profile
 from .services.cv_service import parse_cv_from_file, validate_cv_file
+from .services.cv_category_content import default_show_services_pricing
 from .services.cv_public_access import resolve_public_cv
 from .services.job_adapters import JobSearchService
 from .services.job_matching import JobMatcher
@@ -105,13 +106,26 @@ def parse_cv_upload_view(request):
 
     cv_file = request.FILES['cv_file']
 
+    # Categoria professionale e posizioni target: guidano quali sezioni del
+    # template (Expertise/Servizi/Tariffe/Statistiche) vengono generate.
+    category = (request.data.get('category') or '').strip()
+    valid_categories = {c[0] for c in CVData.CATEGORY_CHOICES}
+    if category not in valid_categories:
+        category = ''
+    target_positions = (request.data.get('target_positions') or '').strip()
+    show_services_raw = request.data.get('show_services_pricing')
+    if show_services_raw is None:
+        show_services_pricing = default_show_services_pricing(category or None)
+    else:
+        show_services_pricing = str(show_services_raw).lower() in ('true', '1', 'yes', 'on')
+
     # Validazione preventiva
     validation_error = validate_cv_file(cv_file)
     if validation_error:
         return Response({"error": validation_error}, status=400)
 
     # Parsing tramite service
-    result = parse_cv_from_file(cv_file)
+    result = parse_cv_from_file(cv_file, category=category or None, target_positions=target_positions or None)
 
     if "error" in result:
         logger.warning(f"Parsing CV fallito: {result['error']}")
@@ -127,6 +141,9 @@ def parse_cv_upload_view(request):
             raw_json=result,
             original_filename=cv_file.name,
             structured_profile=result.get('structured', {}),
+            category=category,
+            target_positions=target_positions,
+            show_services_pricing=show_services_pricing,
         )
 
         # Create default link policy
@@ -883,7 +900,13 @@ class CVPublicView(APIView):
 
         cv.visits_count += 1
         cv.save(update_fields=["visits_count"])
-        return Response(cv.raw_json, status=status.HTTP_200_OK)
+
+        payload = dict(cv.raw_json) if isinstance(cv.raw_json, dict) else {}
+        # Metadati di template (categoria, visibilita' Servizi/Tariffe) usati dal
+        # frontend per decidere quali sezioni mostrare sulla pagina pubblica.
+        payload["_category"] = cv.category
+        payload["_show_services_pricing"] = cv.show_services_pricing
+        return Response(payload, status=status.HTTP_200_OK)
 
 
 class CVDetailView(APIView):

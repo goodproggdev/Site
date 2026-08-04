@@ -258,6 +258,15 @@ class CVData(models.Model):
         ('es', 'Español'),
     ]
 
+    CATEGORY_CHOICES = [
+        ('digitale-it', 'Digitale & IT'),
+        ('ingegneri-tecnici', 'Ingegneri & Tecnici'),
+        ('sanitari-assistenziali', 'Sanitari & Assistenziali'),
+        ('commerciale-vendita', 'Commerciale & Vendita'),
+        ('amministrative-finanziarie', 'Amministrative & Finanziarie'),
+        ('logistica', 'Logistica'),
+    ]
+
     user = models.ForeignKey(
         UserProfile,
         on_delete=models.CASCADE,
@@ -271,6 +280,18 @@ class CVData(models.Model):
         help_text="Structured profile data extracted from CV: skills, experience, seniority, etc."
     )
     template_slug = models.CharField(max_length=100, default='default')
+    category = models.CharField(
+        max_length=40, choices=CATEGORY_CHOICES, blank=True, default='',
+        help_text="Area professionale scelta dall'utente: determina le sezioni mostrate sulla pagina pubblica.",
+    )
+    target_positions = models.CharField(
+        max_length=500, blank=True, default='',
+        help_text="Posizioni lavorative che il CV vuole ricoprire (separate da virgola).",
+    )
+    show_services_pricing = models.BooleanField(
+        default=True,
+        help_text="Mostra le sezioni Servizi/Tariffe nella pagina pubblica (tipico per liberi professionisti).",
+    )
     language = models.CharField(max_length=5, choices=LANGUAGE_CHOICES, default='it')
     is_published = models.BooleanField(default=False)
     slug = models.SlugField(max_length=255, unique=True, blank=True)

@@ -617,7 +617,7 @@ def extract_with_spacy_italian_improved(text):
 
 
 # --- Funzione di Mapping (aggiornata per gestire entrambi i risultati) ---
-def map_extracted_data_to_template(extracted_data_en, extracted_data_it, template_data):
+def map_extracted_data_to_template(extracted_data_en, extracted_data_it, template_data, category=None, target_positions=None):
     """
     Mappa i dati estratti dai parser inglese e italiano nella struttura del template.
     Preferisce i dati dall'estrazione italiana se disponibili.
@@ -747,9 +747,16 @@ def map_extracted_data_to_template(extracted_data_en, extracted_data_it, templat
         populated_data["work_experience_list"] = exp_list_en
 
 
-    # Puoi aggiungere qui la logica di mapping per altre sezioni (expertise, statistics, services, portfolio_items, blog_posts, pricing_packs)
-    # in base ai dati che i tuoi parser riescono a estrarre e alla struttura del template.
-    # Al momento, per queste sezioni, se non sono popolate sopra, manterranno i valori dal template originale.
+    # Expertise / Servizi / Tariffe / Statistiche: se non sono stati popolati sopra da dati
+    # reali del CV, li completiamo con un contenuto "a template" per categoria professionale
+    # (stesso approccio gia' usato per il prefill del form manuale in Upload.tsx), arricchito
+    # con numeri reali calcolati dal CV dove possibile (es. anni di esperienza).
+    if category:
+        try:
+            from api.services.cv_category_content import generate_category_sections
+            populated_data = generate_category_sections(populated_data, category, target_positions)
+        except Exception as e:
+            print(f"Generazione contenuti per categoria fallita: {e}")
 
     print("Mapping completato.")
     return populated_data

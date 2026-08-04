@@ -138,7 +138,7 @@ def validate_cv_file(file) -> Optional[str]:
     return None
 
 
-def parse_cv_from_file(file) -> dict:
+def parse_cv_from_file(file, category=None, target_positions=None) -> dict:
     """
     Servizio principale per il parsing di un file CV.
     Gestisce la pipeline completa: validazione → temp file → parsing EN+IT → mapping JSON.
@@ -195,7 +195,7 @@ def parse_cv_from_file(file) -> dict:
 
         # Mapping locale + arricchimento regex
         t_map0 = time.perf_counter()
-        mapped_data = map_extracted_data_to_template(extracted_en, extracted_it, originalJsonStructure)
+        mapped_data = map_extracted_data_to_template(extracted_en, extracted_it, originalJsonStructure, category=category, target_positions=target_positions)
         stage_ms["map_local"] = int((time.perf_counter() - t_map0) * 1000)
         mapped_data["nordevit_extraction"] = extraction_meta
         enrich_mapped_cv_from_plain_text(mapped_data, cv_text)
@@ -217,7 +217,7 @@ def parse_cv_from_file(file) -> dict:
                     extracted_en = _merge_extracted_en(extracted_en, oai_en)
                     used_openai_text = True
                     path_taken.append("openai_text")
-                    mapped_data = map_extracted_data_to_template(extracted_en, extracted_it, originalJsonStructure)
+                    mapped_data = map_extracted_data_to_template(extracted_en, extracted_it, originalJsonStructure, category=category, target_positions=target_positions)
                     mapped_data["nordevit_extraction"] = extraction_meta
                     enrich_mapped_cv_from_plain_text(mapped_data, cv_text)
                     repair_meta = apply_deterministic_quality_repair(mapped_data, cv_text)
@@ -245,7 +245,7 @@ def parse_cv_from_file(file) -> dict:
                     extracted_en = _merge_extracted_en(extracted_en, vision_en)
                     extraction_meta["used_vision"] = True
                     path_taken.append("vision_pdf")
-                    mapped_data = map_extracted_data_to_template(extracted_en, extracted_it, originalJsonStructure)
+                    mapped_data = map_extracted_data_to_template(extracted_en, extracted_it, originalJsonStructure, category=category, target_positions=target_positions)
                     mapped_data["nordevit_extraction"] = extraction_meta
                     enrich_mapped_cv_from_plain_text(mapped_data, cv_text)
                     repair_meta = apply_deterministic_quality_repair(mapped_data, cv_text)

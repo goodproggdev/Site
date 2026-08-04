@@ -1,0 +1,566 @@
+{
+  "digitale-it": {
+    "expertise_list": [
+      {
+        "name": "Progettazione Architetture Cloud",
+        "icon_class": "ti-cloud",
+        "subtitle": "Definizione e implementazione di architetture scalabili e resilienti su piattaforme cloud pubbliche e private."
+      },
+      {
+        "name": "Sviluppo Software Enterprise",
+        "icon_class": "ti-settings",
+        "subtitle": "Realizzazione di soluzioni software complesse per le esigenze specifiche delle grandi organizzazioni."
+      },
+      {
+        "name": "Consulenza Tecnologica",
+        "icon_class": "ti-light-bulb",
+        "subtitle": "Supporto alle aziende nella scelta e nell'adozione delle migliori tecnologie per raggiungere gli obiettivi di business."
+      }
+    ],
+    "services": [
+      {
+        "icon": "ti-world",
+        "icon_class": "text-danger",
+        "title": "Consulenza Cloud",
+        "description": "Supporto nella migrazione e ottimizzazione di infrastrutture e applicazioni verso il cloud."
+      },
+      {
+        "icon": "ti-settings",
+        "icon_class": "text-danger",
+        "title": "Sviluppo Applicazioni Web",
+        "description": "Realizzazione di applicazioni web robuste, scalabili e sicure utilizzando le ultime tecnologie."
+      },
+      {
+        "icon": "ti-lock",
+        "icon_class": "text-danger",
+        "title": "Sicurezza Informatica",
+        "description": "Analisi delle vulnerabilità e implementazione di misure di sicurezza per proteggere i sistemi e i dati."
+      }
+    ],
+    "pricing_packs": [
+      {
+        "title": "Starter IT",
+        "cost": "Prezzo su Richiesta",
+        "project": "1-2",
+        "storage": "Variabile",
+        "domain": "1",
+        "users": "Limitato",
+        "special_class": ""
+      },
+      {
+        "title": "Professional IT",
+        "cost": "Prezzo su Richiesta",
+        "project": "3-5",
+        "storage": "Variabile",
+        "domain": "Illimitato",
+        "users": "Variabile",
+        "special_class": "price-card-requried"
+      },
+      {
+        "title": "Enterprise IT",
+        "cost": "Preventivo Personalizzato",
+        "project": "Complesso",
+        "storage": "Ampio",
+        "domain": "Multiplo",
+        "users": "Illimitato",
+        "special_class": ""
+      }
+    ],
+    "statistics": [
+      {
+        "icon": "ti-alarm-clock",
+        "count": 8000,
+        "label": "Ore Lavorate",
+        "icon_class": "icon-xl"
+      },
+      {
+        "icon": "ti-layers-alt",
+        "count": 100,
+        "label": "Progetti Completati",
+        "icon_class": "icon-xl"
+      },
+      {
+        "icon": "ti-face-smile",
+        "count": 70,
+        "label": "Clienti Soddisfatti",
+        "icon_class": "icon-xl"
+      },
+      {
+        "icon": "ti-heart-broken",
+        "count": "50k",
+        "label": "Bug Risolti",
+        "icon_class": "icon-xl"
+      }
+    ]
+  },
+  "ingegneri-tecnici": {
+    "expertise_list": [
+      {
+        "name": "Sviluppo Prodotti Meccanici",
+        "icon_class": "ti- আনপ্লাগ",
+        "subtitle": "Concezione, progettazione e prototipazione di componenti e sistemi meccanici avanzati."
+      },
+      {
+        "name": "Ottimizzazione Processi Produttivi",
+        "icon_class": "ti-settings",
+        "subtitle": "Analisi e miglioramento delle linee di produzione per aumentare l'efficienza e ridurre i costi."
+      },
+      {
+        "name": "Manutenzione Predittiva",
+        "icon_class": "ti-package",
+        "subtitle": "Implementazione di strategie di manutenzione basate su dati per prevenire guasti e ottimizzare le operazioni."
+      }
+    ],
+    "services": [
+      {
+        "icon": "ti-ruler-pencil",
+        "icon_class": "text-danger",
+        "title": "Consulenza di Progettazione",
+        "description": "Supporto tecnico nella fase di ideazione e progettazione di soluzioni meccaniche e industriali."
+      },
+      {
+        "icon": "ti-settings",
+        "icon_class": "text-danger",
+        "title": "Analisi e Simulazione",
+        "description": "Esecuzione di analisi strutturali, termiche e fluidodinamiche utilizzando software FEM e CFD."
+      },
+      {
+        "icon": "ti-wrench",
+        "icon_class": "text-danger",
+        "title": "Assistenza Tecnica",
+        "description": "Supporto nella risoluzione di problemi tecnici, installazione e manutenzione di macchinari."
+      }
+    ],
+    "pricing_packs": [
+      {
+        "title": "Consulenza Tecnica Base",
+        "cost": "Prezzo su Richiesta",
+        "project": "Analisi Iniziale",
+        "storage": "-",
+        "domain": "-",
+        "users": "1",
+        "special_class": ""
+      },
+      {
+        "title": "Progettazione Dettagliata",
+        "cost": "Prezzo su Richiesta",
+        "project": "Sviluppo Progetto",
+        "storage": "Documentazione",
+        "domain": "-",
+        "users": "Team",
+        "special_class": "price-card-requried"
+      },
+      {
+        "title": "Supporto Continuo",
+        "cost": "Preventivo Personalizzato",
+        "project": "Assistenza Prolungata",
+        "storage": "Reportistica",
+        "domain": "-",
+        "users": "Azienda",
+        "special_class": ""
+      }
+    ],
+    "statistics": [
+      {
+        "icon": "ti-alarm-clock",
+        "count": 7000,
+        "label": "Ore Lavorate",
+        "icon_class": "icon-xl"
+      },
+      {
+        "icon": "ti-layers-alt",
+        "count": 80,
+        "label": "Progetti Tecnici Completati",
+        "icon_class": "icon-xl"
+      },
+      {
+        "icon": "ti-face-smile",
+        "count": 60,
+        "label": "Collaborazioni Riuscite",
+        "icon_class": "icon-xl"
+      },
+      {
+        "icon": "ti-heart-broken",
+        "count": "30k",
+        "label": "Problemi Tecnici Risolti",
+        "icon_class": "icon-xl"
+      }
+    ]
+  },
+  "sanitari-assistenziali": {
+    "expertise_list": [
+      {
+        "name": "Assistenza Clinica Diretta",
+        "icon_class": "ti-heart",
+        "subtitle": "Fornire cure mediche e assistenza diretta ai pazienti in vari contesti clinici."
+      },
+      {
+        "name": "Educazione Sanitaria",
+        "icon_class": "ti-book",
+        "subtitle": "Informare e formare pazienti e comunità su temi legati alla salute e alla prevenzione."
+      },
+      {
+        "name": "Gestione del Paziente Cronico",
+        "icon_class": "ti-pulse",
+        "subtitle": "Supportare i pazienti con patologie croniche nella gestione quotidiana e nel miglioramento della qualità di vita."
+      }
+    ],
+    "services": [
+      {
+        "icon": "ti-stethoscope",
+        "icon_class": "text-danger",
+        "title": "Visite Mediche/Infermieristiche",
+        "description": "Consultazioni per diagnosi, trattamenti e follow-up."
+      },
+      {
+        "icon": "ti- syringe",
+        "icon_class": "text-danger",
+        "title": "Procedure Assistenziali",
+        "description": "Esecuzione di medicazioni, iniezioni, prelievi e altre procedure necessarie."
+      },
+      {
+        "icon": "ti-comments",
+        "icon_class": "text-danger",
+        "title": "Consulenza Sanitaria",
+        "description": "Orientamento su stili di vita sani, prevenzione e gestione delle patologie."
+      }
+    ],
+    "pricing_packs": [
+      {
+        "title": "Visita Base",
+        "cost": "Costo Variabile",
+        "project": "1 Consultazione",
+        "storage": "-",
+        "domain": "-",
+        "users": "1 Paziente",
+        "special_class": ""
+      },
+      {
+        "title": "Assistenza Domiciliare",
+        "cost": "Costo Variabile",
+        "project": "Sessioni Multiple",
+        "storage": "Scheda Paziente",
+        "domain": "-",
+        "users": "1 Paziente",
+        "special_class": "price-card-requried"
+      },
+      {
+        "title": "Consulenza Specialistica",
+        "cost": "Preventivo Personalizzato",
+        "project": "Piano di Cura",
+        "storage": "Referti",
+        "domain": "-",
+        "users": "1 Paziente",
+        "special_class": ""
+      }
+    ],
+    "statistics": [
+      {
+        "icon": "ti-alarm-clock",
+        "count": 10000,
+        "label": "Ore di Servizio",
+        "icon_class": "icon-xl"
+      },
+      {
+        "icon": "ti-layers-alt",
+        "count": 500,
+        "label": "Pazienti Assistiti",
+        "icon_class": "icon-xl"
+      },
+      {
+        "icon": "ti-face-smile",
+        "count": 400,
+        "label": "Vite Migliorate",
+        "icon_class": "icon-xl"
+      },
+      {
+        "icon": "ti-heart-broken",
+        "count": "100+",
+        "label": "Emergenze Gestite",
+        "icon_class": "icon-xl"
+      }
+    ]
+  },
+  "commerciale-vendita": {
+    "expertise_list": [
+      {
+        "name": "Sviluppo Strategie di Vendita",
+        "icon_class": "ti-bar-chart",
+        "subtitle": "Definire piani d'azione mirati per aumentare le quote di mercato e i volumi di vendita."
+      },
+      {
+        "name": "Gestione Team Commerciali",
+        "icon_class": "ti-user",
+        "subtitle": "Guidare e motivare team di vendita per raggiungere obiettivi sfidanti."
+      },
+      {
+        "name": "Negoziazione e Contratto",
+        "icon_class": "ti-handshake",
+        "subtitle": "Condurre trattative complesse e definire accordi vantaggiosi per entrambe le parti."
+      }
+    ],
+    "services": [
+      {
+        "icon": "ti-shine",
+        "icon_class": "text-danger",
+        "title": "Consulenza Commerciale",
+        "description": "Supporto nella definizione di strategie di vendita e nell'identificazione di nuovi mercati."
+      },
+      {
+        "icon": "ti-user",
+        "icon_class": "text-danger",
+        "title": "Formazione Team Vendite",
+        "description": "Training personalizzato per migliorare le competenze di negoziazione e vendita del personale."
+      },
+      {
+        "icon": "ti-stats-up",
+        "icon_class": "text-danger",
+        "title": "Ottimizzazione Processi CRM",
+        "description": "Implementazione e configurazione di sistemi CRM per una gestione efficiente dei clienti."
+      }
+    ],
+    "pricing_packs": [
+      {
+        "title": "Consulenza Iniziale",
+        "cost": "Prezzo su Richiesta",
+        "project": "Analisi Commerciale",
+        "storage": "-",
+        "domain": "-",
+        "users": "1 Azienda",
+        "special_class": ""
+      },
+      {
+        "title": "Supporto Strategico",
+        "cost": "Prezzo su Richiesta",
+        "project": "Sviluppo Strategia",
+        "storage": "Report Periodici",
+        "domain": "-",
+        "users": "Team Commerciale",
+        "special_class": "price-card-requried"
+      },
+      {
+        "title": "Affiancamento Continuo",
+        "cost": "Preventivo Personalizzato",
+        "project": "Partnership",
+        "storage": "Accesso Dati",
+        "domain": "-",
+        "users": "Illimitato",
+        "special_class": ""
+      }
+    ],
+    "statistics": [
+      {
+        "icon": "ti-alarm-clock",
+        "count": 6000,
+        "label": "Ore sul Campo",
+        "icon_class": "icon-xl"
+      },
+      {
+        "icon": "ti-layers-alt",
+        "count": 200,
+        "label": "Clienti Acquisiti",
+        "icon_class": "icon-xl"
+      },
+      {
+        "icon": "ti-face-smile",
+        "count": 150,
+        "label": "Accordi Conclusi",
+        "icon_class": "icon-xl"
+      },
+      {
+        "icon": "ti-heart-broken",
+        "count": "1M+",
+        "label": "Fatturato Generato (€)",
+        "icon_class": "icon-xl"
+      }
+    ]
+  },
+  "amministrative-finanziarie": {
+    "expertise_list": [
+      {
+        "name": "Consulenza Fiscale e Tributaria",
+        "icon_class": "ti- كتاب مفتوح",
+        "subtitle": "Supporto alle aziende nella gestione degli adempimenti fiscali e nell'ottimizzazione del carico tributario."
+      },
+      {
+        "name": "Redazione e Analisi di Bilancio",
+        "icon_class": "ti-bar-chart-alt",
+        "subtitle": "Preparazione di bilanci d'esercizio e analisi dettagliate della performance economico-finanziaria."
+      },
+      {
+        "name": "Controllo di Gestione",
+        "icon_class": "ti-pie-chart",
+        "subtitle": "Implementazione di sistemi di reporting e analisi dei costi per supportare le decisioni manageriali."
+      }
+    ],
+    "services": [
+      {
+        "icon": "ti-credit-card",
+        "icon_class": "text-danger",
+        "title": "Servizi Contabili",
+        "description": "Gestione della contabilità ordinaria e semplificata, redazione registri contabili."
+      },
+      {
+        "icon": "ti-wallet",
+        "icon_class": "text-danger",
+        "title": "Pianificazione Fiscale",
+        "description": "Consulenza per ottimizzare la situazione fiscale di aziende e privati nel rispetto delle normative."
+      },
+      {
+        "icon": "ti-stats-up",
+        "icon_class": "text-danger",
+        "title": "Analisi di Bilancio",
+        "description": "Valutazione della performance economica e finanziaria e individuazione aree di miglioramento."
+      }
+    ],
+    "pricing_packs": [
+      {
+        "title": "Pacchetto Contabilità Base",
+        "cost": "Prezzo su Richiesta",
+        "project": "Gestione Contabilità",
+        "storage": "Documentazione",
+        "domain": "-",
+        "users": "1 Azienda",
+        "special_class": ""
+      },
+      {
+        "title": "Consulenza Fiscale Annuale",
+        "cost": "Prezzo su Richiesta",
+        "project": "Pianificazione Fiscale",
+        "storage": "Dichiarazioni",
+        "domain": "-",
+        "users": "1 Azienda/Privato",
+        "special_class": "price-card-requried"
+      },
+      {
+        "title": "Analisi Finanziaria e Strategica",
+        "cost": "Preventivo Personalizzato",
+        "project": "Supporto Decisionale",
+        "storage": "Reportistica",
+        "domain": "-",
+        "users": "Azienda",
+        "special_class": ""
+      }
+    ],
+    "statistics": [
+      {
+        "icon": "ti-alarm-clock",
+        "count": 9000,
+        "label": "Ore di Consulenza",
+        "icon_class": "icon-xl"
+      },
+      {
+        "icon": "ti-layers-alt",
+        "count": 300,
+        "label": "Bilanci Redatti",
+        "icon_class": "icon-xl"
+      },
+      {
+        "icon": "ti-face-smile",
+        "count": 250,
+        "label": "Clienti Soddisfatti",
+        "icon_class": "icon-xl"
+      },
+      {
+        "icon": "ti-heart-broken",
+        "count": "500k+",
+        "label": "Risparmi Fiscali Generati (€)",
+        "icon_class": "icon-xl"
+      }
+    ]
+  },
+  "logistica": {
+    "expertise_list": [
+      {
+        "name": "Ottimizzazione della Logistica di Magazzino",
+        "icon_class": "ti-package",
+        "subtitle": "Riprogettazione layout magazzino, implementazione WMS e miglioramento dei processi di picking e packing."
+      },
+      {
+        "name": "Pianificazione e Gestione dei Trasporti",
+        "icon_class": "ti-truck",
+        "subtitle": "Scelta dei vettori, ottimizzazione dei percorsi, gestione delle spedizioni nazionali e internazionali."
+      },
+      {
+        "name": "Gestione Integrata della Supply Chain",
+        "icon_class": "ti-link",
+        "subtitle": "Coordinamento tra fornitori, produzione, magazzino e distribuzione per massimizzare l'efficienza."
+      }
+    ],
+    "services": [
+      {
+        "icon": "ti-package",
+        "icon_class": "text-danger",
+        "title": "Consulenza Logistica",
+        "description": "Supporto nella progettazione e ottimizzazione dei processi di magazzino e distribuzione."
+      },
+      {
+        "icon": "ti-truck",
+        "icon_class": "text-danger",
+        "title": "Gestione Trasporti",
+        "description": "Pianificazione e coordinamento delle spedizioni per garantire efficienza e puntualità."
+      },
+      {
+        "icon": "ti-stack-overflow",
+        "icon_class": "text-danger",
+        "title": "Ottimizzazione Inventario",
+        "description": "Implementazione di strategie per ridurre i costi di stoccaggio e migliorare la disponibilità dei prodotti."
+      }
+    ],
+    "pricing_packs": [
+      {
+        "title": "Analisi Logistica Base",
+        "cost": "Prezzo su Richiesta",
+        "project": "Analisi Iniziale",
+        "storage": "-",
+        "domain": "-",
+        "users": "1 Azienda",
+        "special_class": ""
+      },
+      {
+        "title": "Progettazione Processi",
+        "cost": "Prezzo su Richiesta",
+        "project": "Sviluppo Soluzioni",
+        "storage": "Documentazione",
+        "domain": "-",
+        "users": "Team Logistico",
+        "special_class": "price-card-requried"
+      },
+      {
+        "title": "Gestione Supply Chain",
+        "cost": "Preventivo Personalizzato",
+        "project": "Supporto Continuo",
+        "storage": "Reportistica",
+        "domain": "-",
+        "users": "Azienda",
+        "special_class": ""
+      }
+    ],
+    "statistics": [
+      {
+        "icon": "ti-alarm-clock",
+        "count": 7500,
+        "label": "Ore sul Campo",
+        "icon_class": "icon-xl"
+      },
+      {
+        "icon": "ti-layers-alt",
+        "count": 150,
+        "label": "Progetti di Ottimizzazione Completati",
+        "icon_class": "icon-xl"
+      },
+      {
+        "icon": "ti-face-smile",
+        "count": 100,
+        "label": "Fornitori Gestiti",
+        "icon_class": "icon-xl"
+      },
+      {
+        "icon": "ti-heart-broken",
+        "count": "200k+",
+        "label": "Costi Logistici Risparmiati (€)",
+        "icon_class": "icon-xl"
+      }
+    ]
+  }
+}
