@@ -90,14 +90,28 @@ def _slice_sections(text: str) -> dict[str, list[str]]:
 
 
 def _parse_period(line: str) -> str:
-    m = re.search(r"\b(19|20)\d{2}\b\s*(?:[-–]\s*(?:present|presente|in corso|\b(19|20)\d{2}\b))?", line, re.I)
+    # \b dopo ogni parola chiave evita match parziali: "present" e' un prefisso di
+    # "presente" (IT), quindi senza \b il motore si fermava a "Present" lasciando
+    # una "e" residua nel testo (es. "Acme Srl (2019 - Presente)" -> "Acme Srl (e)").
+    m = re.search(
+        r"\b(19|20)\d{2}\b\s*(?:[-–]\s*(?:present\b|presente\b|in corso\b|\b(19|20)\d{2}\b))?",
+        line,
+        re.I,
+    )
     return m.group(0).strip() if m else ""
 
 
 def _to_item(line: str) -> dict[str, str]:
     clean = re.sub(r"^[\-\*\•\s]+", "", line).strip()
     period = _parse_period(clean)
-    no_period = clean.replace(period, "").strip(" -–|") if period else clean
+    if period:
+        no_period = clean.replace(period, "")
+        # Il periodo e' spesso scritto tra parentesi, es. "Acme Srl (2019 - Presente)":
+        # dopo aver tolto il testo del periodo restano le parentesi vuote "()", da togliere.
+        no_period = re.sub(r"\(\s*\)", "", no_period)
+    else:
+        no_period = clean
+    no_period = no_period.strip(" -–|,;")
     parts = [p.strip() for p in re.split(r"\s+[—\-|]\s+", no_period) if p.strip()]
     title = parts[0] if parts else no_period
     subtitle = " - ".join(parts[1:]) if len(parts) > 1 else ""

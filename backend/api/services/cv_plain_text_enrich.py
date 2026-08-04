@@ -47,6 +47,44 @@ _GITHUB_RESERVED = frozenset(
 )
 
 
+_NAME_BLOCKLIST_WORDS = frozenset(
+    {
+        "curriculum", "vitae", "resume", "cv", "profilo", "profile", "contatti",
+        "contact", "esperienza", "esperienze", "istruzione", "education", "skills",
+        "competenze", "about", "chi", "sono", "linkedin", "github", "email", "telefono",
+        "phone", "indirizzo", "address",
+    },
+)
+
+
+def _guess_name_from_first_lines(text: str) -> str | None:
+    """
+    Euristica conservativa, usata SOLO come ultima risorsa quando nessun parser
+    strutturato (IT/EN) ha trovato un nome: la maggior parte dei CV/resume ha il
+    nome della persona come prima riga non vuota, in 2-4 parole capitalizzate.
+    Scartiamo righe con email, numeri, URL o parole tipiche di intestazioni
+    (es. "Curriculum Vitae") per ridurre i falsi positivi.
+    """
+    for raw_line in text.splitlines()[:6]:
+        line = raw_line.strip()
+        if not line or len(line) > 40:
+            continue
+        if "@" in line or re.search(r"\d", line) or "http" in line.lower():
+            continue
+        words = line.split()
+        if not (2 <= len(words) <= 4):
+            continue
+        if not all(re.fullmatch(r"[A-Za-zÀ-ÖØ-öø-ÿ'’-]+", w) for w in words):
+            continue
+        if any(w.lower() in _NAME_BLOCKLIST_WORDS for w in words):
+            continue
+        # Ogni parola deve iniziare con maiuscola: tipico di un nome proprio.
+        if not all(w[0].isupper() for w in words):
+            continue
+        return line
+    return None
+
+
 def _github_url(text: str) -> str | None:
     m = re.search(
         r"https?://(?:www\.)?github\.com/([A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38})/?",
@@ -106,7 +144,15 @@ def enrich_mapped_cv_from_plain_text(data: dict[str, Any], plain: str) -> dict[s
             data["social_links"] = social
             touched = True
 
-    # Nome in evidenza: se manca `name` ma c'è nome da parser solo IT fallito, non indovinare qui.
+    # Nome: se nessun parser strutturato (IT/EN) l'ha trovato, proviamo l'euristica
+    # conservativa "prima riga plausibile" — meglio di un placeholder "Il Tuo Nome"
+    # sulla pagina pubblica, dato il rischio contenuto (righe brevi, no cifre/email,
+    # parole capitalizzate, niente header tipici tipo "Curriculum Vitae").
+    if not (data.get("name") or "").strip():
+        guessed = _guess_name_from_first_lines(plain)
+        if guessed:
+            data["name"] = guessed
+            touched = True
 
     # Allinea `personal_info.name` al nome top-level se il template non l'ha già messo in `personal_info`.
     top_name = (data.get("name") or "").strip()
