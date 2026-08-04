@@ -32,7 +32,7 @@ export default function CVPreviewStep({ cvData }: CVPreviewStepProps) {
       </h2>
 
       {/* CV Preview Card */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 max-w-2xl mx-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-8 max-w-2xl mx-auto">
         {/* Header */}
         <div className="border-b border-gray-200 dark:border-gray-700 pb-6 mb-6">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">

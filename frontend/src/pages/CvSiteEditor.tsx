@@ -391,7 +391,7 @@ export default function CvSiteEditor() {
           role="toolbar"
           aria-label={t('cvEditor.visual.toolbarAria')}
         >
-          <div className="flex min-w-[10rem] flex-col gap-1">
+          <div className="flex min-w-32 flex-1 flex-col gap-1 sm:min-w-40 sm:flex-none">
             <Label htmlFor="ed-toolbar-accent" value={t('cvEditor.accent')} className="text-xs" />
             <Select
               id="ed-toolbar-accent"
@@ -404,7 +404,7 @@ export default function CvSiteEditor() {
               <option value="teal">{t('cvEditor.accentTeal')}</option>
             </Select>
           </div>
-          <div className="flex min-w-[10rem] flex-col gap-1">
+          <div className="flex min-w-32 flex-1 flex-col gap-1 sm:min-w-40 sm:flex-none">
             <Label htmlFor="ed-toolbar-density" value={t('cvEditor.visual.density')} className="text-xs" />
             <Select
               id="ed-toolbar-density"
@@ -416,7 +416,7 @@ export default function CvSiteEditor() {
               <option value="compact">{t('cvEditor.visual.densityCompact')}</option>
             </Select>
           </div>
-          <div className="flex min-w-[10rem] flex-col gap-1">
+          <div className="flex min-w-32 flex-1 flex-col gap-1 sm:min-w-40 sm:flex-none">
             <Label htmlFor="ed-toolbar-heading" value={t('cvEditor.visual.headingSize')} className="text-xs" />
             <Select
               id="ed-toolbar-heading"
