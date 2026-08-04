@@ -10,6 +10,7 @@ export interface WizardCvState {
   uploadedFile?: File | null;
   parsedData?: Record<string, unknown> | null;
   cvId?: number | null;
+  slug?: string | null;
 }
 
 /** Converte raw_json del backend nel modello locale del wizard. */
@@ -128,6 +129,7 @@ export function apiCvRecordToWizard(cv: ApiCVRecord, prev: WizardCvState): Wizar
     education: (partial.education as unknown[]) ?? prev.education,
     skills: partial.skills ?? prev.skills,
     cvId: Number.isFinite(cvId) ? cvId : null,
+    slug: typeof cv.slug === "string" ? cv.slug : prev.slug,
     parsedData: raw,
   };
 }

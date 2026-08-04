@@ -34,7 +34,15 @@ export default function CVPublishStep({ cvData }: CVPublishStepProps) {
         isPublic ? 'public_with_expiry' : 'private_tokenized',
         expiryMonths,
       );
-      const slug = (cvData.parsedData?.slug as string | undefined) ?? customSlug;
+      // Lo slug reale del CV vive in `cvData.slug` (assegnato dal backend all'upload/creazione,
+      // vedi CVUploadStep.tsx) — NON dentro `parsedData`, che contiene solo i dati del template
+      // e non ha mai avuto una chiave "slug". Usarlo da li' produceva un link rotto (/u/ senza
+      // slug -> 404).
+      const slug = cvData.slug || customSlug;
+      if (!slug) {
+        setPublishError(t('builder.publish.errorNoSlug'));
+        return;
+      }
       setCvUrl(`${window.location.origin}/u/${slug}`);
       setPublished(true);
     } catch {

@@ -20,6 +20,8 @@ export interface CVData {
   uploadedFile?: File | null;
   parsedData?: Record<string, unknown> | null;
   cvId?: number | null;
+  /** Slug pubblico del CV (es. "mario-rossi-a1b2c3"), usato per costruire l'URL /u/<slug>. */
+  slug?: string | null;
 }
 
 interface CVWizardProps {
@@ -46,6 +48,7 @@ export default function CVWizard({ onComplete, initialCvId = null }: CVWizardPro
     uploadedFile: null,
     parsedData: null,
     cvId: null,
+    slug: null,
   });
   const rawBaseRef = useRef<Record<string, unknown>>({});
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);

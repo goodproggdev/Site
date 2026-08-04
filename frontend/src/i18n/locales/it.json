@@ -221,7 +221,8 @@
       "customUrl": "URL personalizzato (opzionale)",
       "publishing": "Pubblicazione in corso...",
       "publishButton": "Pubblica CV",
-      "errorNoCvId": "Il CV non è ancora collegato al server (manca l’ID). Torna allo step Carica e premi «Avanti» per creare una bozza, oppure ricarica il file."
+      "errorNoCvId": "Il CV non è ancora collegato al server (manca l’ID). Torna allo step Carica e premi «Avanti» per creare una bozza, oppure ricarica il file.",
+      "errorNoSlug": "Non riesco a determinare il link pubblico del CV. Prova a ricaricare la pagina e ripetere l'upload."
     }
   },
   "cvEditor": {

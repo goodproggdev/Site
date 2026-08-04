@@ -221,7 +221,8 @@
       "customUrl": "Custom URL (optional)",
       "publishing": "Publishing...",
       "publishButton": "Publish CV",
-      "errorNoCvId": "This CV is not linked to the server yet (missing ID). Go back to Upload and press “Next” to create a draft, or upload a file again."
+      "errorNoCvId": "This CV is not linked to the server yet (missing ID). Go back to Upload and press “Next” to create a draft, or upload a file again.",
+      "errorNoSlug": "We couldn't determine the CV's public link. Try reloading the page and uploading again."
     }
   },
   "cvEditor": {

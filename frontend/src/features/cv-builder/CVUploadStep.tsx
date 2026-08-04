@@ -49,6 +49,10 @@ export default function CVUploadStep({ cvData, updateCVData, onNext }: CVUploadS
       updateCVData({
         uploadedFile: file,
         cvId: Number.isFinite(cvId) ? cvId : undefined,
+        // Lo slug pubblico (es. "mario-rossi-a1b2c3") arriva come campo a sé nella risposta
+        // di upload, non dentro ai dati del template: va conservato qui, altrimenti lo step
+        // di pubblicazione non sa costruire il vero link /u/<slug> del CV.
+        slug: typeof result.slug === "string" ? result.slug : undefined,
         parsedData: rawPayload,
         personalInfo: { ...(fromParse.personalInfo ?? {}) },
         experience: (fromParse.experience as unknown[]) ?? [],
