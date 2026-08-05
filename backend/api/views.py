@@ -735,7 +735,21 @@ class CVDashboardView(APIView):
         profile = get_cv_owner_profile(request)
         if not profile:
             return Response({"cvs": [], "stats": {"total_cvs": 0, "total_visits": 0, "plan": "free"}}, status=status.HTTP_200_OK)
-        cvs = CVData.objects.filter(user=profile)
+        # Performance: select_related evita una query separata per ogni CV per
+        # leggere link_policy (era N+1: 1 query per la lista + 1 per ogni CV per
+        # cv.link_policy). only() esclude raw_json/structured_profile (blob JSON
+        # potenzialmente grandi, mai usati in questa risposta) dal SELECT: meno
+        # dati da trasferire/deserializzare per ogni riga. Stessa identica
+        # risposta di prima, solo più query-efficiente.
+        cvs = (
+            CVData.objects.filter(user=profile)
+            .select_related('link_policy')
+            .only(
+                'id', 'slug', 'created_at', 'updated_at',
+                'visits_count', 'is_published', 'template_slug',
+                'link_policy__visibility', 'link_policy__expires_at', 'link_policy__is_revoked',
+            )
+        )
         data = []
         for cv in cvs:
             # Get link policy if exists
