@@ -48,7 +48,12 @@ def resolve_public_cv(slug: str, token: Optional[str]) -> Tuple[Optional[CVData]
 
     try:
 
-        cv = CVData.objects.select_related("user").get(slug=slug)
+        # Performance: select_related("link_policy") evita una query separata
+        # (getattr(cv, "link_policy", None) qui sotto) — questa funzione e' sul
+        # percorso di ogni singola visualizzazione di una pagina CV pubblica
+        # (API JSON, shell HTML SSR, immagine OG), quindi e' il punto a piu' alto
+        # traffico dell'intera app.
+        cv = CVData.objects.select_related("user", "link_policy").get(slug=slug)
 
     except CVData.DoesNotExist:
 
