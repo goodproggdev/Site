@@ -55,7 +55,7 @@ urlpatterns = [
     # Dashboard & CV Management Fase 4
     path('dashboard/', CVDashboardView.as_view(), name='cv-dashboard'),
     path('cv/public/<slug:slug>/', CVPublicView.as_view(), name='cv-public'),
-    path('cv/<slug:slug>/og-image.png', cv_og_image_view, name='cv-og-image'),
+    path('cv/<slug:slug>/og-image', cv_og_image_view, name='cv-og-image'),
     path('cv/update/<int:cv_id>/', CVUpdateView.as_view(), name='cv-update'),
     path('cv/<int:cv_id>/', CVDetailView.as_view(), name='cv-detail'),
 

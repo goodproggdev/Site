@@ -655,7 +655,7 @@ per punto. Le parti compatibili con lo stack reale (Django+DRF, React+Vite SPA, 
 Django, Vercel) sono state implementate direttamente:
 
 - **OG-001 — Immagine Open Graph dinamica per il CV pubblico**: nuovo endpoint
-  `GET /api/v1/cv/<slug>/og-image.png` (`backend/api/services/cv_og_image.py` +
+  `GET /api/v1/cv/<slug>/og-image` (`backend/api/services/cv_og_image.py` +
   `cv_og_image_view` in `cv_public_html_views.py`, generazione PNG 1200x630 via Pillow con nome del CV,
   tagline e gradiente colore legato alla categoria professionale — stessa palette di
   `categoryTheme.ts`). `cv_public_shell_view` ora punta qui di default invece del logo generico

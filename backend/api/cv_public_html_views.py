@@ -146,7 +146,7 @@ def cv_public_shell_view(request, slug: str):
     # forzare un'immagine fissa per tutti i CV, se un operatore lo desidera.
     og_image = (getattr(settings, "PUBLIC_CV_OG_IMAGE", "") or "").strip()
     if not og_image:
-        og_image = request.build_absolute_uri(f"/api/v1/cv/{slug}/og-image.png")
+        og_image = request.build_absolute_uri(f"/api/v1/cv/{slug}/og-image")
         if token:
             og_image = f"{og_image}?token={token}"
     if not (og_image.startswith("http://") or og_image.startswith("https://")):
@@ -199,7 +199,7 @@ def cv_public_shell_view(request, slug: str):
 
 def cv_og_image_view(request, slug: str):
     """
-    GET /api/v1/cv/<slug>/og-image.png — immagine Open Graph generata al volo
+    GET /api/v1/cv/<slug>/og-image — immagine Open Graph generata al volo
     (nome + tagline + colore legato alla categoria) per la pagina CV pubblica,
     usata come og:image/twitter:image al posto del logo generico della
     piattaforma. Stessa policy di accesso della shell HTML (`resolve_public_cv`):
