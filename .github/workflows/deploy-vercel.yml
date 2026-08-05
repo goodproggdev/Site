@@ -1,0 +1,38 @@
+name: Deploy to Vercel
+
+# Deploy automatico su Vercel ad ogni push su main, come workaround/parallelo
+# all'integrazione Git nativa di Vercel che ha smesso di triggerare le build
+# automaticamente (vedi BACKLOG.md). Usa la Vercel CLI con un token scoped
+# solo al progetto sitecv (VERCEL_TOKEN) piu' VERCEL_ORG_ID/VERCEL_PROJECT_ID
+# per identificare il progetto senza bisogno di un .vercel/project.json
+# committato nel repo.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: vercel-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Deploy to Vercel (Production)
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: vercel deploy --prod --yes --token="${{ secrets.VERCEL_TOKEN }}"
