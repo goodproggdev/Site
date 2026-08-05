@@ -15,8 +15,26 @@ from django.http import HttpResponse, HttpResponseForbidden, HttpResponseNotFoun
 from django.shortcuts import render
 from django.utils.safestring import mark_safe
 
-from api.services.cv_og_image import generate_og_image_png
 from api.services.cv_public_access import resolve_public_cv
+
+try:
+    # Import difensivo: Pillow e' una dipendenza aggiuntiva (vedi
+    # api/services/cv_og_image.py) e non deve mai poter far fallire il
+    # caricamento dell'intero modulo URL conf se per qualche motivo non e'
+    # disponibile/importabile nell'ambiente serverless (stesso pattern gia'
+    # usato altrove nel progetto per spacy/nltk/pyresparser, vedi BACKLOG.md).
+    # Senza questo try/except un ImportError qui farebbe fallire *tutte* le
+    # route Django, non solo l'endpoint dell'immagine OG.
+    from api.services.cv_og_image import generate_og_image_png
+
+    _OG_IMAGE_AVAILABLE = True
+except Exception:  # pragma: no cover - difensivo, vedi commento sopra
+    logging.getLogger(__name__).exception(
+        "Import di api.services.cv_og_image fallito: l'immagine OG dinamica "
+        "sara' disabilitata (fallback al logo statico)."
+    )
+    generate_og_image_png = None
+    _OG_IMAGE_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -145,10 +163,15 @@ def cv_public_shell_view(request, slug: str):
     # invece del logo generico. PUBLIC_CV_OG_IMAGE resta una via di fuga per
     # forzare un'immagine fissa per tutti i CV, se un operatore lo desidera.
     og_image = (getattr(settings, "PUBLIC_CV_OG_IMAGE", "") or "").strip()
-    if not og_image:
+    if not og_image and _OG_IMAGE_AVAILABLE:
         og_image = request.build_absolute_uri(f"/api/v1/cv/{slug}/og-image")
         if token:
             og_image = f"{og_image}?token={token}"
+    if not og_image:
+        # Fallback al logo statico: sia perche' un operatore non ha impostato
+        # PUBLIC_CV_OG_IMAGE, sia perche' la generazione dinamica non e'
+        # disponibile in questo ambiente (vedi import difensivo sopra).
+        og_image = "/logo-nordev.png"
     if not (og_image.startswith("http://") or og_image.startswith("https://")):
         if og_image.startswith("/"):
             og_image = request.build_absolute_uri(og_image)
@@ -205,6 +228,9 @@ def cv_og_image_view(request, slug: str):
     piattaforma. Stessa policy di accesso della shell HTML (`resolve_public_cv`):
     un CV privato con token richiede lo stesso token anche per l'immagine.
     """
+    if not _OG_IMAGE_AVAILABLE:
+        return HttpResponseNotFound(content_type="image/png")
+
     token = request.GET.get("token")
     cv, err_status, _err_code = resolve_public_cv(slug, token)
     if err_status:
@@ -213,12 +239,18 @@ def cv_og_image_view(request, slug: str):
     raw = cv.raw_json if isinstance(cv.raw_json, dict) else {}
     page_title, _meta_description, tagline = _pick_meta_from_raw(raw, slug)
     name = page_title.split("—")[0].strip()
-    png_bytes = generate_og_image_png(
-        name=name,
-        tagline=tagline,
-        category=getattr(cv, "category", "") or "default",
-        site_name=getattr(settings, "SITE_NAME", "Nordevit"),
-    )
+    try:
+        png_bytes = generate_og_image_png(
+            name=name,
+            tagline=tagline,
+            category=getattr(cv, "category", "") or "default",
+            site_name=getattr(settings, "SITE_NAME", "Nordevit"),
+        )
+    except Exception:
+        # Un'immagine OG rotta non deve mai risultare in un 500 su una pagina
+        # pubblica: meglio un 404 (i client OG ripiegano sul fallback).
+        logger.exception("Generazione immagine OG fallita per slug=%s", slug)
+        return HttpResponseNotFound(content_type="image/png")
     response = HttpResponse(png_bytes, content_type="image/png")
     # I dati del CV cambiano raramente rispetto alla frequenza con cui i
     # crawler dei social ri-fetchano l'immagine: cache moderata + revalidate
