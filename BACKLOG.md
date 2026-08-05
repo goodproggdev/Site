@@ -63,7 +63,7 @@ prima di dichiarare il progetto "pulito".
 - [ ] SEC-009 — `CVUpdateView.post` nessuna validazione su `raw_json`
 - [ ] SEC-010 — Nessun rate limit dedicato su endpoint costosi (parsing CV, checkout Stripe)
 - [ ] SEC-011 — Errori interni esposti al client via `str(e)`
-- [ ] DATA-003 — N+1 query in `CVDashboardView.get`
+- [x] DATA-003 — N+1 query in `CVDashboardView.get`
 - [ ] DATA-004 — `CVDataListSerializer` mai usato, `my_cv_list` ritorna `raw_json` per ogni riga
 - [ ] BE-001 — ~150 righe di codice morto/rotto: flusso verifica email/reset password custom mai collegato
 - [ ] BE-006 — `MEDIA_ROOT` filesystem locale incompatibile con Vercel se `USE_S3_STORAGE` non impostato
@@ -236,6 +236,8 @@ un flusso funzionante end-to-end.
 `policy = getattr(cv, 'link_policy', None)` — una query per ogni CV (relazione OneToOne non
 pre-caricata).
 **Fix**: `.select_related('link_policy')`.
+**Fatto**: `23b7d051b` (05/08/2026) — aggiunto `.select_related('link_policy').only(...)`,
+verificato con test mirato (query count 6->1 su 5 CV, output identico), 37 test backend verdi.
 
 ### DATA-004 [MEDIA] — `CVDataListSerializer` mai usato
 Definito in `backend/api/serializers.py` apposta per escludere `raw_json` dalle liste, ma
@@ -867,3 +869,44 @@ ora non è disponibile in produzione**.
 4. Una volta diagnosticato e risolto, rimuovere/verificare il fallback
    difensivo aggiunto (puo' restare comunque come buona pratica difensiva,
    ma l'obiettivo e' far tornare `_OG_IMAGE_AVAILABLE = True` in produzione).
+
+
+## Aggiornamento 05/08/2026 (2) — Performance pass su dashboard + pagina pubblica
+
+Richiesta utente: "migliora le performance della webapp... non modificare logiche e grafica ma
+migliorandole" poi estesa esplicitamente a "tutto, non solo la dashboard".
+
+**Fatto**:
+- DATA-003 (`CVDashboardView.get`): vedi sopra. Commit `23b7d051b`.
+- **Nuovo, non in questa lista originariamente** — stesso identico pattern N+1 trovato in
+  `resolve_public_cv()` (`backend/api/services/cv_public_access.py`): `select_related` solo su
+  `user`, non su `link_policy`, letta subito dopo via `getattr`. Questa funzione e' condivisa da
+  API JSON pubblica (`CVPublicView`), shell HTML SSR (`cv_public_shell_view`, `/u/<slug>`) e
+  endpoint immagine OG (`cv_og_image_view`) — e' il percorso a **piu' alto traffico** di tutta
+  l'app (pagine condivise pubblicamente). Fix: `select_related('user', 'link_policy')`. Verificato
+  con test mirato (query count 2->1, risultato identico). Commit `bb543c0fb`.
+- FE-017 (`CVWizard.tsx`, `updateCVData` non memoizzato): fix con `useCallback`, deps `[persistDraft]`
+  (gia' stabile). Verificato: tsc pulito, eslint 0 errori, build ok, 17/17 test vitest verdi.
+  Commit `b941787d1`.
+
+**Provato ma scartato (nessun beneficio misurato, non committato)**: FE-012 (vendor-ui 216KB) —
+tentativo di sostituire gli import barrel (`from 'flowbite-react'`) con import diretti dai sotto-
+path (`from 'flowbite-react/components/Button'`, ufficialmente supportati dal package `exports`
+map). Cambio meccanico sicuro (stessi componenti, stesso comportamento, tsc/build puliti), ma la
+dimensione del chunk `vendor-ui` e' rimasta invariata (216.10KB -> 216.11KB, nel rumore): il grosso
+del peso di questo chunk viene evidentemente da dipendenze interne condivise di flowbite-react
+(tema, utility, ecc.), non da componenti non usati che il barrel import lasciava dentro. Riportare
+questo esito se si riprende FE-012 in futuro, per non ripetere lo stesso tentativo: serve
+un'analisi piu' approfondita (es. bundle visualizer) prima di investire tempo li'.
+
+**Non toccato in questo giro** (fuori scope o rischio non giustificato per un "performance pass"):
+- `CVPublicView.get`: `cv.visits_count += 1; cv.save(...)` e' un read-modify-write con race
+  condition teorica sotto richieste concorrenti sullo stesso CV — e' un problema di correttezza
+  concorrenziale, non di performance (resta comunque 1 sola query). Se si vuole sistemare,
+  usare `F('visits_count') + 1` in un `.update()`, ma e' un cambio di semantica dell'operazione
+  (non solo un fix di query count) quindi lasciato fuori da questo giro mirato.
+- `my_cv_list` (DATA-004, `GET /api/v1/cv/`): nessun riferimento trovato nel frontend attuale
+  (`grep` su tutto `frontend/src` non trova chiamate a questo endpoint) — sembra dead code, non
+  la fonte della lentezza segnalata. Da verificare/rimuovere separatamente (coordinare con FE-001).
+- FE-012/FE-013/FE-015: cambi di bundling/struttura piu' rischiosi o di beneficio non provato,
+  lasciati come voci di backlog separate invece di infilarli in questo giro mirato.
