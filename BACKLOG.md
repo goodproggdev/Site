@@ -767,12 +767,10 @@ feature che gli utenti non chiederanno. **Non fatto — prima capire se e perch�
 scartato per difficoltà tecnica ma per dubbio ritorno.
 
 ### ROAD-007 — Optimistic UI updates
-**Verdetto: applicabile, buon candidato per un prossimo giro di lavoro autonomo — non fatto per
-concentrare questa sessione sulle voci con evidenza più diretta.** Il caso d'uso più ovvio nel prodotto
-è l'eliminazione di un CV dalla Dashboard (oggi presumibilmente aspetta la risposta del server prima di
-aggiornare la lista) e forse "Copia link"/toggle visibilità. Aggiunto come TASK-ROAD-007 a bassa
-priorità: da fare quando si toccano di nuovo `Dashboard.tsx`/`CVPublishStep.tsx` per altri motivi (vedi
-FE-007, FE-009, FE-011 nel backlog sopra, stessi file).
+**Fatto** (`2b53b1720`, 05/08/2026): eliminazione CV in `Dashboard.tsx` ora ottimistica — la card sparisce
+e il modal si chiude subito al click, la chiamata al server parte in background, rollback (posizione e
+statistiche ripristinate) + avviso transitorio sulla card se fallisce. "Copia link"/toggle visibilità
+restano fuori scope (già percepiti come istantanei, non fanno una vera chiamata di rete bloccante).
 
 ### ROAD-008 — Type-safety end-to-end (analogo a `supabase gen types typescript`)
 **Verdetto: il principio si applica, lo strumento concreto no** (non c'è uno schema Supabase generato
@@ -793,11 +791,14 @@ branch), non codice applicativo. **Non fatto** — richiede che l'utente verific
 proprio account Supabase prima che abbia senso lavorarci da qui.
 
 ### ROAD-010 — Sentry (o analogo) per error tracking in produzione
-**Verdetto: applicabile, richiede solo un account/DSN esterno che l'utente deve creare.** L'integrazione
-codice è quasi meccanica (`sentry-sdk` lato Django, `@sentry/react` lato frontend, poche righe di init
-con la variabile `SENTRY_DSN`). **Non fatta in questa sessione** perché richiede che l'utente crei un
-account Sentry (o servizio equivalente) e fornisca il DSN — nessuna azione di sola-lettura può
-sostituire quel passo. Buon prossimo passo autonomo NON APPENA si ha un DSN da usare.
+**Fatto lato codice** (`ee19cd072`, 05/08/2026): `sentry-sdk` (backend) e `@sentry/react` (frontend)
+integrati, entrambi import difensivi (mai possono bloccare l'avvio dell'app, vedi commento nel commit)
+e attivi SOLO se `SENTRY_DSN`/`VITE_SENTRY_DSN` sono impostati — oggi sono vuoti quindi il tracking e'
+spento (verificato: zero byte aggiunti al bundle frontend senza DSN). **Manca ancora**: l'utente deve
+creare un account Sentry (o servizio equivalente), generare un DSN, e impostarlo come env var su
+Vercel (`SENTRY_DSN` per il backend, `VITE_SENTRY_DSN` per il frontend, quest'ultima richiede un
+nuovo build/deploy per essere inclusa dato che Vite la legge a build-time). Nessuna azione di
+sola-lettura può sostituire questo passo.
 
 ### ROAD-011 — hreflang / metatag dinamici sulle pagine di marketing (non la CV pubblica)
 **Verdetto: la CV pubblica è già a posto, le pagine di marketing no — ma è un fix a basso ritorno dato
