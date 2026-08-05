@@ -65,8 +65,12 @@ export default function Dashboard() {
   const [copyToastCvId, setCopyToastCvId] = useState<number | null>(null);
   const copyToastTimer = useRef<ReturnType<typeof window.setTimeout> | null>(null);
   const [cvToDelete, setCvToDelete] = useState<CV | null>(null);
-  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
+  // Optimistic UI (CV_Update.md sez. 3): l'eliminazione rimuove subito la card e
+  // chiude il modal senza aspettare il server. deleteErrorToastId mostra un
+  // avviso transitorio sulla card ripristinata solo se la chiamata fallisce
+  // (stesso pattern/stile del toast "Copiato" esistente per coerenza visiva).
+  const [deleteErrorToastId, setDeleteErrorToastId] = useState<number | null>(null);
+  const deleteErrorToastTimer = useRef<ReturnType<typeof window.setTimeout> | null>(null);
   const [jobSaveId, setJobSaveId] = useState<string | null>(null);
   const [jobSaveErrorId, setJobSaveErrorId] = useState<string | null>(null);
 
@@ -81,10 +85,24 @@ export default function Dashboard() {
     }, 2200);
   };
 
+  const flashDeleteErrorToast = (cvId: number) => {
+    if (deleteErrorToastTimer.current) {
+      window.clearTimeout(deleteErrorToastTimer.current);
+    }
+    setDeleteErrorToastId(cvId);
+    deleteErrorToastTimer.current = window.setTimeout(() => {
+      setDeleteErrorToastId(null);
+      deleteErrorToastTimer.current = null;
+    }, 4000);
+  };
+
   useEffect(() => {
     return () => {
       if (copyToastTimer.current) {
         window.clearTimeout(copyToastTimer.current);
+      }
+      if (deleteErrorToastTimer.current) {
+        window.clearTimeout(deleteErrorToastTimer.current);
       }
     };
   }, []);
@@ -152,26 +170,46 @@ export default function Dashboard() {
 
   const confirmDeleteCv = async () => {
     if (!cvToDelete) return;
-    setDeleteSubmitting(true);
-    setDeleteError(null);
+    const cv = cvToDelete;
+    const cvIndex = cvs.findIndex((c) => c.id === cv.id);
+
+    // Optimistic UI (CV_Update.md sez. 3): chiudiamo subito il modal e
+    // rimuoviamo la card senza aspettare la risposta del server — l'utente
+    // vede l'effetto istantaneamente. Se la chiamata fallisce, ripristiniamo
+    // la card nella stessa posizione e le statistiche, mostrando un avviso
+    // sulla card ripristinata invece che nel modal (ormai gia' chiuso).
+    setCvToDelete(null);
+    setCvs((prev) => prev.filter((c) => c.id !== cv.id));
+    setStats((prev) =>
+      prev
+        ? {
+            ...prev,
+            total_cvs: Math.max(0, prev.total_cvs - 1),
+            total_visits: Math.max(0, prev.total_visits - (cv.visits_count || 0)),
+          }
+        : prev,
+    );
+
     try {
-      await deleteCV(cvToDelete.id);
-      trackEvent('cv_delete', { cv_id: cvToDelete.id });
-      setCvs((prev) => prev.filter((c) => c.id !== cvToDelete.id));
+      await deleteCV(cv.id);
+      trackEvent('cv_delete', { cv_id: cv.id });
+    } catch {
+      setCvs((prev) => {
+        if (prev.some((c) => c.id === cv.id)) return prev;
+        const next = [...prev];
+        next.splice(Math.min(cvIndex, next.length), 0, cv);
+        return next;
+      });
       setStats((prev) =>
         prev
           ? {
               ...prev,
-              total_cvs: Math.max(0, prev.total_cvs - 1),
-              total_visits: Math.max(0, prev.total_visits - (cvToDelete.visits_count || 0)),
+              total_cvs: prev.total_cvs + 1,
+              total_visits: prev.total_visits + (cv.visits_count || 0),
             }
           : prev,
       );
-      setCvToDelete(null);
-    } catch {
-      setDeleteError(t('dashboard.cvList.deleteError'));
-    } finally {
-      setDeleteSubmitting(false);
+      flashDeleteErrorToast(cv.id);
     }
   };
 
@@ -432,6 +470,11 @@ export default function Dashboard() {
                             {t('common.copiedToClipboard')}
                           </p>
                         ) : null}
+                        {deleteErrorToastId === cv.id ? (
+                          <p className="text-xs text-red-600 dark:text-red-400" role="alert">
+                            {t('dashboard.cvList.deleteError')}
+                          </p>
+                        ) : null}
                       </div>
                       <div className="mt-4 flex justify-between items-center">
                         <div className="text-sm text-gray-500">
@@ -498,10 +541,7 @@ export default function Dashboard() {
                             className="btn-icon text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/40 dark:hover:text-red-300"
                             title={t('dashboard.cvList.deleteCv')}
                             aria-label={t('dashboard.cvList.deleteCvAria')}
-                            onClick={() => {
-                              setDeleteError(null);
-                              setCvToDelete(cv);
-                            }}
+                            onClick={() => setCvToDelete(cv)}
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -596,14 +636,9 @@ export default function Dashboard() {
 
       <Modal
         show={cvToDelete !== null}
-        onClose={() => {
-          if (!deleteSubmitting) {
-            setCvToDelete(null);
-            setDeleteError(null);
-          }
-        }}
+        onClose={() => setCvToDelete(null)}
         size="md"
-        dismissible={!deleteSubmitting}
+        dismissible
       >
         <Modal.Header className="border-b border-gray-200 dark:border-gray-700">
           {t('dashboard.cvList.deleteConfirmTitle')}
@@ -613,17 +648,12 @@ export default function Dashboard() {
           {cvToDelete ? (
             <p className="break-all font-mono text-sm text-gray-900 dark:text-gray-100">/{cvToDelete.slug}</p>
           ) : null}
-          {deleteError ? (
-            <p className="text-sm text-red-600 dark:text-red-400" role="alert">
-              {deleteError}
-            </p>
-          ) : null}
         </Modal.Body>
         <Modal.Footer className="border-t border-gray-200 dark:border-gray-700">
-          <Button color="light" onClick={() => setCvToDelete(null)} disabled={deleteSubmitting}>
+          <Button color="light" onClick={() => setCvToDelete(null)}>
             {t('dashboard.cvList.deleteCancel')}
           </Button>
-          <Button color="failure" onClick={() => void confirmDeleteCv()} isProcessing={deleteSubmitting}>
+          <Button color="failure" onClick={() => void confirmDeleteCv()}>
             {t('dashboard.cvList.deleteConfirm')}
           </Button>
         </Modal.Footer>
