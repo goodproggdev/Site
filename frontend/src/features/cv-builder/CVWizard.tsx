@@ -150,7 +150,12 @@ export default function CVWizard({ onComplete, initialCvId = null }: CVWizardPro
     }
   };
 
-  const updateCVData = (newData: Partial<CVData>) => {
+  // Performance (FE-017): memoizzata con useCallback — prima veniva ricreata
+  // a ogni render e usata come dep in vari useCallback di CVFormStep.tsx,
+  // vanificandone la memoizzazione li' (re-render extra a ogni interazione,
+  // non un bug di correttezza). persistDraft e' gia' stabile (deps `[]`),
+  // quindi l'identita' di updateCVData ora resta stabile tra i render.
+  const updateCVData = useCallback((newData: Partial<CVData>) => {
     if ('cvId' in newData) {
       cvIdRef.current = newData.cvId;
     }
@@ -165,7 +170,7 @@ export default function CVWizard({ onComplete, initialCvId = null }: CVWizardPro
       }
       return next;
     });
-  };
+  }, [persistDraft]);
 
   return (
     <div className="max-w-4xl mx-auto">
