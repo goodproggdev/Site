@@ -811,3 +811,4 @@ introdurre `react-helmet-async` (o simile) e gestire i meta per route — è un 
 ritorno SEO è incerto per pagine dietro autenticazione o comunque non pensate per traffico organico
 multi-lingua. **Non fatto** — priorità bassa, valutare insieme a un eventuale ROAD-001 (SSR delle
 pagine di marketing risolverebbe questo e altro insieme).
+
