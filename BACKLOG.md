@@ -812,3 +812,58 @@ ritorno SEO è incerto per pagine dietro autenticazione o comunque non pensate p
 multi-lingua. **Non fatto** — priorità bassa, valutare insieme a un eventuale ROAD-001 (SSR delle
 pagine di marketing risolverebbe questo e altro insieme).
 
+
+## Aggiornamento 05/08/2026 — GitHub Actions deploy + OG-image disabilitata in produzione
+
+**Deploy automatico ripristinato** (workaround, non fix della causa Vercel):
+aggiunto `.github/workflows/deploy-vercel.yml` che fa deploy su Vercel via CLI
+ad ogni push su `main` (secrets: VERCEL_TOKEN scoped al progetto `sitecv`,
+VERCEL_ORG_ID, VERCEL_PROJECT_ID — gia' configurati sul repo). Verificato
+funzionante end-to-end (run #3 completato con successo, sito verificato live).
+
+**Causa probabile del blocco deploy nativo Vercel trovata e corretta**:
+`vercel.json` aveva un gruppo regex non-capturing `(?:...)` nel secondo
+`headers[].source`, non supportato da path-to-regexp (il parser usato da
+Vercel per `headers`/`redirects`/`rewrites`, diverso dal parser PCRE usato per
+`routes` legacy). Questo faceva fallire la validazione della config *prima*
+che qualunque build potesse partire — spiegherebbe perche' gli ultimi push
+non generavano nemmeno un deployment fallito in dashboard, solo silenzio.
+Fix: rimosso `?:` (commit `3a511bcd2`). Da tenere a mente per il futuro: se si
+riaggiungono regex in `headers`/`rewrites`/`redirects`, usare solo gruppi
+capturing semplici, mai `(?:...)`, lookahead/lookbehind, o altra sintassi PCRE
+avanzata non supportata da path-to-regexp.
+
+**REGRESSIONE CRITICA trovata e mitigata**: il primo deploy reale del backend
+dopo mesi di pipeline rotta ha rotto **tutte** le route Django con 500
+`FUNCTION_INVOCATION_FAILED` (non solo `/og-image`): l'import a livello di
+modulo di `generate_og_image_png` in `cv_public_html_views.py` falliva
+nell'ambiente serverless Vercel, e senza try/except questo faceva fallire il
+caricamento dell'intero URL conf. Mitigato (commit `2dfed958a`) rendendo
+l'import difensivo: se fallisce, `/og-image` risponde 404 e la shell HTML
+ripiega sul logo statico, ma il resto del sito funziona. **Verificato in
+produzione**: il fallback e' effettivamente attivo (`_OG_IMAGE_AVAILABLE =
+False` su Vercel), quindi il sito funziona ma **l'immagine OG dinamica per
+ora non è disponibile in produzione**.
+
+**Da fare (root cause dell'ImportError non ancora diagnosticata)**:
+1. Verificare nei log Vercel (dashboard, `vercel.com/sitie-gestionali/sitecv/logs`,
+   era in "loading" infinito durante questa sessione — problema noto
+   dell'ambiente browser di queste sessioni, riprovare con un browser reale)
+   il traceback esatto dell'ImportError/eccezione a import-time di
+   `api.services.cv_og_image` nell'ambiente serverless.
+2. Capire quale `requirements*.txt` viene effettivamente usato da
+   `@vercel/python` per `backend/mybackend/wsgi.py`: la nearest-ancestor
+   directory rispetto all'entrypoint è `backend/`, quindi probabilmente
+   `backend/requirements.txt` (quello "pesante" con spacy/nltk/pyresparser/
+   pymupdf), NON `backend/requirements-vercel.txt` — da confermare. Se cosi',
+   il commento in `requirements-vercel.txt` che descrive la sua funzione va
+   rivisto, e va capito se il file "pesante" installa Pillow correttamente
+   o se li' c'e' un conflitto/errore di build.
+3. Ipotesi piu' probabile: incompatibilita' del wheel Pillow (dipendenza
+   binaria compilata, `_imaging` extension) con l'architettura/runtime esatto
+   della funzione Python serverless di Vercel — testato localmente in questo
+   sandbox (Pillow 12.2.0) e funziona perfettamente, quindi il bug e'
+   specifico dell'ambiente Vercel, non della logica applicativa.
+4. Una volta diagnosticato e risolto, rimuovere/verificare il fallback
+   difensivo aggiunto (puo' restare comunque come buona pratica difensiva,
+   ma l'obiettivo e' far tornare `_OG_IMAGE_AVAILABLE = True` in produzione).
