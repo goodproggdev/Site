@@ -4,6 +4,12 @@ Questo file esiste per far ripartire una sessione Claude "a memoria vuota" senza
 delle sessioni precedenti. Leggilo per intero prima di iniziare a lavorare. Tienilo aggiornato: quando
 chiudi un lavoro importante o prendi una decisione che vincola il futuro, aggiungi qui una riga.
 
+**C'è anche `BACKLOG.md`** nella root del repo: è la coda di miglioramenti/fix trovati con un audit
+globale (05/08/2026) di backend, frontend, testing/CI/CD, prodotto — pensata per essere eseguita voce
+per voce in autonomia in sessioni future. Se non hai un compito specifico da questa sessione, quella è
+la fonte primaria di "cosa fare dopo". Contiene anche 2 voci CRITICHE che richiedono conferma esplicita
+dell'utente prima di agire (credenziali reali esposte nella history git) — leggile per prime.
+
 ## Cos'è il progetto
 
 SiteCV (repo GitHub `goodproggdev/SiteCV`) è una piattaforma che genera pagine CV pubbliche a partire
