@@ -19,6 +19,10 @@ stripe==11.5.0
 # Generazione immagine Open Graph per i CV pubblici (api/services/cv_og_image.py)
 Pillow==11.1.0
 
+# Error tracking in produzione (Sentry) — inerte finche' SENTRY_DSN non e' impostato,
+# vedi backend/mybackend/settings.py.
+sentry-sdk==2.19.2
+
 # Deploy / storage
 psycopg[binary]
 django-storages[s3]

@@ -321,3 +321,32 @@ if not DEBUG:
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = 'DENY'
+
+# ==============================================================================
+# ERROR TRACKING (Sentry) — CV_Update.md sez. 5 "Gestione Errori in Produzione"
+# ==============================================================================
+# Inerte finche' non viene impostato SENTRY_DSN (nessun account Sentry creato in
+# questa sessione: serve un DSN generato dall'utente sul proprio account, non
+# generabile in autonomia). Import difensivo: se sentry-sdk non fosse installato
+# o non importabile nell'ambiente serverless (vedi il problema analogo gia'
+# incontrato con Pillow/api.services.cv_og_image in questa stessa sessione),
+# questo non deve MAI poter impedire l'avvio dell'intera app.
+SENTRY_DSN = config('SENTRY_DSN', default='')
+if SENTRY_DSN:
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.django import DjangoIntegration
+
+        sentry_sdk.init(
+            dsn=SENTRY_DSN,
+            integrations=[DjangoIntegration()],
+            traces_sample_rate=config('SENTRY_TRACES_SAMPLE_RATE', default=0.1, cast=float),
+            environment=config('SENTRY_ENVIRONMENT', default='production' if not DEBUG else 'development'),
+            send_default_pii=False,
+        )
+    except Exception:
+        import logging as _logging
+        _logging.getLogger(__name__).exception(
+            "Inizializzazione Sentry fallita: continuo senza error tracking (non deve "
+            "bloccare l'avvio dell'app)."
+        )

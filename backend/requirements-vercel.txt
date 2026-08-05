@@ -35,6 +35,10 @@ stripe==11.5.0
 # nulla a che vedere con l'esclusione di spacy/nltk/pyresparser/pymupdf sopra.
 Pillow==11.1.0
 
+# Error tracking in produzione (Sentry) — inerte finche' SENTRY_DSN non e' impostato,
+# vedi backend/mybackend/settings.py.
+sentry-sdk==2.19.2
+
 psycopg[binary]
 django-storages[s3]
 whitenoise==6.8.2
