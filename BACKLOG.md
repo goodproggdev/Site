@@ -41,7 +41,7 @@ prima di dichiarare il progetto "pulito".
 ### Alta priorità
 - [ ] SEC-003 — Stripe: price/feature/plan controllati dal client, entitlement falsificabili
 - [ ] SEC-004 — Endpoint upload file anonimo, CSRF-exempt, nessun limite
-- [ ] SEC-005 / TEST-001 — CI frontend non fallisce mai davvero (fallback `|| echo` su typecheck/lint/test)
+- [x] SEC-005 / TEST-001 — CI frontend non fallisce mai davvero (fallback `|| echo` su typecheck/lint/test)
 - [ ] DATA-001 — `Entitlement.unique_together` con booleano → leak entitlement su resubscribe
 - [ ] DATA-002 — Backend non permette di aggiornare `category`/`target_positions`/`show_pricing`/`template_slug` su un CV esistente
 - [ ] BE-008 — Parsing CV silenziosamente vuoto in produzione se manca `CV_PARSE_USE_OPENAI`
@@ -51,7 +51,7 @@ prima di dichiarare il progetto "pulito".
 - [ ] FE-006 — `PublicCvTemplateDefault.tsx` testo hardcoded misto IT/EN, non usa i18n
 - [ ] FE-007 — Dashboard: errore di fetch silenziato, nessun feedback utente
 - [ ] FE-008 — Modal portfolio senza focus trap/ESC/ARIA
-- [ ] TEST-002 — Test E2E Playwright esistono ma non girano mai in CI
+- [x] TEST-002 — Test E2E Playwright esistono ma non girano mai in CI (in continue-on-error finché non c'è una prima run reale)
 - [ ] TEST-003 — Copertura test quasi nulla su upload/wizard/pubblicazione CV
 - [ ] PROD-001 — Un solo template nel registry nonostante la promessa di più stili
 - [ ] PROD-002 — Contenuti auto-generati per categoria non segnalati come "da personalizzare"
@@ -98,7 +98,7 @@ prima di dichiarare il progetto "pulito".
 - [ ] FE-018 — Interfaccia `CV` duplicata tra `Dashboard.tsx` e `api/types.ts`
 - [ ] FE-019 — Listener globali Navbar con closure potenzialmente stale
 - [ ] FE-020 — Duplicazione handler copy-link/copy-linkedin identici
-- [ ] TEST-007 — `vercel.json` schema legacy, nessun header di cache esplicito
+- [x] TEST-007 — `vercel.json` schema legacy, nessun header di cache esplicito (headers per asset statici aggiunti; migrazione a `rewrites` non fatta, resta a schema legacy)
 - [ ] TEST-008 — Dipendenze backend non pinnate su librerie critiche
 - [ ] PROD-006 — Gestione multi-CV per utente poco chiara / limiti piano Free non verificati
 
@@ -148,6 +148,10 @@ DRF, nessuna auth richiesta, nessun limite di dimensione/whitelist estensione (a
 `validate_cv_file`, limitare dimensione.
 
 ### SEC-005 [ALTA] (= TEST-001) — CI frontend non fallisce mai davvero
+**Fatto (05/08/2026)**: rimossi i fallback `|| echo` da typecheck/lint/build/vitest nel job `frontend`
+di `.github/workflows/ci.yml` — verificato che tutti e 4 passano puliti sullo stato attuale del repo
+prima di renderli bloccanti (nessuna regressione nascosta dietro i fallback rimossi).
+
 `.github/workflows/ci.yml`, job `frontend`: `npm run typecheck || echo "..."`,
 `npm run lint || echo "..."`, `npm run test -- --run || echo "Tests failed but continuing..."` —
 ogni comando ha un fallback che rende il job sempre verde a prescindere dall'esito.
@@ -490,13 +494,20 @@ o se il bottone va rinominato per non promettere una feature che non fa nulla di
 ### TEST-001 — vedi SEC-005 (stesso identico problema, riferimento incrociato)
 
 ### TEST-002 [ALTA] — Test E2E Playwright esistono ma non girano mai in CI
-`.github/workflows/ci.yml`, job `e2e-setup` è solo un placeholder (`echo "E2E tests would run
+**Fatto (05/08/2026)**: job `e2e-setup` placeholder sostituito con un job reale `e2e` in
+`.github/workflows/ci.yml` che installa Playwright/Chromium e gira `npx playwright test` col webServer
+di `vite preview` (nessun backend Django live in CI: `auth-login.spec.ts` si auto-skippa via
+`E2E_SKIP_AUTH_LOGIN=1`, `site-audit.spec.ts` gira per davvero). **Non verificabile end-to-end in questa
+sessione**: il sandbox di lavoro non ha accesso di rete per scaricare i binari di Chromium
+(`playwright install` bloccato da allowlist di rete), quindi la wiring è stata validata solo leggendo il
+codice dei test/config, non con una run reale — per questo il job è `continue-on-error: true` finché non
+c'è una prima esecuzione vera in CI (dove GitHub Actions ha accesso di rete pieno) da cui giudicare
+l'affidabilità. Controllare l'esito della prima PR/push dopo questo commit e togliere
+`continue-on-error` quando si è verificato che è stabile.
+
+`.github/workflows/ci.yml`, job `e2e-setup` era solo un placeholder (`echo "E2E tests would run
 here..."`). Nel repo esistono realmente `frontend/e2e/auth-login.spec.ts` e `site-audit.spec.ts` con
-`playwright.config.ts` funzionante e webServer configurato — non vengono mai eseguiti automaticamente,
-possono rompersi senza che nessuno se ne accorga.
-**Fix**: sostituire il job placeholder con uno reale:
-`npx playwright install --with-deps chromium && npm run test:e2e`, avviando un backend Django di test
-(sqlite + fixtures) o mockando le chiamate API.
+`playwright.config.ts` funzionante e webServer configurato — non venivano mai eseguiti automaticamente.
 
 ### TEST-003 [ALTA] — Copertura test quasi nulla su upload/wizard/pubblicazione CV
 Il flusso "carica CV → parsing → wizard → pubblica" (il cuore del prodotto) non ha una sola riga di
@@ -533,12 +544,21 @@ non rispecchia il runtime Vercel; opzionale: un secondo profilo docker-compose a
 `requirements-vercel.txt` per test di parità produzione.
 
 ### TEST-007 [BASSA] — `vercel.json` schema legacy, nessun header di cache esplicito
-Usa lo schema v2 legacy (`builds`+`routes`) invece di `rewrites`/`headers`/`cleanUrls`. Nessuna sezione
-`headers`: nessun `Cache-Control` esplicito per asset con hash in `/assets/*` (potrebbero avere
-`max-age` lungo + `immutable`, sono fingerprint-ati da Vite) né per `index.html` (dovrebbe avere
-`no-cache` per evitare che utenti restino bloccati su bundle vecchi).
-**Fix**: se non ci sono vincoli tecnici, migrare a `rewrites` e aggiungere `headers` con
-`Cache-Control: public, max-age=31536000, immutable` per `/assets/*` e `no-cache` per `index.html`.
+**Fatto parzialmente (05/08/2026)**: aggiunta una sezione `headers` top-level in `vercel.json` con
+`Cache-Control: public, max-age=31536000, immutable` per `/assets/(.*)` e per i file con estensione
+immagine/font — confermato dai docs Vercel che `headers` è combinabile con `routes` nello stesso file.
+**Non fatto**: nessuna regola `no-cache` per `index.html`/le pagine HTML — la SPA serve tutte le route
+non-asset tramite lo stesso `dest: frontend/index.html`, e la corrispondenza di `headers.source` guarda
+il path RICHIESTO dal browser (`/`, `/it/dashboard`, ecc.), non il file di destinazione risolto da
+`routes`: una regola tipo `"source": "/index.html"` non scatterebbe mai in pratica. Per farlo bene
+servirebbe un pattern catch-all (`"source": "/(.*)"`) il cui comportamento di precedenza rispetto alle
+regole più specifiche su `/assets/*` non è stato verificato su Vercel reale in questa sessione (nessun
+accesso a un ambiente Vercel di test) — lasciato non fatto per non rischiare di rompere il caching degli
+asset o la sostituzione dei bundle vecchi con un cambiamento non testato su un progetto di produzione.
+Rimane comunque uno schema legacy (`builds`+`routes`) invece di `rewrites`/`cleanUrls`.
+**Fix residuo**: se si vuole risolvere anche il caso HTML, testare prima su un progetto Vercel di
+staging una regola catch-all con `no-cache, must-revalidate` verificando che non sovrascriva/con
+prevalga in modo imprevisto sulle regole più specifiche di `/assets/*`.
 
 ### TEST-008 [BASSA] — Dipendenze backend non pinnate su librerie critiche
 `dj-database-url`, `psycopg[binary]`, `django-storages[s3]` senza versione; `pypdf>=5.0.0`,
@@ -622,3 +642,172 @@ rilancia un'analisi dedicata su: confronto tra promesse del design system e flus
 raggiungibile, coerenza tra piani a pagamento e feature visibili, qualità dei meta tag OG/JSON-LD di
 default sulla pagina pubblica, e gestione di tutti gli stati di errore lato utente (parsing fallito,
 file non supportato, feature non nel piano, link scaduto).
+
+---
+
+## Fatto (05/08/2026) — dal confronto con `CV_Update.md`
+
+L'utente ha condiviso una lista generica di migliorie "Git + Vercel + Supabase" (performance/caching,
+Supabase RLS/Auth/Realtime/Storage, i18n/PWA/optimistic UI, DX/CI, analytics/SEO). Molti di quei
+suggerimenti assumono un'architettura diversa da quella reale del progetto (Next.js/Astro con SSR/SSG,
+Supabase usato come backend diretto dal client) — vedi la sezione ROADMAP sotto per il dettaglio punto
+per punto. Le parti compatibili con lo stack reale (Django+DRF, React+Vite SPA, Postgres via ORM
+Django, Vercel) sono state implementate direttamente:
+
+- **OG-001 — Immagine Open Graph dinamica per il CV pubblico**: nuovo endpoint
+  `GET /api/v1/cv/<slug>/og-image.png` (`backend/api/services/cv_og_image.py` +
+  `cv_og_image_view` in `cv_public_html_views.py`, generazione PNG 1200x630 via Pillow con nome del CV,
+  tagline e gradiente colore legato alla categoria professionale — stessa palette di
+  `categoryTheme.ts`). `cv_public_shell_view` ora punta qui di default invece del logo generico
+  (`PUBLIC_CV_OG_IMAGE` resta una via di fuga per forzare un'immagine fissa). Stessa policy di accesso
+  della shell HTML (CV privati con token restano protetti anche per l'immagine). Verificato end-to-end
+  con Django test client: CV pubblicato → immagine 200 col colore/nome corretti, CV inesistente → 404,
+  meta `og:image` nella shell aggiornato di conseguenza. Aggiunto `Pillow==11.1.0` a
+  `requirements.txt`/`requirements-vercel.txt` (libreria leggera, wheel precompilato, non c'entra con
+  l'esclusione di spacy/nltk/pyresparser).
+- **OG-002 — Cache headers per asset statici Vercel**: `vercel.json`, sezione `headers` top-level,
+  `Cache-Control: public, max-age=31536000, immutable` per `/assets/(.*)` e per file
+  jpg/jpeg/png/svg/ico/webp/gif/woff/woff2/ttf. Non toccata la parte HTML/no-cache (vedi TEST-007 per il
+  motivo). Verificato che Vercel supporta `headers` insieme a `routes` legacy leggendo la documentazione
+  ufficiale corrente (non c'era modo di testarlo su un deploy reale in questa sessione).
+- **OG-003 — Vercel Web Analytics + Speed Insights**: aggiunti `@vercel/analytics` e
+  `@vercel/speed-insights`, componenti `<Analytics />`/`<SpeedInsights />` montati in `App.tsx`. Sono
+  no-op finché non si attiva il toggle "Web Analytics"/"Speed Insights" nelle impostazioni del progetto
+  su vercel.com (azione da fare a mano nel dashboard, non automatizzabile da codice — non fatta in
+  questa sessione, va abilitata quando si vuole iniziare a raccogliere i dati).
+- **Vedi anche SEC-005/TEST-001, TEST-002, TEST-007** più sopra: la parte "DX/CI" del file (test E2E
+  automatizzati, controlli che falliscono davvero) è stata affrontata nello stesso passaggio.
+
+Tutto quanto sopra è stato verificato con: `npx tsc --noEmit`, `npx eslint`, `npm run build`,
+`npx vitest run` (frontend, tutti verdi), `python manage.py test api` (37/37 verdi, nessuna
+regressione) + un test manuale end-to-end del nuovo endpoint OG image via Django test client. La
+wiring E2E in CI (TEST-002) NON è stata verificata con una run reale per mancanza di accesso di rete
+nel sandbox di lavoro — vedi nota nella sezione TEST-002.
+
+---
+
+## ROADMAP — voci di `CV_Update.md` non implementate in autonomia
+
+Queste voci richiedono o un cambio architetturale profondo, o account/credenziali esterne che
+l'utente deve creare/fornire, o una decisione di prodotto che non è stata presa. Non sono state
+implementate senza una conferma esplicita, coerentemente con le regole di questa sessione: azioni che
+cambiano impostazioni di account o comportano riscritture rilevanti vanno proposte, non eseguite di
+default.
+
+### ROAD-001 — Passaggio a Next.js (App Router) o Astro per SSR/SSG
+**Verdetto: non applicabile senza una riscrittura totale del frontend.** Il frontend è oggi una SPA
+React+Vite con client-side rendering puro (routing via `react-router-dom`, nessun framework SSR). La
+piattaforma ha già UNA pagina realmente server-renderizzata per i motivi giusti — la CV pubblica
+(`cv_public_shell_view` + `cv_public_shell.html`, meta tag/OG/JSON-LD generati lato Django prima che la
+SPA si monti) — proprio perché è l'unica pagina dove la SEO/social-sharing conta davvero (le altre sono
+dietro login o pagine di marketing statiche). Migrare l'INTERO frontend a Next.js/Astro vorrebbe dire
+riscrivere il routing, il data-fetching, l'auth (oggi JWT in localStorage con interceptor axios) e il
+deploy (oggi un'unica funzione Vercel Python serve sia `/api` che `/u/*`, il frontend è un build statico
+servito da un secondo step `@vercel/static-build`). È un progetto a sé, non una "miglioria" incrementale.
+**Se interessa**: la domanda da farsi prima non è "quale framework" ma "quali pagine hanno davvero
+bisogno di SEO/SSR" — probabilmente solo la home/marketing e la pagina CV pubblica (già risolta). Si
+potrebbe valutare di *aggiungere* Next.js/Astro SOLO per le pagine di marketing pubbliche, lasciando il
+resto (dashboard, builder, editor — tutto dietro login, nessun bisogno di SEO) come SPA Vite invariata.
+Decisione di prodotto/architettura da prendere con l'utente, non da questa sessione.
+
+### ROAD-002 — Row Level Security (RLS) granulare su Supabase
+**Verdetto: non applicabile con l'architettura dati attuale.** Il progetto usa Supabase solo come
+hosting del database Postgres — tutto l'accesso ai dati passa dall'ORM Django (`backend/api/models.py`,
+viste DRF), con autenticazione/autorizzazione gestita interamente in Django (JWT, permessi DRF). Le
+policy RLS di Postgres si applicano al ruolo con cui ci si connette al DB: Django si connette quasi
+certamente con un ruolo con privilegi ampi (per poter fare join, migration, ecc.), che in Postgres
+tipicamente bypassa RLS by design se ha `BYPASSRLS` o è il proprietario delle tabelle — verificare quale
+ruolo/connection string usa `DATABASE_URL` in produzione prima di assumere che aggiungere RLS abbia
+un qualunque effetto. Introdurre RLS "vera" richiederebbe che il FRONTEND si connetta direttamente a
+Supabase (via `supabase-js` con anon key + JWT di Supabase Auth), bypassando l'attuale layer DRF — è
+un cambio di architettura dati, non una configurazione aggiuntiva. **Non fatto.**
+
+### ROAD-003 — Autenticazione multi-provider (Google/GitHub/Apple) + Magic Link/passkey
+**Verdetto: parzialmente applicabile, ma richiede credenziali esterne che solo l'utente può creare.**
+Il backend usa già `django-allauth` (vedi `requirements.txt`, `mybackend/registration_urls.py`), che
+supporta nativamente login social (Google/GitHub/ecc.) — la libreria giusta è già nel progetto, non
+serve Supabase Auth per questo. Aggiungere un provider richiede pero': creare un'app OAuth su Google
+Cloud Console (o GitHub/Apple), ottenere `client_id`/`client_secret`, e configurarli come credenziali
+`django-allauth` (env var o via Django admin, tabella `SocialApp`) — sono valori che solo l'utente puo'
+generare (accesso al suo account Google/GitHub Developer). Passkey/WebAuthn e Magic Link via email
+richiederebbero pacchetti aggiuntivi (`django-allauth` supporta i Magic Link/"Passwordless" solo in
+versioni/piani recenti, da verificare) e un ripensamento del flusso login lato frontend. **Non fatto.**
+**Prossimo passo se interessa**: l'utente crea le app OAuth (inizia con Google, è il piu' richiesto),
+fornisce client_id/secret, poi è un cambio di codice contenuto (route + bottone "Accedi con Google").
+
+### ROAD-004 — Supabase Realtime Subscriptions
+**Verdetto: non applicabile senza cambiare come il frontend parla al database.** Stesso discorso di
+ROAD-002: Realtime di Supabase funziona via websocket sulla connessione diretta client→Supabase, non
+attraverso un backend Django in mezzo. Andrebbe deciso PRIMA se e quali funzionalità della piattaforma
+beneficerebbero davvero di aggiornamenti realtime (notifiche? stato pubblicazione CV? oggi non ci sono
+casi d'uso multi-utente/collaborativi nel prodotto che lo richiedano chiaramente — un CV è editato da
+una sola persona alla volta). **Non fatto, e probabilmente basso valore per la forma attuale del
+prodotto** finché non c'è un caso d'uso concreto che lo giustifichi.
+
+### ROAD-005 — Supabase Storage + trasformazione immagini (webp/avif)
+**Verdetto: parzialmente sovrapposto a scelte già fatte, non a Supabase Storage.** Il progetto gestisce
+già lo storage file in modo configurabile (`USE_S3_STORAGE` in `backend/mybackend/settings.py`, vedi
+anche BE-006 nel backlog sopra) — userebbe S3 (o compatibile), non Supabase Storage specificamente, e va
+prima sistemato il fatto che oggi in produzione questo flag rischia di non essere impostato (vedi BE-006
+e BE-008 per il rischio di degrado silenzioso). La generazione automatica di varianti webp/avif è
+un'ottimizzazione reale ma indipendente dal provider di storage: si può fare con Pillow (già aggiunto in
+questa sessione per l'OG image) lato backend, o lasciarla a un CDN/servizio di image optimization. **Non
+fatto** — priorità più bassa di sistemare prima BE-006.
+
+### ROAD-006 — PWA (Progressive Web App) e offline-first
+**Verdetto: applicabile tecnicamente, ma il fit con QUESTO prodotto è dubbio — decisione di prodotto
+prima che tecnica.** Una PWA con service worker/manifest ha senso per app usate ripetutamente offline
+(es. note, task manager). SiteCV è, nella sua essenza, uno strumento usato occasionalmente (carica CV,
+compila wizard, pubblica) più una pagina pubblica statica-nei-fatti condivisa con terzi — nessuna delle
+due ha un bisogno ovvio di funzionare offline o di essere "installata" sulla home screen. Implementarla
+comunque (es. con `vite-plugin-pwa`) è un lavoro contenuto, ma rischia di essere sforzo speso su una
+feature che gli utenti non chiederanno. **Non fatto — prima capire se e perché serve**, non è stato
+scartato per difficoltà tecnica ma per dubbio ritorno.
+
+### ROAD-007 — Optimistic UI updates
+**Verdetto: applicabile, buon candidato per un prossimo giro di lavoro autonomo — non fatto per
+concentrare questa sessione sulle voci con evidenza più diretta.** Il caso d'uso più ovvio nel prodotto
+è l'eliminazione di un CV dalla Dashboard (oggi presumibilmente aspetta la risposta del server prima di
+aggiornare la lista) e forse "Copia link"/toggle visibilità. Aggiunto come TASK-ROAD-007 a bassa
+priorità: da fare quando si toccano di nuovo `Dashboard.tsx`/`CVPublishStep.tsx` per altri motivi (vedi
+FE-007, FE-009, FE-011 nel backlog sopra, stessi file).
+
+### ROAD-008 — Type-safety end-to-end (analogo a `supabase gen types typescript`)
+**Verdetto: il principio si applica, lo strumento concreto no** (non c'è uno schema Supabase generato
+dal client, il DB è dietro Django). L'equivalente reale per questo stack è generare uno schema OpenAPI
+dal backend DRF (`drf-spectacular`, non ancora installato) e poi generare i tipi TypeScript da quello
+(es. `openapi-typescript`), invece di mantenere a mano interfacce come `CVData` in
+`frontend/src/api/types.ts` (vedi FE-010, FE-018 nel backlog sopra per i problemi concreti che questo
+causa già oggi). **Non fatto in questa sessione**: è uno scope ampio (tocca praticamente ogni funzione
+in `cvApi.ts` e i tipi in tutto il frontend), da trattare come un progetto a sé, non un fix puntuale.
+Buon prossimo passo se si vuole affrontare seriamente FE-010/FE-018.
+
+### ROAD-009 — Database branching Supabase + Preview Deployments Vercel
+**Verdetto: richiede configurazione a livello di dashboard/piano Supabase, non solo codice.** Il
+database branching di Supabase è una feature del prodotto Supabase stesso (spesso legata a piani a
+pagamento), da abilitare dal dashboard Supabase, non dal repo. Una volta abilitato lato Supabase, il
+collegamento con le Preview Deployments di Vercel è comunque configurazione (env var diverse per
+branch), non codice applicativo. **Non fatto** — richiede che l'utente verifichi/attivi la feature sul
+proprio account Supabase prima che abbia senso lavorarci da qui.
+
+### ROAD-010 — Sentry (o analogo) per error tracking in produzione
+**Verdetto: applicabile, richiede solo un account/DSN esterno che l'utente deve creare.** L'integrazione
+codice è quasi meccanica (`sentry-sdk` lato Django, `@sentry/react` lato frontend, poche righe di init
+con la variabile `SENTRY_DSN`). **Non fatta in questa sessione** perché richiede che l'utente crei un
+account Sentry (o servizio equivalente) e fornisca il DSN — nessuna azione di sola-lettura può
+sostituire quel passo. Buon prossimo passo autonomo NON APPENA si ha un DSN da usare.
+
+### ROAD-011 — hreflang / metatag dinamici sulle pagine di marketing (non la CV pubblica)
+**Verdetto: la CV pubblica è già a posto, le pagine di marketing no — ma è un fix a basso ritorno dato
+il CSR.** Verificato leggendo `cv_public_html_views.py`/`cv_public_shell.html`: la shell della pagina CV
+pubblica genera già correttamente `<html lang="{{ html_lang }}">` dalla lingua reale del CV, canonical
+URL, OG/Twitter/JSON-LD dinamici — questa parte NON aveva bisogno di intervento (la voce originaria
+"correggere lang/hreflang sulla shell SSR" nella todo-list di questa sessione è stata chiusa senza
+modifiche di codice per questo motivo). Le pagine di marketing (Home, Pricing, ecc.) invece hanno solo i
+meta tag statici e generici di `frontend/index.html`, identici per ogni route e ogni lingua, perché sono
+una SPA client-rendered senza libreria head-management (`react-helmet-async` non installata). hreflang
+ha senso solo quando esistono più URL per la stessa pagina in lingue diverse: qui servirebbe prima
+introdurre `react-helmet-async` (o simile) e gestire i meta per route — è un lavoro concreto ma il
+ritorno SEO è incerto per pagine dietro autenticazione o comunque non pensate per traffico organico
+multi-lingua. **Non fatto** — priorità bassa, valutare insieme a un eventuale ROAD-001 (SSR delle
+pagine di marketing risolverebbe questo e altro insieme).

@@ -10,6 +10,8 @@ per voce in autonomia in sessioni future. Se non hai un compito specifico da que
 la fonte primaria di "cosa fare dopo". Contiene anche 2 voci CRITICHE che richiedono conferma esplicita
 dell'utente prima di agire (credenziali reali esposte nella history git) — leggile per prime.
 
+`BACKLOG.md` contiene anche una sezione **ROADMAP** (aggiunta 05/08/2026, dal confronto con una lista di suggerimenti generici "Git+Vercel+Supabase" che l'utente ha condiviso in `CV_Update.md`): elenca cosa NON è stato fatto in autonomia e perché (migrazione Next.js/Astro, Supabase Auth/RLS/Realtime nativi, PWA, Sentry, OAuth social login, DB branching Supabase — tutte cose che richiedono una riscrittura architetturale, un account esterno con credenziali, o una decisione di prodotto che l'utente non ha ancora preso). Leggila prima di riproporre queste idee da zero.
+
 ## Cos'è il progetto
 
 SiteCV (repo GitHub `goodproggdev/SiteCV`) è una piattaforma che genera pagine CV pubbliche a partire
@@ -168,7 +170,10 @@ Backend:
 - `backend/api/services/cv_plain_text_enrich.py` — enrichment nome/contatti
 - `backend/api/data/category_templates.json` — banca contenuti per categoria
 - `backend/demo_resume_parser.py` — `map_extracted_data_to_template()`
-- `backend/api/cv_public_html_views.py` — SSR shell pagina pubblica
+- `backend/api/cv_public_html_views.py` — SSR shell pagina pubblica + `cv_og_image_view`
+  (immagine Open Graph dinamica per CV, vedi sotto)
+- `backend/api/services/cv_og_image.py` — genera il PNG 1200x630 dell'immagine OG per CV
+  (Pillow, gradiente per categoria, nessun font esterno — vedi commenti nel file)
 - `backend/mybackend/urls.py` — routing incl. `/u/<slug>`
 
 Frontend:

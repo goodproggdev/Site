@@ -105,10 +105,10 @@ jobs:
         run: npm ci
 
       - name: Type check
-        run: npm run typecheck || echo "Type errors found but continuing..."
+        run: npm run typecheck
 
       - name: Lint
-        run: npm run lint || echo "Lint errors found but continuing..."
+        run: npm run lint
 
       - name: Build
         run: npm run build
@@ -116,7 +116,7 @@ jobs:
           VITE_API_BASE_URL: http://localhost:8000
 
       - name: Run Vitest
-        run: npm run test -- --run || echo "Tests failed but continuing..."
+        run: npm run test -- --run
 
   # ─── FRONTEND BUDGET CHECK ──────────────────────────────────────────
   frontend-budget:
@@ -163,19 +163,51 @@ jobs:
           
           echo "✅ Bundle size OK"
 
-  # ─── E2E TEST SETUP ──────────────────────────────────────────────────
-  e2e-setup:
-    name: E2E Test Setup
+  # ─── E2E TESTS (Playwright) ─────────────────────────────────────────
+  # Gira solo contro il build statico del frontend (`vite preview`, vedi
+  # playwright.config.ts webServer), senza backend Django live in CI: i test
+  # che richiedono l'API (auth-login.spec.ts) si auto-skippano tramite
+  # E2E_SKIP_AUTH_LOGIN, mentre site-audit.spec.ts (navigazione, modali,
+  # pagine pubbliche) gira per davvero e intercetta regressioni reali di UI.
+  # `continue-on-error: true` finche' non abbiamo una prima run reale in CI
+  # da cui verificare l'affidabilita' — vedi BACKLOG.md TEST-002.
+  e2e:
+    name: E2E Tests (Playwright)
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
+    continue-on-error: true
+    defaults:
+      run:
+        working-directory: frontend
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup test environment
-        run: |
-          echo "E2E tests would run here with Playwright or Cypress"
-          echo "Testing critical path: payment -> entitlement -> builder -> publish"
+      - name: Set up Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E tests
+        run: npx playwright test
+        env:
+          E2E_SKIP_AUTH_LOGIN: "1"
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 7
 
   # ─── DOCKER BUILD CHECK ─────────────────────────────────────────────
   docker-build:

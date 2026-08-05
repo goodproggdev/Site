@@ -30,6 +30,11 @@ django-allauth==65.4.1
 
 stripe==11.5.0
 
+# Generazione immagine Open Graph per i CV pubblici (api/services/cv_og_image.py).
+# Libreria pura/wheel precompilato, nessuna dipendenza compilata pesante: non ha
+# nulla a che vedere con l'esclusione di spacy/nltk/pyresparser/pymupdf sopra.
+Pillow==11.1.0
+
 psycopg[binary]
 django-storages[s3]
 whitenoise==6.8.2

@@ -2,6 +2,11 @@ import { Suspense, lazy, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, useParams, useLocation } from "react-router-dom";
 import { useTranslation } from 'react-i18next';
 import ErrorBoundary from "./components/ErrorBoundary";
+// Vercel Web Analytics + Speed Insights: RUM (Real User Monitoring) in produzione.
+// Componenti no-op se il progetto Vercel non ha il toggle Analytics/Speed Insights
+// attivato nelle impostazioni — sicuri da montare sempre, nessuna chiave richiesta.
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import CookieConsent from "./components/CookieConsent";
 import GaRouteListener from "./components/GaRouteListener";
 import { Navbar, Footer } from "./layout";
@@ -134,6 +139,8 @@ function App() {
       <ErrorBoundary>
         <AppShell />
       </ErrorBoundary>
+      <Analytics />
+      <SpeedInsights />
     </Router>
   );
 }

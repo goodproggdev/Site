@@ -11,10 +11,11 @@ from pathlib import Path
 from typing import Any
 
 from django.conf import settings
-from django.http import HttpResponseForbidden, HttpResponseNotFound
+from django.http import HttpResponse, HttpResponseForbidden, HttpResponseNotFound
 from django.shortcuts import render
 from django.utils.safestring import mark_safe
 
+from api.services.cv_og_image import generate_og_image_png
 from api.services.cv_public_access import resolve_public_cv
 
 logger = logging.getLogger(__name__)
@@ -138,10 +139,16 @@ def cv_public_shell_view(request, slug: str):
     page_title, meta_description, tagline = _pick_meta_from_raw(raw, slug)
     canonical_url = request.build_absolute_uri(request.get_full_path())
 
+    # Immagine OG: di default generata al volo per CV (nome + tagline + colore
+    # categoria, vedi cv_og_image_view/generate_og_image_png), cosi' chi
+    # condivide il link su LinkedIn/WhatsApp/X vede un'anteprima personalizzata
+    # invece del logo generico. PUBLIC_CV_OG_IMAGE resta una via di fuga per
+    # forzare un'immagine fissa per tutti i CV, se un operatore lo desidera.
     og_image = (getattr(settings, "PUBLIC_CV_OG_IMAGE", "") or "").strip()
     if not og_image:
-        base = settings.FRONTEND_URL.rstrip("/")
-        og_image = f"{base}/logo-nordev.png"
+        og_image = request.build_absolute_uri(f"/api/v1/cv/{slug}/og-image.png")
+        if token:
+            og_image = f"{og_image}?token={token}"
     if not (og_image.startswith("http://") or og_image.startswith("https://")):
         if og_image.startswith("/"):
             og_image = request.build_absolute_uri(og_image)
@@ -187,3 +194,34 @@ def cv_public_shell_view(request, slug: str):
         "site_name": getattr(settings, "SITE_NAME", "Nordevit"),
     }
     return render(request, "cv_public_shell.html", context, content_type="text/html; charset=utf-8")
+
+
+
+def cv_og_image_view(request, slug: str):
+    """
+    GET /api/v1/cv/<slug>/og-image.png — immagine Open Graph generata al volo
+    (nome + tagline + colore legato alla categoria) per la pagina CV pubblica,
+    usata come og:image/twitter:image al posto del logo generico della
+    piattaforma. Stessa policy di accesso della shell HTML (`resolve_public_cv`):
+    un CV privato con token richiede lo stesso token anche per l'immagine.
+    """
+    token = request.GET.get("token")
+    cv, err_status, _err_code = resolve_public_cv(slug, token)
+    if err_status:
+        return HttpResponseNotFound(content_type="image/png")
+
+    raw = cv.raw_json if isinstance(cv.raw_json, dict) else {}
+    page_title, _meta_description, tagline = _pick_meta_from_raw(raw, slug)
+    name = page_title.split("—")[0].strip()
+    png_bytes = generate_og_image_png(
+        name=name,
+        tagline=tagline,
+        category=getattr(cv, "category", "") or "default",
+        site_name=getattr(settings, "SITE_NAME", "Nordevit"),
+    )
+    response = HttpResponse(png_bytes, content_type="image/png")
+    # I dati del CV cambiano raramente rispetto alla frequenza con cui i
+    # crawler dei social ri-fetchano l'immagine: cache moderata + revalidate
+    # in background per non rigenerarla ad ogni richiesta.
+    response["Cache-Control"] = "public, max-age=3600, stale-while-revalidate=86400"
+    return response

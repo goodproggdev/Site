@@ -18,6 +18,8 @@
   },
   "dependencies": {
     "@stripe/stripe-js": "^5.8.0",
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "axios": "^1.8.1",
     "caniuse-lite": "^1.0.30001701",
     "file-saver": "^2.0.5",

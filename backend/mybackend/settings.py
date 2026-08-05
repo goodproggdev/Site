@@ -4,10 +4,11 @@ Usa python-decouple per leggere i segreti da .env
 """
 
 import os
-from pathlib import Path
-from decouple import config, Csv
 from datetime import timedelta
+from pathlib import Path
+
 import dj_database_url
+from decouple import Csv, config
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -58,7 +59,11 @@ FRONTEND_DEFAULT_LANG = config('FRONTEND_DEFAULT_LANG', default='it')
 FRONTEND_DIST_INDEX_HTML = config('FRONTEND_DIST_INDEX_HTML', default='')
 # Origine assoluta per /assets/... (vuoto = stesso host della richiesta, es. reverse proxy su un solo dominio).
 FRONTEND_ASSET_ORIGIN = config('FRONTEND_ASSET_ORIGIN', default='').rstrip('/')
-# Immagine Open Graph assoluta per i CV pubblici (opzionale; default: FRONTEND_URL + /logo-nordev.png lato view).
+# Immagine Open Graph assoluta per i CV pubblici (opzionale). Se vuoto (default),
+# ogni CV usa un'immagine generata al volo (nome + tagline + colore categoria,
+# vedi api/services/cv_og_image.py e /api/v1/cv/<slug>/og-image.png) invece del
+# logo generico della piattaforma. Impostare questa variabile forza un'unica
+# immagine fissa per tutti i CV.
 PUBLIC_CV_OG_IMAGE = config('PUBLIC_CV_OG_IMAGE', default='')
 
 # ==============================================================================

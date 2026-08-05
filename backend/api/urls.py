@@ -1,26 +1,28 @@
 from django.urls import path
+
+from .cv_public_html_views import cv_og_image_view
 from .views import (
-    match_resume,
-    parse_cv_upload_view,
-    create_cv_draft_view,
-    my_cv_list,
-    delete_cv,
-    create_stripe_checkout_view,
-    stripe_webhook_view,
     CVDashboardView,
+    CVDetailView,
     CVPublicView,
     CVUpdateView,
-    CVDetailView,
     # Entitlement & Link Policy
     check_entitlement,
-    list_entitlements,
-    cv_link_policy,
-    regenerate_cv_token,
-    revoke_cv_access,
+    create_cv_draft_view,
+    create_stripe_checkout_view,
     cv_extraction_kpi_view,
+    cv_link_policy,
+    delete_cv,
     # Job Matching
     get_job_matches,
+    list_entitlements,
+    match_resume,
+    my_cv_list,
+    parse_cv_upload_view,
     refresh_job_matches,
+    regenerate_cv_token,
+    revoke_cv_access,
+    stripe_webhook_view,
     update_job_match_status,
 )
 
@@ -53,6 +55,7 @@ urlpatterns = [
     # Dashboard & CV Management Fase 4
     path('dashboard/', CVDashboardView.as_view(), name='cv-dashboard'),
     path('cv/public/<slug:slug>/', CVPublicView.as_view(), name='cv-public'),
+    path('cv/<slug:slug>/og-image.png', cv_og_image_view, name='cv-og-image'),
     path('cv/update/<int:cv_id>/', CVUpdateView.as_view(), name='cv-update'),
     path('cv/<int:cv_id>/', CVDetailView.as_view(), name='cv-detail'),
 
